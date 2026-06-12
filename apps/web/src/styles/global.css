@@ -1,0 +1,87 @@
+:root {
+  color: #1d1b16;
+  background: #efe8dc;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.intro-panel {
+  width: min(720px, 100%);
+  border: 1px solid #cfc1ac;
+  border-radius: 8px;
+  background: #f9f5ed;
+  padding: 32px;
+  box-shadow: 0 18px 50px rgb(76 59 35 / 0.12);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #8e2f22;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #17140f;
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+p {
+  max-width: 60ch;
+  line-height: 1.65;
+}
+
+.status-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 28px 0 0;
+}
+
+.status-list div {
+  border-top: 1px solid #d9cdbb;
+  padding-top: 12px;
+}
+
+.status-list dt {
+  color: #6e6253;
+  font-size: 0.82rem;
+}
+
+.status-list dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+

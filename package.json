@@ -1,0 +1,20 @@
+{
+  "name": "warring-states-card-tactics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @warring-states/web dev",
+    "build": "pnpm --filter @warring-states/web build",
+    "test": "pnpm --filter @warring-states/game-core test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
+  },
+  "packageManager": "pnpm@11.5.2"
+}
+
