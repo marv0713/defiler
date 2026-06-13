@@ -10,6 +10,26 @@
 - Verified Phase 0 scaffold before continuing:
   - `pnpm test` passed.
   - `pnpm typecheck` passed.
+- `pnpm build` passed.
+
+### Task 3.5: Implement Basic Effect Resolver
+
+- Added `packages/game-core/src/effects/effectResolver.ts`.
+- Added `packages/game-core/src/effects/effectResolver.test.ts`.
+- Implemented `resolveEffects` with support for:
+  - `BUFF` — increases target `currentPower`, adds `PowerModifier`.
+  - `DAMAGE` — decreases target `currentPower` (floor 0), adds `PowerModifier`.
+  - `DESTROY` — removes target from board, marks destroyed, moves to graveyard.
+  - `SUMMON` — creates token `CardInstance` on specified row from `cardDefinitions`.
+- Added `cardDefinitions: Record<string, CardDefinition>` to `GameState`.
+- Updated `createInitialGameState` to populate `cardDefinitions` from deck configs.
+- Updated `applyPlayCard` in reducer to call `resolveEffects` after playing a card.
+- Effect randomness uses `createSeededRandom` with `${seed}-fx-${actionLog.length}`.
+- All modifier IDs are deterministic (no `Date.now`).
+- Updated all 7 existing test files to include `cardDefinitions: {}` in mock states.
+- Verification:
+  - `pnpm test` passed with 59 tests across 13 files.
+  - `pnpm typecheck` passed.
   - `pnpm build` passed.
 
 ### Task 1.1: Define Core Types
@@ -41,9 +61,9 @@
 
 ## Current Work
 
-- Completed Phase 2 / Task 2.4 and Task 2.5.
-- Next task is Phase 3 / Task 3.1: add initial card data.
-- Read `agent.md` and recorded its project rules in `task_plan.md` and `findings.md`.
+- Completed Phase 3 / Task 3.1: add initial card data.
+- Next task is Phase 3 / Task 3.2: add card validation.
+- Read `AGENTS.md` and continued following its project rules.
 
 ### Task 1.3: Implement Deterministic Random Utility
 
@@ -166,5 +186,97 @@
   - Clears boards and pass states.
 - Verification:
   - `pnpm test` passed with 24 tests across 8 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+
+## 2026-06-13
+
+### Task 3.1: Add Initial Card Data
+
+- Added `packages/game-core/src/cards/cardData.test.ts`.
+- Confirmed `pnpm test` failed before implementation because `INITIAL_CARDS` was not exported.
+- Added `packages/game-core/src/cards/cardData.ts`.
+- Exported `INITIAL_CARDS` from `packages/game-core/src/index.ts`.
+- Added 20 initial cards:
+  - 5 Qin cards.
+  - 5 Chu cards.
+  - 5 Qi cards.
+  - 5 Zhao cards.
+- Cards compile against `CardDefinition`.
+- All cards include:
+  - `id`
+  - `name`
+  - `englishName`
+  - `faction`
+  - `type`
+  - `power`
+  - `rarity`
+  - `tags`
+  - `effects`
+  - `budget`
+  - `description`
+  - `row` for unit cards
+- Verification:
+  - `pnpm test` passed with 27 tests across 9 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+
+### Task 3.2: Add Card Validation
+
+- Added `packages/game-core/src/cards/cardValidation.test.ts`.
+- Confirmed `pnpm test` failed before implementation because `validateCards` was not exported.
+- Added `packages/game-core/src/cards/cardValidation.ts`.
+- Exported `validateCards` and `ValidationResult` from `packages/game-core/src/index.ts`.
+- Implemented `validateCards(cards)` with:
+  - duplicate id errors
+  - unit-without-row errors
+  - negative power errors
+  - unknown faction errors
+  - unknown row errors
+  - unknown effect type errors
+  - missing budget warnings
+  - missing description warnings
+- Current `INITIAL_CARDS` passes validation.
+- Verification:
+  - `pnpm test` passed with 33 tests across 10 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+
+### Task 3.3: Define Effect Types
+
+- Added `packages/game-core/src/effects/effectTypes.test.ts`.
+- Confirmed `pnpm test` failed before implementation because `EFFECT_TYPES` was not exported.
+- Added `packages/game-core/src/effects/effectTypes.ts`.
+- Defined:
+  - `EFFECT_TYPES`
+  - `EffectType`
+  - `EffectDefinition`
+  - `TargetSelector`
+  - `ManualTargetRule`
+  - `ConditionDefinition`
+  - `EffectContext`
+  - individual effect interfaces for all MVP effect types
+- Updated `CardDefinition.effects` to use the formal `EffectDefinition` union.
+- Updated card validation to reuse `EFFECT_TYPES` instead of maintaining a separate effect type whitelist.
+- Adjusted the unknown-effect validation test to explicitly cast external dirty data through `unknown`, preserving strict typing while still testing validation behavior.
+- Verification:
+  - `pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --skipLibCheck packages/game-core/src/effects/effectTypes.test.ts packages/game-core/src/cards/cardValidation.test.ts` passed.
+  - `pnpm test` passed with 36 tests across 11 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+
+### Task 3.4: Implement Target Resolver
+
+- Added `packages/game-core/src/effects/targetResolver.ts`.
+- Added `packages/game-core/src/effects/targetResolver.test.ts`.
+- Implemented `resolveTargets` with support for:
+  - `SELF`
+  - `ALLY_LOWEST`, `ALLY_RANDOM`, `ALLY_ROW`
+  - `ENEMY_LOWEST`, `ENEMY_HIGHEST`, `ENEMY_RANDOM`, `ENEMY_ROW`
+- Ensured destroyed cards are ignored in all selectors.
+- Implemented deterministic `pickRandom` using context's `random` function.
+- Exported `resolveTargets` from `packages/game-core/src/index.ts`.
+- Verification:
+  - `pnpm test` passed with 45 tests across 12 files.
   - `pnpm typecheck` passed.
   - `pnpm build` passed.

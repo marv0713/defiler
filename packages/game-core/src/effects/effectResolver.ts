@@ -1,0 +1,270 @@
+import type { CardInstance, GameState } from "../types";
+import type {
+  BuffEffect,
+  DamageEffect,
+  DestroyEffect,
+  EffectContext,
+  EffectDefinition,
+  SummonEffect,
+} from "./effectTypes";
+import { resolveTargets } from "./targetResolver";
+
+/**
+ * Applies a list of effects to the game state in order.
+ * Returns a new GameState with the effects resolved.
+ */
+export function resolveEffects(
+  state: GameState,
+  context: EffectContext,
+  effects: EffectDefinition[],
+  sourceCardInstanceId?: string,
+): GameState {
+  let nextState = state;
+  let effectIndex = 0;
+
+  for (const effect of effects) {
+    nextState = applyEffect(nextState, context, effect, effectIndex, sourceCardInstanceId);
+    effectIndex++;
+  }
+
+  return nextState;
+}
+
+function applyEffect(
+  state: GameState,
+  context: EffectContext,
+  effect: EffectDefinition,
+  effectIndex: number,
+  sourceCardInstanceId?: string,
+): GameState {
+  switch (effect.type) {
+    case "BUFF":
+      return applyBuff(state, context, effect, effectIndex, sourceCardInstanceId);
+    case "DAMAGE":
+      return applyDamage(state, context, effect, effectIndex, sourceCardInstanceId);
+    case "DESTROY":
+      return applyDestroy(state, context, effect, sourceCardInstanceId);
+    case "SUMMON":
+      return applySummon(state, context, effect);
+    case "DRAW_DISCARD":
+    case "REVIVE":
+    case "LOCK":
+    case "CLEAR_WEATHER":
+    case "CONDITIONAL_BOOST":
+      return state; // Not yet implemented
+    default:
+      return state;
+  }
+}
+
+function applyBuff(
+  state: GameState,
+  context: EffectContext,
+  effect: BuffEffect,
+  effectIndex: number,
+  sourceCardInstanceId?: string,
+): GameState {
+  const targets = resolveTargets(state, context, effect.target, sourceCardInstanceId);
+
+  return updateTargets(state, targets, (card) => {
+    const modifierId = `buff-${sourceCardInstanceId ?? "unknown"}-e${effectIndex}-${card.instanceId}`;
+    return {
+      ...card,
+      currentPower: card.currentPower + effect.amount,
+      modifiers: [
+        ...card.modifiers,
+        {
+          id: modifierId,
+          sourceCardInstanceId,
+          amount: effect.amount,
+          type: "buff" as const,
+          expiresAt: "round_end" as const,
+        },
+      ],
+    };
+  });
+}
+
+function applyDamage(
+  state: GameState,
+  context: EffectContext,
+  effect: DamageEffect,
+  effectIndex: number,
+  sourceCardInstanceId?: string,
+): GameState {
+  const targets = resolveTargets(state, context, effect.target, sourceCardInstanceId);
+
+  return updateTargets(state, targets, (card) => {
+    const modifierId = `damage-${sourceCardInstanceId ?? "unknown"}-e${effectIndex}-${card.instanceId}`;
+    const newPower = Math.max(0, card.currentPower - effect.amount);
+    return {
+      ...card,
+      currentPower: newPower,
+      modifiers: [
+        ...card.modifiers,
+        {
+          id: modifierId,
+          sourceCardInstanceId,
+          amount: -effect.amount,
+          type: "damage" as const,
+          expiresAt: "round_end" as const,
+        },
+      ],
+    };
+  });
+}
+
+function applyDestroy(
+  state: GameState,
+  context: EffectContext,
+  effect: DestroyEffect,
+  sourceCardInstanceId?: string,
+): GameState {
+  const targets = resolveTargets(state, context, effect.target, sourceCardInstanceId);
+
+  let nextState = state;
+
+  for (const target of targets) {
+    nextState = removeCardFromBoard(nextState, target);
+    nextState = addCardToGraveyard(nextState, target);
+  }
+
+  return nextState;
+}
+
+function applySummon(
+  state: GameState,
+  context: EffectContext,
+  effect: SummonEffect,
+): GameState {
+  const definition = state.cardDefinitions[effect.cardId];
+  if (!definition) return state;
+
+  let nextState = state;
+
+  for (let i = 0; i < effect.count; i++) {
+    const player = nextState.players[context.sourcePlayerId];
+    const instanceId = `summon-${effect.cardId}-${context.sourcePlayerId}-${nextState.actionLog.length}-${i}`;
+    const token: CardInstance = {
+      instanceId,
+      cardId: effect.cardId,
+      ownerId: context.sourcePlayerId,
+      type: definition.type,
+      row: effect.row,
+      currentPower: definition.power,
+      basePower: definition.power,
+      isLocked: false,
+      isDestroyed: false,
+      modifiers: [],
+    };
+
+    nextState = {
+      ...nextState,
+      players: {
+        ...nextState.players,
+        [context.sourcePlayerId]: {
+          ...player,
+          board: {
+            ...player.board,
+            [effect.row]: [...player.board[effect.row], token],
+          },
+        },
+      },
+    };
+  }
+
+  return nextState;
+}
+
+/** Replaces each target card in-place across boards and hands. */
+function updateTargets(
+  state: GameState,
+  targets: CardInstance[],
+  transform: (card: CardInstance) => CardInstance,
+): GameState {
+  if (targets.length === 0) return state;
+
+  const targetIds = new Set(targets.map((t) => t.instanceId));
+  let nextState = state;
+
+  for (const playerId of ["player", "opponent"] as const) {
+    const player = nextState.players[playerId];
+    let changed = false;
+
+    const nextBoard = { ...player.board };
+    for (const row of ["melee", "ranged", "siege"] as const) {
+      const newRow = nextBoard[row].map((card) =>
+        targetIds.has(card.instanceId) ? transform(card) : card,
+      );
+      if (newRow !== nextBoard[row]) {
+        nextBoard[row] = newRow;
+        changed = true;
+      }
+    }
+
+    const nextHand = player.hand.map((card) =>
+      targetIds.has(card.instanceId) ? transform(card) : card,
+    );
+
+    if (changed || nextHand !== player.hand) {
+      nextState = {
+        ...nextState,
+        players: {
+          ...nextState.players,
+          [playerId]: {
+            ...player,
+            board: nextBoard,
+            hand: nextHand,
+          },
+        },
+      };
+    }
+  }
+
+  return nextState;
+}
+
+function removeCardFromBoard(state: GameState, target: CardInstance): GameState {
+  for (const playerId of ["player", "opponent"] as const) {
+    const player = state.players[playerId];
+    for (const row of ["melee", "ranged", "siege"] as const) {
+      const index = player.board[row].findIndex((c) => c.instanceId === target.instanceId);
+      if (index !== -1) {
+        return {
+          ...state,
+          players: {
+            ...state.players,
+            [playerId]: {
+              ...player,
+              board: {
+                ...player.board,
+                [row]: [
+                  ...player.board[row].slice(0, index),
+                  ...player.board[row].slice(index + 1),
+                ],
+              },
+            },
+          },
+        };
+      }
+    }
+  }
+  return state;
+}
+
+function addCardToGraveyard(state: GameState, target: CardInstance): GameState {
+  const ownerId = target.ownerId;
+  const player = state.players[ownerId];
+  const destroyedCard: CardInstance = { ...target, isDestroyed: true };
+
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [ownerId]: {
+        ...player,
+        graveyard: [...player.graveyard, destroyedCard],
+      },
+    },
+  };
+}

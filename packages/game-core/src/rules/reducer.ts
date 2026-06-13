@@ -1,6 +1,8 @@
 import type { GameAction, PlayCardAction } from "./actions";
 import { getLegalActions } from "./legalActions";
 import { settleRound, startNextRound } from "./round";
+import { resolveEffects } from "../effects/effectResolver";
+import { createSeededRandom } from "../utils/random";
 import type {
   GameActionLogEntry,
   GameState,
@@ -110,7 +112,21 @@ function applyPlayCard(state: GameState, action: PlayCardAction): GameState {
     graveyard: nextGraveyard,
   };
 
-  const nextState = replacePlayer(state, action.playerId, nextPlayer);
+  let nextState = replacePlayer(state, action.playerId, nextPlayer);
+
+  // Resolve card effects
+  const effects = state.cardDefinitions[card.cardId]?.effects ?? [];
+  if (effects.length > 0) {
+    const random = createSeededRandom(
+      `${nextState.seed}-fx-${nextState.actionLog.length}`,
+    );
+    const context = {
+      sourcePlayerId: action.playerId,
+      opponentPlayerId: getOpponentId(action.playerId),
+      random,
+    };
+    nextState = resolveEffects(nextState, context, effects, card.instanceId);
+  }
 
   return {
     ...nextState,

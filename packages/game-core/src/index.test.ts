@@ -87,6 +87,7 @@ describe("game-core package", () => {
         opponent,
       },
       actionLog: [],
+      cardDefinitions: {},
     };
 
     expect(state.players.player.hand[0]?.currentPower).toBe(6);

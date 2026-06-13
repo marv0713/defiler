@@ -66,6 +66,13 @@ function createPlayerState(
 }
 
 export function createInitialGameState(config: CreateGameConfig): GameState {
+  const cardDefinitions: Record<string, CardDefinition> = {};
+  for (const card of [...config.playerDeck, ...config.opponentDeck]) {
+    if (!cardDefinitions[card.id]) {
+      cardDefinitions[card.id] = card;
+    }
+  }
+
   return {
     id: `game-${config.seed}`,
     seed: config.seed,
@@ -87,5 +94,6 @@ export function createInitialGameState(config: CreateGameConfig): GameState {
       ),
     },
     actionLog: [],
+    cardDefinitions,
   };
 }

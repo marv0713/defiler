@@ -1,3 +1,5 @@
+import type { EffectDefinition } from "./effects/effectTypes";
+
 export type PlayerId = "player" | "opponent";
 
 export type Faction = "qin" | "chu" | "qi" | "zhao" | "neutral";
@@ -13,10 +15,6 @@ export type GameStatus =
   | "playing"
   | "round_finished"
   | "game_finished";
-
-export interface EffectDefinition {
-  type: string;
-}
 
 export interface CardDefinition {
   id: string;
@@ -93,4 +91,5 @@ export interface GameState {
   roundWinnerId?: PlayerId;
   actionLog: GameActionLogEntry[];
   weather?: WeatherState;
+  cardDefinitions: Record<string, CardDefinition>;
 }

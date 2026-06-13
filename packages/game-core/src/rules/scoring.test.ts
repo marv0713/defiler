@@ -86,6 +86,7 @@ describe("scoring", () => {
         opponent,
       },
       actionLog: [],
+      cardDefinitions: {},
     };
 
     expect(calculateScores(state)).toEqual({

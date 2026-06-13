@@ -53,6 +53,7 @@ function createState(playerHand: CardInstance[]): GameState {
       opponent: createPlayer("opponent", []),
     },
     actionLog: [],
+    cardDefinitions: {},
   };
 }
 

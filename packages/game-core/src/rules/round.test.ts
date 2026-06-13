@@ -50,6 +50,7 @@ function createState(player: PlayerState, opponent: PlayerState): GameState {
       opponent,
     },
     actionLog: [],
+    cardDefinitions: {},
   };
 }
 

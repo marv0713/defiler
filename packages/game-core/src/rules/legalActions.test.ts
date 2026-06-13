@@ -69,6 +69,7 @@ function createState(
       opponent,
     },
     actionLog: [],
+    cardDefinitions: {},
   };
 }
 

@@ -9,11 +9,11 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 - `docs/product_design_document.md`
 - `docs/technical_design_document.md`
 - `docs/tasks.md`
-- `agent.md`
+- `AGENTS.md`
 
 ## Current Phase
 
-Phase 2: Actions, Reducer, Scoring, and Round Flow
+Phase 3: Card Data and Effect System
 
 ## Task Status
 
@@ -30,25 +30,13 @@ Phase 2: Actions, Reducer, Scoring, and Round Flow
 | Phase 2 / Task 2.3 | Complete | Basic legal action generation added. |
 | Phase 2 / Task 2.4 | Complete | Reducer handles play card, pass, and start-next-round. |
 | Phase 2 / Task 2.5 | Complete | Round settlement and next-round flow added. |
-| Phase 3 / Task 3.1 | Pending | Add initial card data. |
+| Phase 3 / Task 3.1 | Complete | Initial 20-card MVP faction pool added. |
+| Phase 3 / Task 3.2 | Complete | Card definition validation added. |
+| Phase 3 / Task 3.3 | Complete | Formal effect type system added. |
+| Phase 3 / Task 3.4 | Complete | Automatic target resolver implemented. |
+| Phase 3 / Task 3.5 | Complete | Basic effect resolver (BUFF, DAMAGE, DESTROY, SUMMON) implemented. |
 
-## Active Task: 3.1 Add Initial Card Data
+## Next Task: 3.6 Implement Resource Effects (DRAW_DISCARD, REVIVE, LOCK)
 
-### Requirements
-
-Add a small initial card pool in `packages/game-core/src/cards/cardData.ts`.
-
-### Acceptance Criteria
-
-- At least 20 cards exist.
-- Card ids are unique.
-- Cards compile against `CardDefinition`.
-
-## Guardrails
-
-- Keep game core independent from React, browser APIs, DOM, CSS, and localStorage.
-- Prefer pure functions and TypeScript types.
-- Do not use `Math.random` inside game-core rules.
-- All gameplay changes must include Vitest tests.
-- Do not hardcode one function per card; use config-driven effects.
-- Keep changes small and reviewable.
+- Already have types and target resolver.
+- Keep the same config-driven approach.
