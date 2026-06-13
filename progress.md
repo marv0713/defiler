@@ -310,10 +310,22 @@
   - `pnpm typecheck` passed.
   - Commit: `de4fdb1`.
 
-### Task 3.7: Expand MVP Card Pool to 60 Cards (Planning)
+### Task 3.7: Expand MVP Card Pool to 60 Cards
 
-- Planning phase started. See `task_plan.md` for full card list.
-- Will expand from 20 to 60 cards (15 per faction).
-- Will fill in effect configs on all cards using implemented effect types only.
-- Will keep validation passing and budgets consistent.
+- Rewrote `packages/game-core/src/cards/cardData.ts` to 60 cards (15 per faction).
+- Added 10 new Qin cards including `qin-token` (summon target).
+- Added 10 new Chu cards including `chu-token` (summon target).
+- Added 10 new Qi cards.
+- Added 10 new Zhao cards.
+- Filled in real effect configs on 13 existing placeholder cards:
+  - Qin: legalist-officer (BUFF ALLY_LOWEST +3), qin-crossbow-formation (DAMAGE x2)
+  - Chu: chu-shaman (SUMMON), chunshen-retainer (BUFF ALLY_RANDOM), xiang-yan (CONDITIONAL_BOOST)
+  - Qi: jixia-scholar (DRAW_DISCARD), guan-zhong-legacy (DRAW_DISCARD), sun-bin (DAMAGE), tian-ji (DRAW_DISCARD)
+  - Zhao: hu-clothing-cavalry (BUFF ALLY_ROW), li-mu (CONDITIONAL_BOOST), lian-po (CONDITIONAL_BOOST), zhao-raid (DAMAGE x2)
+- Updated `cardData.test.ts` to assert pool >= 60 and per-faction >= 12.
+- Verification:
+  - `pnpm test` passed with 70 tests across 13 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+  - Commit: `4a861a4`.
 

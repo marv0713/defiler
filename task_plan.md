@@ -36,7 +36,7 @@ Phase 3: Card Data and Effect System
 | Phase 3 / Task 3.4 | Complete | Automatic target resolver implemented. |
 | Phase 3 / Task 3.5 | Complete | Basic effect resolver (BUFF, DAMAGE, DESTROY, SUMMON) implemented. |
 | Phase 3 / Task 3.6 | Complete | Resource effects (DRAW_DISCARD, REVIVE, LOCK) implemented. |
-| Phase 3 / Task 3.7 | In Progress | Expanding to 60 cards with live effect configs. |
+| Phase 3 / Task 3.7 | Complete | 60 cards (15/faction) with real effect configs. Validation passes. |
 
 ---
 
