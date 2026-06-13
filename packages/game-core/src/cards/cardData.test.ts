@@ -9,12 +9,12 @@ function countCardsForFaction(cards: CardDefinition[], faction: Faction): number
 }
 
 describe("initial card data", () => {
-  it("contains at least five cards for each MVP faction", () => {
-    expect(INITIAL_CARDS).toHaveLength(20);
+  it("contains at least twelve cards for each MVP faction", () => {
+    expect(INITIAL_CARDS.length).toBeGreaterThanOrEqual(60);
 
     for (const faction of MVP_FACTIONS) {
       expect(countCardsForFaction(INITIAL_CARDS, faction)).toBeGreaterThanOrEqual(
-        5,
+        12,
       );
     }
   });
