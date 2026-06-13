@@ -37,8 +37,53 @@ Phase 3: Card Data and Effect System
 | Phase 3 / Task 3.5 | Complete | Basic effect resolver (BUFF, DAMAGE, DESTROY, SUMMON) implemented. |
 | Phase 3 / Task 3.6 | Complete | Resource effects (DRAW_DISCARD, REVIVE, LOCK) implemented. |
 | Phase 3 / Task 3.7 | Complete | 60 cards (15/faction) with real effect configs. Validation passes. |
+| Phase 4 / Task 4.1 | **Next** | Simple AI that always returns a legal action and completes full games. |
+| Phase 4 / Task 4.2 | Pending | Heuristic AI with score-based pass decisions. |
+| Phase 4 / Task 4.3 | Pending | Single-game AI vs AI simulation. |
+| Phase 4 / Task 4.4 | Pending | Matchup simulation report (win rates, card stats). |
 
 ---
+
+## Next Task: 4.1 Implement Simple AI
+
+### Goal
+
+Create `packages/game-core/src/ai/simpleAI.ts` with a basic AI that always returns a legal action and can complete a full game without infinite loops.
+
+### Interface
+
+```ts
+export function chooseSimpleAIAction(
+  state: GameState,
+  playerId: PlayerId,
+): GameAction;
+```
+
+### Behavior Rules
+
+1. Get legal actions via `getLegalActions(state, playerId)`.
+2. If no legal actions exist, fallback to `{ type: "PASS", playerId }`.
+3. Separate actions into play actions and pass action.
+4. If play actions exist, choose one at random using seeded random (`state.seed + "-ai-" + state.actionLog.length`).
+5. If only pass is legal, return pass.
+
+### Files
+
+- `packages/game-core/src/ai/simpleAI.ts` — **[NEW]**
+- `packages/game-core/src/ai/simpleAI.test.ts` — **[NEW]** (must include: always-legal, full-game completion, no mutation)
+- `packages/game-core/src/index.ts` — export `chooseSimpleAIAction`
+
+### Acceptance Criteria
+
+- [ ] AI always returns a legal action.
+- [ ] AI completes a full 3-round match (integration test).
+- [ ] Random play selection is seeded and deterministic.
+- [ ] No React or browser APIs imported.
+- [ ] All 70+ tests pass.
+
+---
+
+## Archived: Task 3.7 Detail
 
 ## Task 3.7: Expand MVP Card Pool to 60 Cards
 

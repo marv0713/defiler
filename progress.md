@@ -329,3 +329,18 @@
   - `pnpm build` passed.
   - Commit: `4a861a4`.
 
+
+### Housekeeping
+
+- Found `targetResolver.ts` had unstaged changes from the 3.4-3.6 fix pass (graveyard source, helper refactor).
+- Committed separately as `1593890`.
+- All sources now clean (`git status` empty).
+
+## Phase 4: AI and Simulator
+
+### Next: Task 4.1 Simple AI
+
+- Will create `packages/game-core/src/ai/simpleAI.ts`.
+- `chooseSimpleAIAction(state, playerId)` must always return a legal action.
+- Uses seeded random for deterministic play selection.
+- Integration test must verify a full 3-round game completes.
