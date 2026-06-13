@@ -12,6 +12,7 @@ export { applyAction } from "./rules/reducer";
 export { settleRound, startNextRound } from "./rules/round";
 export { calculatePlayerScore, calculateRowScore, calculateScores } from "./rules/scoring";
 export { createSeededRandom, shuffleWithSeed } from "./utils/random";
+export { chooseSimpleAIAction } from "./ai/simpleAI";
 
 export type {
   BoardState,
