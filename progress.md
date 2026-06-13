@@ -12,6 +12,22 @@
   - `pnpm typecheck` passed.
 - `pnpm build` passed.
 
+### Task 3.6: Implement Resource Effects
+
+- Added `source` parameter to `resolveTargets` (board/graveyard) so REVIVE can target graveyard cards.
+- Graveyard targets are not filtered by `isDestroyed` (since all graveyard cards are destroyed).
+- Updated `targetResolver.test.ts` with graveyard source test.
+- Implemented three new effects in `effectResolver.ts`:
+  - `DRAW_DISCARD` — draws from top of deck, discards from end of hand (deterministic auto-discard).
+  - `REVIVE` — resolves graveyard targets, moves card back to board with `isDestroyed = false`, supports `maxPower` filter.
+  - `LOCK` — sets `isLocked = true` on board targets.
+- Added `removeCardFromGraveyard` helper.
+- Added 8 new tests: 3 for DRAW_DISCARD, 3 for REVIVE, 3 for LOCK (1 additional in targetResolver).
+- Verification:
+  - `pnpm test` passed with 69 tests across 13 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+
 ### Task 3.5: Implement Basic Effect Resolver
 
 - Added `packages/game-core/src/effects/effectResolver.ts`.
@@ -280,3 +296,24 @@
   - `pnpm test` passed with 45 tests across 12 files.
   - `pnpm typecheck` passed.
   - `pnpm build` passed.
+
+## 2026-06-14
+
+### Fix Pass: Tasks 3.4-3.6 Review Issues
+
+- `targetResolver.test.ts`: fixed "ignores destroyed cards" test to use immutable spread construction instead of direct mutation.
+- `effectResolver.ts updateTargets`: extended to cover graveyard zone in addition to board and hand.
+- `effectResolver.ts applyRevive`: added explicit tie-break comment (earliest graveyard entry wins) and `basePower` clarification on `maxPower` filter.
+- `effectResolver.test.ts`: added REVIVE tie-break test case.
+- Verification:
+  - `pnpm test` passed with 70 tests across 13 files.
+  - `pnpm typecheck` passed.
+  - Commit: `de4fdb1`.
+
+### Task 3.7: Expand MVP Card Pool to 60 Cards (Planning)
+
+- Planning phase started. See `task_plan.md` for full card list.
+- Will expand from 20 to 60 cards (15 per faction).
+- Will fill in effect configs on all cards using implemented effect types only.
+- Will keep validation passing and budgets consistent.
+

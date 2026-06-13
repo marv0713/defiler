@@ -71,6 +71,29 @@
 - Modifier IDs use the pattern `{type}-{sourceCardInstanceId}-e{effectIndex}-{targetInstanceId}` for full determinism.
 - `cardDefinitions` was added to `GameState` so SUMMON can resolve card definitions at runtime without coupling to any static registry.
 - `EffectContext.random` is derived from `${state.seed}-fx-${state.actionLog.length}` in the reducer, making every action's random sequence reproducible.
-- `updateTargets` is a shared helper that replaces cards matching target instanceIds across both players' boards and hands.
+- `updateTargets` covers boards, hands, **and graveyards** for all three players — graveyard support was added in the 3.4-3.6 fix pass.
 - DESTROY is a two-step: `removeCardFromBoard` then `addCardToGraveyard` (with `isDestroyed: true`).
-- DRAW_DISCARD, REVIVE, LOCK, CLEAR_WEATHER, and CONDITIONAL_BOOST are typed but return state unchanged (placeholder for future tasks).
+- DRAW_DISCARD discards from the end of the hand deterministically; discarded cards are placed in the graveyard with `isDestroyed: false` (they were not destroyed in combat, so they can be REVIVE targets).
+- REVIVE uses `resolveTargets(source: "graveyard")` — all graveyard cards are returned regardless of `isDestroyed` value.
+- REVIVE's `maxPower` filter checks `basePower <= maxPower` (uses basePower so temporary debuffs don't affect eligibility).
+- REVIVE tie-break rule: when multiple candidates share the minimum power, the card earliest in the graveyard array (entered first) is revived. This is tested and documented.
+- LOCK just sets `isLocked = true`; locked skill enforcement arrives with specific card effects or a later rule pass.
+- `removeCardFromGraveyard` is a standalone helper, separate from `removeCardFromBoard`, since graveyard is a flat array while board is nested by row.
+
+## Task 3.4-3.6 Fix History (2026-06-14)
+
+- `targetResolver.test.ts`: replaced direct state mutation with immutable spread construction.
+- `effectResolver.ts updateTargets`: extended to cover graveyard zone in addition to board and hand.
+- `effectResolver.ts applyRevive`: added explicit tie-break comment and `basePower` clarification.
+- `effectResolver.test.ts`: added REVIVE tie-break test case.
+- Commit: `de4fdb1`.
+
+## Card Pool Design (Task 3.7)
+
+- Effect configs are now live on all 60 cards; all implemented effect types (BUFF, DAMAGE, DESTROY, DRAW_DISCARD, SUMMON, REVIVE, LOCK, CONDITIONAL_BOOST) are used.
+- Only CLEAR_WEATHER remains a no-op (weather system not implemented yet).
+- Budgets follow the product design tiers: common 4-6, elite 7-9, hero 10-12, legend 13-15.
+- Qin identity: high power, direct removal (DESTROY, DAMAGE), few frills.
+- Chu identity: swarm / token SUMMON, row BUFF, unit-count conditional scaling.
+- Qi identity: DRAW_DISCARD hand management, DAMAGE enemy highest, conditional filtering.
+- Zhao identity: CONDITIONAL_BOOST when behind, LOCK on pass, cavalry synergy BUFF.
