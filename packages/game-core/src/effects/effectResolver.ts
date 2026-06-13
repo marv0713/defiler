@@ -3,8 +3,11 @@ import type {
   BuffEffect,
   DamageEffect,
   DestroyEffect,
+  DrawDiscardEffect,
   EffectContext,
   EffectDefinition,
+  LockEffect,
+  ReviveEffect,
   SummonEffect,
 } from "./effectTypes";
 import { resolveTargets } from "./targetResolver";
@@ -47,8 +50,11 @@ function applyEffect(
     case "SUMMON":
       return applySummon(state, context, effect);
     case "DRAW_DISCARD":
+      return applyDrawDiscard(state, context, effect);
     case "REVIVE":
+      return applyRevive(state, context, effect);
     case "LOCK":
+      return applyLock(state, context, effect, sourceCardInstanceId);
     case "CLEAR_WEATHER":
     case "CONDITIONAL_BOOST":
       return state; // Not yet implemented
@@ -176,7 +182,7 @@ function applySummon(
   return nextState;
 }
 
-/** Replaces each target card in-place across boards and hands. */
+/** Replaces each target card in-place across boards, hands, and graveyards. */
 function updateTargets(
   state: GameState,
   targets: CardInstance[],
@@ -206,7 +212,13 @@ function updateTargets(
       targetIds.has(card.instanceId) ? transform(card) : card,
     );
 
-    if (changed || nextHand !== player.hand) {
+    // Also cover graveyard so that effects which target graveyard cards
+    // (e.g., a future BUFF that keeps a card buffed after death) are applied correctly.
+    const nextGraveyard = player.graveyard.map((card) =>
+      targetIds.has(card.instanceId) ? transform(card) : card,
+    );
+
+    if (changed || nextHand !== player.hand || nextGraveyard !== player.graveyard) {
       nextState = {
         ...nextState,
         players: {
@@ -215,6 +227,7 @@ function updateTargets(
             ...player,
             board: nextBoard,
             hand: nextHand,
+            graveyard: nextGraveyard,
           },
         },
       };
@@ -264,6 +277,115 @@ function addCardToGraveyard(state: GameState, target: CardInstance): GameState {
       [ownerId]: {
         ...player,
         graveyard: [...player.graveyard, destroyedCard],
+      },
+    },
+  };
+}
+
+function applyDrawDiscard(
+  state: GameState,
+  context: EffectContext,
+  effect: DrawDiscardEffect,
+): GameState {
+  const player = state.players[context.sourcePlayerId];
+  const drawCount = Math.min(effect.draw, player.deck.length);
+  const drawn = player.deck.slice(0, drawCount);
+  const remainingDeck = player.deck.slice(drawCount);
+
+  const nextHand = [...player.hand, ...drawn];
+
+  // Discard from end of hand (simple deterministic strategy)
+  const discardCount = Math.min(effect.discard, nextHand.length);
+  const discarded = nextHand.slice(nextHand.length - discardCount);
+  const finalHand = nextHand.slice(0, nextHand.length - discardCount);
+
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [context.sourcePlayerId]: {
+        ...player,
+        deck: remainingDeck,
+        hand: finalHand,
+        graveyard: [...player.graveyard, ...discarded.map((c) => ({ ...c, isDestroyed: false }))],
+      },
+    },
+  };
+}
+
+function applyRevive(
+  state: GameState,
+  context: EffectContext,
+  effect: ReviveEffect,
+): GameState {
+  const targets = resolveTargets(state, context, effect.target, undefined, "graveyard");
+
+  // Filter by maxPower if specified (uses basePower so temporary debuffs don't affect eligibility)
+  const eligible = effect.maxPower != null
+    ? targets.filter((t) => t.basePower <= effect.maxPower!)
+    : targets;
+
+  if (eligible.length === 0) return state;
+
+  // Tie-break rule: when multiple cards are eligible (e.g., two cards tied at ALLY_LOWEST),
+  // revive the one that entered the graveyard first (lowest array index).
+  const toRevive = eligible[0];
+  let nextState = removeCardFromGraveyard(state, toRevive);
+
+  const revivedCard: CardInstance = {
+    ...toRevive,
+    isDestroyed: false,
+  };
+
+  const ownerId = toRevive.ownerId;
+  const player = nextState.players[ownerId];
+  const row = revivedCard.row ?? "melee";
+
+  return {
+    ...nextState,
+    players: {
+      ...nextState.players,
+      [ownerId]: {
+        ...player,
+        board: {
+          ...player.board,
+          [row]: [...player.board[row], revivedCard],
+        },
+      },
+    },
+  };
+}
+
+function applyLock(
+  state: GameState,
+  context: EffectContext,
+  effect: LockEffect,
+  sourceCardInstanceId?: string,
+): GameState {
+  const targets = resolveTargets(state, context, effect.target, sourceCardInstanceId, "board");
+
+  return updateTargets(state, targets, (card) => ({
+    ...card,
+    isLocked: true,
+  }));
+}
+
+function removeCardFromGraveyard(state: GameState, target: CardInstance): GameState {
+  const ownerId = target.ownerId;
+  const player = state.players[ownerId];
+  const index = player.graveyard.findIndex((c) => c.instanceId === target.instanceId);
+  if (index === -1) return state;
+
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [ownerId]: {
+        ...player,
+        graveyard: [
+          ...player.graveyard.slice(0, index),
+          ...player.graveyard.slice(index + 1),
+        ],
       },
     },
   };

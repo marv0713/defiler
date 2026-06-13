@@ -360,4 +360,327 @@ describe("resolveEffects", () => {
       expect(card.modifiers[1].type).toBe("buff");
     });
   });
+
+  describe("DRAW_DISCARD", () => {
+    it("draws cards from deck and discards from end of hand", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [
+              createCard("deck-1", "player", 3, "melee"),
+              createCard("deck-2", "player", 4, "ranged"),
+              createCard("deck-3", "player", 5, "siege"),
+            ],
+            hand: [
+              createCard("hand-1", "player", 1, "melee"),
+              createCard("hand-2", "player", 2, "melee"),
+            ],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "DRAW_DISCARD", draw: 2, discard: 1 },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+
+      // Drew 2 from deck: deck-1, deck-2 → hand becomes [hand-1, hand-2, deck-1, deck-2]
+      // Discard 1 from end: deck-2 → graveyard
+      expect(result.players.player.deck).toHaveLength(1);
+      expect(result.players.player.deck[0].instanceId).toBe("deck-3");
+      expect(result.players.player.hand).toHaveLength(3); // hand-1, hand-2, deck-1
+      expect(result.players.player.graveyard).toHaveLength(1);
+      expect(result.players.player.graveyard[0].instanceId).toBe("deck-2");
+    });
+
+    it("handles draw from empty deck and discard from empty hand", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "DRAW_DISCARD", draw: 3, discard: 2 },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+
+      expect(result.players.player.deck).toEqual([]);
+      expect(result.players.player.hand).toEqual([]);
+      expect(result.players.player.graveyard).toEqual([]);
+    });
+
+    it("does not mutate the original state", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [createCard("deck-1", "player", 3, "melee")],
+            hand: [createCard("hand-1", "player", 1, "melee")],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "DRAW_DISCARD", draw: 1, discard: 1 },
+      ];
+
+      resolveEffects(state, mockContext, effects);
+
+      expect(state.players.player.deck).toHaveLength(1);
+      expect(state.players.player.hand).toHaveLength(1);
+      expect(state.players.player.graveyard).toEqual([]);
+    });
+  });
+
+  describe("REVIVE", () => {
+    it("revives the lowest-power ally card from graveyard to board", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [
+              { ...createCard("g1", "player", 5, "melee"), isDestroyed: true },
+              { ...createCard("g2", "player", 2, "ranged"), isDestroyed: true },
+              { ...createCard("g3", "player", 8, "siege"), isDestroyed: true },
+            ],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "REVIVE", target: { type: "ALLY_LOWEST" } },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+
+      // g2 (power 2, ranged) should be revived
+      expect(result.players.player.graveyard).toHaveLength(2);
+      expect(result.players.player.board.ranged).toHaveLength(1);
+      const revived = result.players.player.board.ranged[0];
+      expect(revived.instanceId).toBe("g2");
+      expect(revived.isDestroyed).toBe(false);
+    });
+
+    it("filters by maxPower when specified", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [
+              { ...createCard("g1", "player", 5, "melee"), isDestroyed: true },
+              { ...createCard("g2", "player", 2, "ranged"), isDestroyed: true },
+            ],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "REVIVE", target: { type: "ALLY_LOWEST" }, maxPower: 3 },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+
+      // Only g2 (power 2 ≤ 3) is eligible
+      expect(result.players.player.graveyard).toHaveLength(1);
+      expect(result.players.player.board.ranged).toHaveLength(1);
+      expect(result.players.player.board.ranged[0].instanceId).toBe("g2");
+    });
+
+    it("returns state unchanged when no eligible cards in graveyard", () => {
+      const state = createState();
+      const effects: EffectDefinition[] = [
+        { type: "REVIVE", target: { type: "ALLY_LOWEST" } },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+      expect(result).toBe(state);
+    });
+
+    it("tie-break: revives the earliest graveyard entry when multiple cards share the lowest power", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [
+              { ...createCard("g1", "player", 2, "melee"), isDestroyed: true },
+              { ...createCard("g2", "player", 2, "ranged"), isDestroyed: true },
+            ],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "REVIVE", target: { type: "ALLY_LOWEST" } },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects);
+
+      // g1 and g2 both have power 2; g1 entered graveyard first so it is revived
+      expect(result.players.player.graveyard).toHaveLength(1);
+      expect(result.players.player.graveyard[0].instanceId).toBe("g2");
+      expect(result.players.player.board.melee).toHaveLength(1);
+      expect(result.players.player.board.melee[0].instanceId).toBe("g1");
+    });
+  });
+
+  describe("LOCK", () => {
+    it("sets isLocked to true on the target", () => {
+      const state = createState();
+      const effects: EffectDefinition[] = [
+        { type: "LOCK", target: { type: "ENEMY_HIGHEST" } },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects, "source-card");
+
+      const locked = result.players.opponent.board.melee[0];
+      expect(locked.isLocked).toBe(true);
+    });
+
+    it("does not mutate the original state", () => {
+      const state = createState();
+      const effects: EffectDefinition[] = [
+        { type: "LOCK", target: { type: "ENEMY_HIGHEST" } },
+      ];
+
+      resolveEffects(state, mockContext, effects, "source-card");
+
+      expect(state.players.opponent.board.melee[0].isLocked).toBe(false);
+    });
+
+    it("respects existing isLocked state (already locked stays locked)", () => {
+      const alreadyLocked = { ...createCard("o-melee-1", "opponent", 8, "melee"), isLocked: true };
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [alreadyLocked], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const effects: EffectDefinition[] = [
+        { type: "LOCK", target: { type: "ENEMY_HIGHEST" } },
+      ];
+
+      const result = resolveEffects(state, mockContext, effects, "source-card");
+      expect(result.players.opponent.board.melee[0].isLocked).toBe(true);
+    });
+  });
 });

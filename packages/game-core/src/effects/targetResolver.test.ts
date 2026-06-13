@@ -168,12 +168,28 @@ describe("targetResolver", () => {
   });
 
   it("ignores destroyed cards", () => {
-    const state = createMockGameState();
-    state.players.opponent.board.siege[1].isDestroyed = true; // Destroy o3 (power 1)
+    const base = createMockGameState();
+    // Build a new immutable state with o3 marked destroyed
+    const state: GameState = {
+      ...base,
+      players: {
+        ...base.players,
+        opponent: {
+          ...base.players.opponent,
+          board: {
+            ...base.players.opponent.board,
+            siege: [
+              base.players.opponent.board.siege[0],
+              { ...base.players.opponent.board.siege[1], isDestroyed: true },
+            ],
+          },
+        },
+      },
+    };
     const selector: TargetSelector = { type: "ENEMY_LOWEST" };
     const targets = resolveTargets(state, mockContext, selector);
     expect(targets).toHaveLength(1);
-    expect(targets[0].instanceId).toBe("o1"); // Now o1 (power 8) is lowest
+    expect(targets[0].instanceId).toBe("o1"); // o3 destroyed → o1 (power 8) is lowest
   });
 
   it("resolves ALLY_RANDOM selector", () => {
@@ -214,5 +230,41 @@ describe("targetResolver", () => {
     expect(targets).toHaveLength(2);
     expect(targets.map((t) => t.instanceId)).toContain("o2");
     expect(targets.map((t) => t.instanceId)).toContain("o3");
+  });
+
+  it("resolves ALLY_LOWEST from graveyard", () => {
+    const state = createMockGameState();
+    // Add some destroyed cards to player's graveyard
+    state.players.player.graveyard = [
+      {
+        instanceId: "g1",
+        cardId: "gc1",
+        ownerId: "player",
+        type: "unit",
+        row: "melee",
+        currentPower: 2,
+        basePower: 2,
+        isLocked: false,
+        isDestroyed: true,
+        modifiers: [],
+      },
+      {
+        instanceId: "g2",
+        cardId: "gc2",
+        ownerId: "player",
+        type: "unit",
+        row: "ranged",
+        currentPower: 7,
+        basePower: 7,
+        isLocked: false,
+        isDestroyed: false,
+        modifiers: [],
+      },
+    ];
+
+    const selector: TargetSelector = { type: "ALLY_LOWEST" };
+    const targets = resolveTargets(state, mockContext, selector, undefined, "graveyard");
+    expect(targets).toHaveLength(1);
+    expect(targets[0].instanceId).toBe("g1"); // Power 2 is lowest
   });
 });
