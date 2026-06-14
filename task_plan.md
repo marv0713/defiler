@@ -37,8 +37,8 @@ Phase 3: Card Data and Effect System
 | Phase 3 / Task 3.5 | Complete | Basic effect resolver (BUFF, DAMAGE, DESTROY, SUMMON) implemented. |
 | Phase 3 / Task 3.6 | Complete | Resource effects (DRAW_DISCARD, REVIVE, LOCK) implemented. |
 | Phase 3 / Task 3.7 | Complete | 60 cards (15/faction) with real effect configs. Validation passes. |
-| Phase 4 / Task 4.1 | **Next** | Simple AI that always returns a legal action and completes full games. |
-| Phase 4 / Task 4.2 | Pending | Heuristic AI with score-based pass decisions. |
+| Phase 4 / Task 4.1 | Complete | Simple AI: random play-card selection, always legal, full-game tested. |
+| Phase 4 / Task 4.2 | **Next** | Heuristic AI with score-based pass decisions. |
 | Phase 4 / Task 4.3 | Pending | Single-game AI vs AI simulation. |
 | Phase 4 / Task 4.4 | Pending | Matchup simulation report (win rates, card stats). |
 

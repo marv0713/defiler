@@ -344,3 +344,17 @@
 - `chooseSimpleAIAction(state, playerId)` must always return a legal action.
 - Uses seeded random for deterministic play selection.
 - Integration test must verify a full 3-round game completes.
+
+### Task 4.1: Simple AI (Complete)
+
+- Created `packages/game-core/src/ai/simpleAI.ts`.
+- `chooseSimpleAIAction(state, playerId)`: prefers random PLAY_CARD; falls back to PASS.
+- Random selection uses `createSeededRandom(seed + "-ai-" + playerId + "-" + logLength)` for determinism.
+- 7 tests: legal action guarantee, empty-hand pass, fallback pass, play preference, determinism, no mutation, full-game integration.
+- Also fixed: `settleRound` now applies a draw tiebreaker on round 3 (opponent wins) to prevent infinite loops on empty-hand later rounds.
+- Added 2 new round tests covering the tiebreaker rule.
+- Verification:
+  - `pnpm test` passed with 79 tests across 14 files.
+  - `pnpm typecheck` passed.
+  - `pnpm build` passed.
+  - Commits: `dbb8477` (simpleAI), `8b3c37a` (tiebreaker).
