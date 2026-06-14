@@ -52,17 +52,24 @@ export function settleRound(state: GameState): GameState {
     };
   }
 
-  const winnerId =
+  const matchWinnerId =
     roundWinnerId && players[roundWinnerId].roundWins >= MAX_ROUND_WINS
       ? roundWinnerId
       : undefined;
 
+  // Tiebreaker: if no match winner and this is the final possible round
+  // (round 3 in a best-of-3), the opponent wins by default so the game
+  // always terminates.
+  const finalWinnerId =
+    matchWinnerId ??
+    (state.currentRound >= MAX_ROUND_WINS * 2 - 1 ? "opponent" : undefined);
+
   return {
     ...state,
-    status: winnerId ? "game_finished" : "round_finished",
+    status: finalWinnerId ? "game_finished" : "round_finished",
     players,
     roundWinnerId,
-    winnerId,
+    winnerId: finalWinnerId,
   };
 }
 

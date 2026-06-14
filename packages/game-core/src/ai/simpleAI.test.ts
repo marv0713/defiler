@@ -92,11 +92,10 @@ describe("chooseSimpleAIAction", () => {
   });
 
   it("can complete a full match without infinite loops", () => {
-    // Use exactly STARTING_HAND_SIZE (10) cards per faction so each player
-    // exhausts their hand in round 1 and both pass, triggering round settlement.
-    // Subsequent rounds have empty hands so both players pass immediately,
-    // which can cause draws. We cap at currentRound 3 to avoid any possibility
-    // of perpetual draws (a known limitation pending a hand-replenishment rule).
+    // Use exactly 10 cards per faction (= STARTING_HAND_SIZE) so hand is
+    // exhausted in round 1. Rounds 2-3 have empty hands so both players
+    // pass immediately. The draw tiebreaker in round 3 guarantees the game
+    // always reaches game_finished.
     const QIN_10 = INITIAL_CARDS.filter((c) => c.faction === "qin").slice(0, 10);
     const CHU_10 = INITIAL_CARDS.filter((c) => c.faction === "chu").slice(0, 10);
 
@@ -112,11 +111,7 @@ describe("chooseSimpleAIAction", () => {
     const MAX_STEPS = 300;
     let steps = 0;
 
-    while (
-      state.status !== "game_finished" &&
-      state.currentRound <= 3 &&
-      steps < MAX_STEPS
-    ) {
+    while (state.status !== "game_finished" && steps < MAX_STEPS) {
       steps += 1;
 
       if (state.status === "round_finished") {
@@ -129,14 +124,8 @@ describe("chooseSimpleAIAction", () => {
       state = applyAction(state, action);
     }
 
-    // Either the game finished cleanly, or we completed round 3 without crashing.
-    expect(["game_finished", "round_finished", "playing"]).toContain(
-      state.status,
-    );
-    // The AI never threw or produced an illegal action.
-    expect(steps).toBeGreaterThan(0);
+    expect(state.status).toBe("game_finished");
+    expect(state.winnerId).toBeTruthy();
     expect(steps).toBeLessThan(MAX_STEPS);
-    // At minimum, round 1 should have been completed.
-    expect(state.currentRound).toBeGreaterThanOrEqual(1);
   });
 });

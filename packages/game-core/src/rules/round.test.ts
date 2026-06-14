@@ -127,4 +127,33 @@ describe("round flow", () => {
     expect(nextState.players.player.hasPassed).toBe(false);
     expect(nextState.players.opponent.hasPassed).toBe(false);
   });
+  it("declares opponent winner when round 3 ends in a draw", () => {
+    const state = {
+      ...createState(
+        createPlayer("player", { melee: [createCard("p", 5)] }),
+        createPlayer("opponent", { melee: [createCard("o", 5)] }),
+      ),
+      currentRound: 3,
+    };
+
+    const nextState = settleRound(state);
+
+    expect(nextState.status).toBe("game_finished");
+    expect(nextState.winnerId).toBe("opponent");
+    // roundWinnerId is undefined because the round itself was a draw
+    expect(nextState.roundWinnerId).toBeUndefined();
+  });
+
+  it("does not apply the draw tiebreaker before round 3", () => {
+    // Round 1 draw → round_finished, game continues
+    const state = createState(
+      createPlayer("player", { melee: [createCard("p", 5)] }),
+      createPlayer("opponent", { melee: [createCard("o", 5)] }),
+    );
+
+    const nextState = settleRound(state);
+
+    expect(nextState.status).toBe("round_finished");
+    expect(nextState.winnerId).toBeUndefined();
+  });
 });
