@@ -104,3 +104,32 @@
 ## MVP Temporary Rules
 
 - Round 3 draw tiebreaker in `round.ts`: opponent wins if round 3 ends without a round winner. This is intentionally temporary for MVP/simple-AI full-game completion.
+
+## Phase 5 UI Architecture (Task 5.x AI vs AI Demo)
+
+### Decisions
+
+- **Mode**: AI vs AI auto-play; player watches and controls pace.
+- **State management**: Zustand store (`gameStore.ts`) holds `GameState` and drives AI ticks.
+- **Tick model**: Each `tick()` call advances the game by exactly one step (one AI action, or one round transition). The UI can call `tick()` on button press ("Next") or via `setInterval` ("Autoplay").
+- **AI used**: `chooseSimpleAIAction` from `game-core` — no React/browser imports inside game-core.
+- **Screens**: Start → Game → Result (simple state machine inside the store via `screen: AppScreen`).
+- **Task 4.2 skipped**: simple AI is sufficient for the demo; heuristic AI deferred.
+
+### Component Structure
+
+```
+App.tsx
+├── StartScreen   (faction picker, Start button)
+├── GameScreen    (PlayerBoard × 2, controls)
+│   ├── PlayerBoard (3 rows + header + graveyard strip)
+│   │   └── CardView (power badge + name)
+│   └── Controls  (Next / Autoplay / Round status)
+└── ResultScreen  (winner, round scores, Restart)
+```
+
+### gameStore.ts key facts
+
+- `tick()` handles all three state transitions: `playing` → AI action, `round_finished` → START_NEXT_ROUND, `game_finished` → navigate to result screen.
+- `autoplay` flag is read by the UI to drive `setInterval`; the store itself does not set any timers (keeps store pure).
+- `scores()` selector calls `calculateScores(gameState)` from game-core.

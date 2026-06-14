@@ -38,47 +38,43 @@ Phase 3: Card Data and Effect System
 | Phase 3 / Task 3.6 | Complete | Resource effects (DRAW_DISCARD, REVIVE, LOCK) implemented. |
 | Phase 3 / Task 3.7 | Complete | 60 cards (15/faction) with real effect configs. Validation passes. |
 | Phase 4 / Task 4.1 | Complete | Simple AI: random play-card selection, always legal, full-game tested. |
-| Phase 4 / Task 4.2 | **Next** | Heuristic AI with score-based pass decisions. |
-| Phase 4 / Task 4.3 | Pending | Single-game AI vs AI simulation. |
-| Phase 4 / Task 4.4 | Pending | Matchup simulation report (win rates, card stats). |
+| Phase 4 / Task 4.2 | Skipped | Heuristic AI — deferred; simple AI sufficient for UI demo. |
+| Phase 4 / Task 4.3 | Skipped | Single-game simulation — deferred. |
+| Phase 4 / Task 4.4 | Skipped | Matchup report — deferred. |
+| Phase 5 / Task 5.x | **In Progress** | AI vs AI demo UI in `apps/web`. |
 
 ---
 
-## Next Task: 4.2 Implement Heuristic AI
+## Current Task: 5.x AI vs AI Demo UI
 
 ### Goal
 
-Create `packages/game-core/src/ai/heuristicAI.ts` with score-aware action selection and pass decisions.
+Build a browser UI where two simpleAI bots play each other. The player watches and controls pace (Next / autoplay).
 
-### Interface
+### Screens
 
-```ts
-chooseHeuristicAIAction(state: GameState, playerId: PlayerId): GameAction
-estimateActionValue(state: GameState, action: GameAction): number
-```
-
-### Behavior Rules
-
-1. Get legal actions via `getLegalActions(state, playerId)`.
-2. Prefer actions that improve score difference.
-3. Pass if ahead and opponent has passed.
-4. Consider passing if ahead by a large margin.
-5. Avoid spending high-value cards unnecessarily if already far ahead.
+1. **Start** — choose factions for both sides, click Start.
+2. **Game** — live board view updating each turn. Controls: Next Step / Autoplay toggle.
+3. **Result** — shows winner, round wins, final scores.
 
 ### Files
 
-- `packages/game-core/src/ai/heuristicAI.ts` — **[NEW]**
-- `packages/game-core/src/ai/heuristicAI.test.ts` — **[NEW]**
-- `packages/game-core/src/index.ts` — export heuristic AI helpers
+| File | Status |
+|------|--------|
+| `apps/web/src/store/gameStore.ts` | ✅ Done |
+| `apps/web/src/components/CardView.tsx` | ✅ Done |
+| `apps/web/src/components/PlayerBoard.tsx` | ✅ Done |
+| `apps/web/src/App.tsx` | 🔲 Rewrite needed |
+| `apps/web/src/styles/global.css` | 🔲 Game board styles needed |
 
 ### Acceptance Criteria
 
-- [ ] AI is deterministic with seed if randomness is used.
-- [ ] AI returns legal actions.
-- [ ] AI can complete a full game.
-- [ ] Tests cover pass decisions.
-- [ ] No React or browser APIs imported.
-- [ ] All tests pass.
+- [ ] App loads; Start screen shows faction pickers.
+- [ ] Game screen updates live as AI plays.
+- [ ] Next Step and Autoplay controls work.
+- [ ] Result screen shows winner.
+- [ ] `pnpm typecheck` clean.
+- [ ] `pnpm build` passes.
 
 ---
 

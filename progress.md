@@ -380,3 +380,23 @@
   - `pnpm typecheck` passed.
   - `pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --skipLibCheck packages/game-core/src/effects/targetResolver.test.ts packages/game-core/src/effects/effectResolver.test.ts packages/game-core/src/ai/simpleAI.test.ts` passed.
   - `pnpm build` passed.
+
+## Phase 5: React Web UI (AI vs AI Demo)
+
+### Decision: Skip Task 4.2 (Heuristic AI)
+
+- Task 4.2 complexity: moderate (score evaluation + pass heuristics, ~50-80 lines).
+- User decision: skip 4.2 and 4.3/4.4 for now; go straight to UI so the game is visible in the browser.
+- Task 4.2 remains in backlog; can be added before or after UI is working.
+
+### Task 5.x: AI vs AI Demo UI (In Progress)
+
+- User confirmed mode: AI vs AI auto-play, player watches and clicks Next / toggles autoplay.
+- Files created so far:
+  - `apps/web/src/store/gameStore.ts` — Zustand store; holds GameState, drives AI ticks, manages autoplay.
+  - `apps/web/src/components/CardView.tsx` — displays card power + name slug; destroyed/locked CSS modifiers.
+  - `apps/web/src/components/PlayerBoard.tsx` — shows three rows, score, hand/deck counts, pass state, graveyard preview.
+- Still needed:
+  - `App.tsx` rewrite (Start → Game → Result screens)
+  - `global.css` game board styling
+  - Dev server validation
