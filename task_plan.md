@@ -44,42 +44,41 @@ Phase 3: Card Data and Effect System
 
 ---
 
-## Next Task: 4.1 Implement Simple AI
+## Next Task: 4.2 Implement Heuristic AI
 
 ### Goal
 
-Create `packages/game-core/src/ai/simpleAI.ts` with a basic AI that always returns a legal action and can complete a full game without infinite loops.
+Create `packages/game-core/src/ai/heuristicAI.ts` with score-aware action selection and pass decisions.
 
 ### Interface
 
 ```ts
-export function chooseSimpleAIAction(
-  state: GameState,
-  playerId: PlayerId,
-): GameAction;
+chooseHeuristicAIAction(state: GameState, playerId: PlayerId): GameAction
+estimateActionValue(state: GameState, action: GameAction): number
 ```
 
 ### Behavior Rules
 
 1. Get legal actions via `getLegalActions(state, playerId)`.
-2. If no legal actions exist, fallback to `{ type: "PASS", playerId }`.
-3. Separate actions into play actions and pass action.
-4. If play actions exist, choose one at random using seeded random (`state.seed + "-ai-" + state.actionLog.length`).
-5. If only pass is legal, return pass.
+2. Prefer actions that improve score difference.
+3. Pass if ahead and opponent has passed.
+4. Consider passing if ahead by a large margin.
+5. Avoid spending high-value cards unnecessarily if already far ahead.
 
 ### Files
 
-- `packages/game-core/src/ai/simpleAI.ts` — **[NEW]**
-- `packages/game-core/src/ai/simpleAI.test.ts` — **[NEW]** (must include: always-legal, full-game completion, no mutation)
-- `packages/game-core/src/index.ts` — export `chooseSimpleAIAction`
+- `packages/game-core/src/ai/heuristicAI.ts` — **[NEW]**
+- `packages/game-core/src/ai/heuristicAI.test.ts` — **[NEW]**
+- `packages/game-core/src/index.ts` — export heuristic AI helpers
 
 ### Acceptance Criteria
 
-- [ ] AI always returns a legal action.
-- [ ] AI completes a full 3-round match (integration test).
-- [ ] Random play selection is seeded and deterministic.
+- [ ] AI is deterministic with seed if randomness is used.
+- [ ] AI returns legal actions.
+- [ ] AI can complete a full game.
+- [ ] Tests cover pass decisions.
 - [ ] No React or browser APIs imported.
-- [ ] All 70+ tests pass.
+- [ ] All tests pass.
 
 ---
 

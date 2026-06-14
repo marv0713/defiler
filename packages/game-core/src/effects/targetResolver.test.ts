@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { resolveTargets } from "./targetResolver";
-import type { GameState, EffectContext } from "../types";
-import type { TargetSelector } from "./effectTypes";
+import type { GameState } from "../types";
+import type { EffectContext, TargetSelector } from "./effectTypes";
 
 describe("targetResolver", () => {
   const mockContext: EffectContext = {
@@ -165,6 +165,63 @@ describe("targetResolver", () => {
     const targets = resolveTargets(state, mockContext, selector);
     expect(targets).toHaveLength(1);
     expect(targets[0].instanceId).toBe("o2"); // Power 12 is highest on opponent board
+  });
+
+  it("uses board order as the tie-breaker for lowest and highest selectors", () => {
+    const base = createMockGameState();
+    const state: GameState = {
+      ...base,
+      players: {
+        ...base.players,
+        opponent: {
+          ...base.players.opponent,
+          board: {
+            ...base.players.opponent.board,
+            melee: [
+              { ...base.players.opponent.board.melee[0], currentPower: 4 },
+              {
+                instanceId: "o-tied-low",
+                cardId: "oc-low",
+                ownerId: "opponent",
+                type: "unit",
+                row: "melee",
+                currentPower: 4,
+                basePower: 4,
+                isLocked: false,
+                isDestroyed: false,
+                modifiers: [],
+              },
+            ],
+            siege: [
+              { ...base.players.opponent.board.siege[0], currentPower: 12 },
+              {
+                instanceId: "o-tied-high",
+                cardId: "oc-high",
+                ownerId: "opponent",
+                type: "unit",
+                row: "siege",
+                currentPower: 12,
+                basePower: 12,
+                isLocked: false,
+                isDestroyed: false,
+                modifiers: [],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    expect(
+      resolveTargets(state, mockContext, { type: "ENEMY_LOWEST" }).map(
+        (target) => target.instanceId,
+      ),
+    ).toEqual(["o1"]);
+    expect(
+      resolveTargets(state, mockContext, { type: "ENEMY_HIGHEST" }).map(
+        (target) => target.instanceId,
+      ),
+    ).toEqual(["o2"]);
   });
 
   it("ignores destroyed cards", () => {

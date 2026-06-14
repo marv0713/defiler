@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolveEffects } from "./effectResolver";
-import type { GameState, CardInstance, EffectContext } from "../types";
-import type { EffectDefinition, TargetSelector } from "./effectTypes";
+import type { GameState, CardInstance } from "../types";
+import type { EffectContext, EffectDefinition, TargetSelector } from "./effectTypes";
 
 function createCard(
   instanceId: string,
@@ -358,6 +358,169 @@ describe("resolveEffects", () => {
       expect(card.modifiers).toHaveLength(2);
       expect(card.modifiers[0].type).toBe("damage");
       expect(card.modifiers[1].type).toBe("buff");
+    });
+  });
+
+  describe("CONDITIONAL_BOOST", () => {
+    it("boosts self when the score condition is met", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: {
+              melee: [createCard("source-card", "player", 3, "melee")],
+              ranged: [],
+              siege: [],
+            },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: {
+              melee: [createCard("enemy-card", "opponent", 8, "melee")],
+              ranged: [],
+              siege: [],
+            },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const result = resolveEffects(
+        state,
+        mockContext,
+        [
+          {
+            type: "CONDITIONAL_BOOST",
+            condition: { type: "SCORE_BEHIND" },
+            amount: 3,
+          },
+        ],
+        "source-card",
+      );
+
+      expect(result.players.player.board.melee[0].currentPower).toBe(6);
+      expect(result.players.player.board.melee[0].modifiers[0]).toEqual(
+        expect.objectContaining({
+          amount: 3,
+          type: "buff",
+          sourceCardInstanceId: "source-card",
+        }),
+      );
+    });
+
+    it("does nothing when the score condition is not met", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: {
+              melee: [createCard("source-card", "player", 9, "melee")],
+              ranged: [],
+              siege: [],
+            },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: {
+              melee: [createCard("enemy-card", "opponent", 4, "melee")],
+              ranged: [],
+              siege: [],
+            },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const result = resolveEffects(
+        state,
+        mockContext,
+        [
+          {
+            type: "CONDITIONAL_BOOST",
+            condition: { type: "SCORE_BEHIND" },
+            amount: 3,
+          },
+        ],
+        "source-card",
+      );
+
+      expect(result).toBe(state);
+    });
+
+    it("supports opponent-passed and ally-count conditions", () => {
+      const state = createState({
+        players: {
+          player: {
+            id: "player",
+            faction: "qin",
+            deck: [],
+            hand: [],
+            board: {
+              melee: [
+                createCard("source-card", "player", 3, "melee"),
+                createCard("ally-1", "player", 2, "melee"),
+              ],
+              ranged: [createCard("ally-2", "player", 2, "ranged")],
+              siege: [],
+            },
+            graveyard: [],
+            hasPassed: false,
+            roundWins: 0,
+          },
+          opponent: {
+            id: "opponent",
+            faction: "chu",
+            deck: [],
+            hand: [],
+            board: { melee: [], ranged: [], siege: [] },
+            graveyard: [],
+            hasPassed: true,
+            roundWins: 0,
+          },
+        },
+      });
+
+      const result = resolveEffects(
+        state,
+        mockContext,
+        [
+          {
+            type: "CONDITIONAL_BOOST",
+            condition: { type: "OPPONENT_PASSED" },
+            amount: 2,
+          },
+          {
+            type: "CONDITIONAL_BOOST",
+            condition: { type: "ALLY_UNIT_COUNT_AT_LEAST", count: 3 },
+            amount: 1,
+          },
+        ],
+        "source-card",
+      );
+
+      expect(result.players.player.board.melee[0].currentPower).toBe(6);
     });
   });
 

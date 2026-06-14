@@ -115,7 +115,9 @@ function applyPlayCard(state: GameState, action: PlayCardAction): GameState {
   let nextState = replacePlayer(state, action.playerId, nextPlayer);
 
   // Resolve card effects
-  const effects = state.cardDefinitions[card.cardId]?.effects ?? [];
+  const effects = card.isLocked
+    ? []
+    : (state.cardDefinitions[card.cardId]?.effects ?? []);
   if (effects.length > 0) {
     const random = createSeededRandom(
       `${nextState.seed}-fx-${nextState.actionLog.length}`,

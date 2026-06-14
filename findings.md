@@ -77,8 +77,11 @@
 - REVIVE uses `resolveTargets(source: "graveyard")` — all graveyard cards are returned regardless of `isDestroyed` value.
 - REVIVE's `maxPower` filter checks `basePower <= maxPower` (uses basePower so temporary debuffs don't affect eligibility).
 - REVIVE tie-break rule: when multiple candidates share the minimum power, the card earliest in the graveyard array (entered first) is revived. This is tested and documented.
-- LOCK just sets `isLocked = true`; locked skill enforcement arrives with specific card effects or a later rule pass.
+- LOCK sets `isLocked = true`, and the reducer skips configured effect resolution when a locked card is played.
 - `removeCardFromGraveyard` is a standalone helper, separate from `removeCardFromBoard`, since graveyard is a flat array while board is nested by row.
+- CONDITIONAL_BOOST is implemented as a self-buff when its condition is true.
+- Supported CONDITIONAL_BOOST conditions: `SCORE_AHEAD`, `SCORE_BEHIND`, `OPPONENT_PASSED`, `ALLY_UNIT_COUNT_AT_LEAST`.
+- LOWEST/HIGHEST target selectors are single-target selectors. Ties resolve by board order for deterministic behavior.
 
 ## Task 3.4-3.6 Fix History (2026-06-14)
 
@@ -97,3 +100,7 @@
 - Chu identity: swarm / token SUMMON, row BUFF, unit-count conditional scaling.
 - Qi identity: DRAW_DISCARD hand management, DAMAGE enemy highest, conditional filtering.
 - Zhao identity: CONDITIONAL_BOOST when behind, LOCK on pass, cavalry synergy BUFF.
+
+## MVP Temporary Rules
+
+- Round 3 draw tiebreaker in `round.ts`: opponent wins if round 3 ends without a round winner. This is intentionally temporary for MVP/simple-AI full-game completion.

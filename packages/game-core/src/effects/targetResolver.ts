@@ -30,7 +30,7 @@ export function resolveTargets(
       const units = activeOnly(getCardsFrom(state, sourcePlayerId, source));
       if (units.length === 0) return [];
       const minPower = Math.min(...units.map((u) => u.currentPower));
-      return units.filter((u) => u.currentPower === minPower);
+      return units.filter((u) => u.currentPower === minPower).slice(0, 1);
     }
 
     case "ALLY_RANDOM": {
@@ -46,14 +46,14 @@ export function resolveTargets(
       const units = activeOnly(getCardsFrom(state, opponentPlayerId, source));
       if (units.length === 0) return [];
       const minPower = Math.min(...units.map((u) => u.currentPower));
-      return units.filter((u) => u.currentPower === minPower);
+      return units.filter((u) => u.currentPower === minPower).slice(0, 1);
     }
 
     case "ENEMY_HIGHEST": {
       const units = activeOnly(getCardsFrom(state, opponentPlayerId, source));
       if (units.length === 0) return [];
       const maxPower = Math.max(...units.map((u) => u.currentPower));
-      return units.filter((u) => u.currentPower === maxPower);
+      return units.filter((u) => u.currentPower === maxPower).slice(0, 1);
     }
 
     case "ENEMY_RANDOM": {

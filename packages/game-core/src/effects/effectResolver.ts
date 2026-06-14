@@ -9,8 +9,10 @@ import type {
   LockEffect,
   ReviveEffect,
   SummonEffect,
+  ConditionalBoostEffect,
 } from "./effectTypes";
 import { resolveTargets } from "./targetResolver";
+import { calculateScores } from "../rules/scoring";
 
 /**
  * Applies a list of effects to the game state in order.
@@ -56,8 +58,9 @@ function applyEffect(
     case "LOCK":
       return applyLock(state, context, effect, sourceCardInstanceId);
     case "CLEAR_WEATHER":
+      return state; // Weather system is not implemented in MVP yet
     case "CONDITIONAL_BOOST":
-      return state; // Not yet implemented
+      return applyConditionalBoost(state, context, effect, effectIndex, sourceCardInstanceId);
     default:
       return state;
   }
@@ -368,6 +371,58 @@ function applyLock(
     ...card,
     isLocked: true,
   }));
+}
+
+function applyConditionalBoost(
+  state: GameState,
+  context: EffectContext,
+  effect: ConditionalBoostEffect,
+  effectIndex: number,
+  sourceCardInstanceId?: string,
+): GameState {
+  if (!sourceCardInstanceId || !conditionMatches(state, context, effect.condition)) {
+    return state;
+  }
+
+  return applyBuff(
+    state,
+    context,
+    {
+      type: "BUFF",
+      target: { type: "SELF" },
+      amount: effect.amount,
+    },
+    effectIndex,
+    sourceCardInstanceId,
+  );
+}
+
+function conditionMatches(
+  state: GameState,
+  context: EffectContext,
+  condition: ConditionalBoostEffect["condition"],
+): boolean {
+  const scores = calculateScores(state);
+  const sourceScore = scores[context.sourcePlayerId];
+  const opponentScore = scores[context.opponentPlayerId];
+
+  switch (condition.type) {
+    case "SCORE_AHEAD":
+      return sourceScore > opponentScore;
+    case "SCORE_BEHIND":
+      return sourceScore < opponentScore;
+    case "OPPONENT_PASSED":
+      return state.players[context.opponentPlayerId].hasPassed;
+    case "ALLY_UNIT_COUNT_AT_LEAST":
+      return countActiveBoardUnits(state, context.sourcePlayerId) >= condition.count;
+  }
+}
+
+function countActiveBoardUnits(state: GameState, playerId: "player" | "opponent"): number {
+  const board = state.players[playerId].board;
+  return [...board.melee, ...board.ranged, ...board.siege].filter(
+    (card) => !card.isDestroyed,
+  ).length;
 }
 
 function removeCardFromGraveyard(state: GameState, target: CardInstance): GameState {

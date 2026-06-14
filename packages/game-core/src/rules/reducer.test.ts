@@ -102,6 +102,67 @@ describe("applyAction", () => {
     expect(nextState.currentPlayerId).toBe("opponent");
   });
 
+  it("does not resolve effects for a locked card", () => {
+    const lockedCard = {
+      ...createCard("locked-unit", "unit", "melee"),
+      isLocked: true,
+    };
+    const state: GameState = {
+      ...createState([lockedCard]),
+      cardDefinitions: {
+        "locked-unit": {
+          id: "locked-unit",
+          name: "Locked Unit",
+          englishName: "Locked Unit",
+          faction: "qin",
+          type: "unit",
+          row: "melee",
+          power: 4,
+          rarity: "elite",
+          tags: [],
+          effects: [
+            {
+              type: "SUMMON",
+              cardId: "token",
+              row: "melee",
+              count: 1,
+            },
+          ],
+          description: "Would summon if not locked.",
+        },
+        token: {
+          id: "token",
+          name: "Token",
+          englishName: "Token",
+          faction: "qin",
+          type: "unit",
+          row: "melee",
+          power: 2,
+          rarity: "common",
+          tags: [],
+          effects: [],
+          description: "A token.",
+        },
+      },
+    };
+
+    const nextState = applyAction(state, {
+      type: "PLAY_CARD",
+      playerId: "player",
+      cardInstanceId: "locked-unit",
+      target: {
+        type: "row",
+        playerId: "player",
+        row: "melee",
+      },
+    });
+
+    expect(nextState.players.player.board.melee).toHaveLength(1);
+    expect(nextState.players.player.board.melee[0].instanceId).toBe(
+      "locked-unit",
+    );
+  });
+
   it("passes and switches turn when the opponent has not passed", () => {
     const state = createState([]);
 

@@ -358,3 +358,25 @@
   - `pnpm typecheck` passed.
   - `pnpm build` passed.
   - Commits: `dbb8477` (simpleAI), `8b3c37a` (tiebreaker).
+
+### Review Fixes: Task 3.4 through Task 4.1
+
+- Kept `round.ts` round-3 draw tiebreaker as an MVP temporary strategy per user confirmation.
+- Added regression tests for:
+  - lowest/highest target tie-breaking
+  - `CONDITIONAL_BOOST`
+  - locked cards skipping skill resolution
+  - explicit test-file typechecking for effect resolver/target resolver/simple AI tests
+- Fixed `targetResolver` so `ALLY_LOWEST`, `ENEMY_LOWEST`, and `ENEMY_HIGHEST` return a single deterministic target using board order as tie-breaker.
+- Implemented `CONDITIONAL_BOOST` in `effectResolver`:
+  - `SCORE_AHEAD`
+  - `SCORE_BEHIND`
+  - `OPPONENT_PASSED`
+  - `ALLY_UNIT_COUNT_AT_LEAST`
+- Updated reducer so locked cards do not resolve their configured effects when played.
+- Fixed `EffectContext` imports in effect tests so explicit test-file typechecking passes.
+- Verification:
+  - `pnpm test` passed with 84 tests across 14 files.
+  - `pnpm typecheck` passed.
+  - `pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --skipLibCheck packages/game-core/src/effects/targetResolver.test.ts packages/game-core/src/effects/effectResolver.test.ts packages/game-core/src/ai/simpleAI.test.ts` passed.
+  - `pnpm build` passed.
