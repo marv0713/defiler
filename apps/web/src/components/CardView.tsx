@@ -1,17 +1,32 @@
-import type { CardInstance } from "@warring-states/game-core";
+import type { CardDefinition, CardInstance } from "@warring-states/game-core";
 
 interface CardViewProps {
   card: CardInstance;
+  definition?: CardDefinition;
   ghost?: boolean;
 }
 
-// Map faction color by ownerId prefix or cardId prefix
 function getFactionColor(card: CardInstance): string {
-  if (card.ownerId === "player") return "red";
-  return "blue";
+  return card.ownerId === "player" ? "red" : "blue";
 }
 
-export function CardView({ card, ghost = false }: CardViewProps) {
+/** Short label for each effect type shown on board cards. */
+function getEffectBadge(def: CardDefinition | undefined): string | null {
+  if (!def || def.effects.length === 0) return null;
+  const types = def.effects.map((e) => e.type);
+  // Show the most impactful effect type as a short badge.
+  if (types.includes("DESTROY"))           return "💀";
+  if (types.includes("DAMAGE"))            return "🗡";
+  if (types.includes("BUFF"))              return "⬆";
+  if (types.includes("DRAW_DISCARD"))      return "🃏";
+  if (types.includes("SUMMON"))            return "✨";
+  if (types.includes("REVIVE"))            return "♻";
+  if (types.includes("LOCK"))              return "🔐";
+  if (types.includes("CONDITIONAL_BOOST")) return "⚡";
+  return "⚡";
+}
+
+export function CardView({ card, definition, ghost = false }: CardViewProps) {
   const factionColor = getFactionColor(card);
   const cls = [
     "card",
@@ -23,16 +38,28 @@ export function CardView({ card, ghost = false }: CardViewProps) {
     .filter(Boolean)
     .join(" ");
 
-  // Clean up the display name from the instanceId
-  const rawName = card.cardId
-    .replace(/^(qin|chu|qi|zhao|neutral)-/, "")
-    .replace(/-token$/, " ★")
-    .replace(/-/g, " ");
+  // Prefer the definition's English name; fall back to deriving from cardId.
+  const displayName =
+    definition?.englishName ??
+    card.cardId
+      .replace(/^(qin|chu|qi|zhao|neutral)-/, "")
+      .replace(/-token$/, " ★")
+      .replace(/-/g, " ");
+
+  const effectBadge = getEffectBadge(definition);
+  const tooltip = definition
+    ? `${definition.englishName}${definition.description ? `\n${definition.description}` : ""}`
+    : card.cardId;
 
   return (
-    <div className={cls} title={card.cardId}>
+    <div className={cls} title={tooltip}>
       <span className="card__power">{card.currentPower}</span>
-      <span className="card__name">{rawName}</span>
+      <span className="card__name">{displayName}</span>
+      {effectBadge && (
+        <span className="card__effect-badge" aria-label="has effect">
+          {effectBadge}
+        </span>
+      )}
     </div>
   );
 }

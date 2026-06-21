@@ -1,0 +1,233 @@
+import { calculateScores } from "../rules/scoring";
+import type {
+  CardDefinition,
+  CardInstance,
+  GameState,
+  PlayerId,
+} from "../types";
+
+export interface UtilityAIWeights {
+  scoreDiff: number;
+  roundWinsDiff: number;
+  handAdvantage: number;
+  deckAdvantage: number;
+  boardUnitAdvantage: number;
+  cardResourceCost: number;
+  overBudgetPenalty: number;
+  hopelessChasePenalty: number;
+  opponentPassedLeadBonus: number;
+  finalRoundUrgency: number;
+}
+
+export interface CatchupPlan {
+  pointsNeeded: number;
+  cardsNeeded: number;
+  totalEstimatedCost: number;
+  canCatchUp: boolean;
+}
+
+export interface RoundBudget {
+  maxCardsThisRound: number;
+  cardsPlayedThisRound: number;
+  isOverBudget: boolean;
+}
+
+export const NORMAL_AI_WEIGHTS: UtilityAIWeights = {
+  scoreDiff: 1,
+  roundWinsDiff: 25,
+  handAdvantage: 5,
+  deckAdvantage: 1,
+  boardUnitAdvantage: 1,
+  cardResourceCost: 0.35,
+  overBudgetPenalty: 8,
+  hopelessChasePenalty: 18,
+  opponentPassedLeadBonus: 30,
+  finalRoundUrgency: 12,
+};
+
+export function getOpponentId(playerId: PlayerId): PlayerId {
+  return playerId === "player" ? "opponent" : "player";
+}
+
+export function countBoardUnits(state: GameState, playerId: PlayerId): number {
+  const board = state.players[playerId].board;
+  return board.melee.length + board.ranged.length + board.siege.length;
+}
+
+export function countCardsPlayedThisRound(
+  state: GameState,
+  playerId: PlayerId,
+): number {
+  return state.actionLog.filter(
+    (entry) =>
+      entry.round === state.currentRound &&
+      entry.playerId === playerId &&
+      entry.message === "PLAY_CARD",
+  ).length;
+}
+
+function estimateEffectTemplateValue(definition: CardDefinition | undefined): number {
+  if (!definition) return 0;
+
+  return definition.effects.reduce((total, effect) => {
+    switch (effect.type) {
+      case "BUFF":
+        return total + effect.amount;
+      case "DAMAGE":
+        return total + effect.amount;
+      case "DESTROY":
+        return total + 6;
+      case "DRAW_DISCARD":
+        return total + effect.draw * 2 - effect.discard;
+      case "SUMMON":
+        return total + effect.count * 2;
+      case "REVIVE":
+        return total + 4;
+      case "LOCK":
+        return total + 3;
+      case "CONDITIONAL_BOOST":
+        return total + effect.amount * 0.6;
+      case "CLEAR_WEATHER":
+        return total + 1;
+    }
+  }, 0);
+}
+
+function estimateCardPointImpact(
+  state: GameState,
+  card: CardInstance,
+): number {
+  const definition = state.cardDefinitions[card.cardId];
+  return Math.max(0, card.currentPower + estimateEffectTemplateValue(definition) * 0.5);
+}
+
+function getRarityPremium(definition: CardDefinition | undefined): number {
+  switch (definition?.rarity) {
+    case "elite":
+      return 1;
+    case "hero":
+      return 2;
+    case "legend":
+      return 3;
+    case "common":
+    default:
+      return 0;
+  }
+}
+
+export function estimateCardResourceCost(
+  state: GameState,
+  card: CardInstance,
+): number {
+  const definition = state.cardDefinitions[card.cardId];
+  const effectValue = estimateEffectTemplateValue(definition);
+  return 2 + card.currentPower * 0.35 + effectValue * 0.4 + getRarityPremium(definition);
+}
+
+export function evaluateStateForPlayer(
+  state: GameState,
+  playerId: PlayerId,
+  weights: UtilityAIWeights = NORMAL_AI_WEIGHTS,
+): number {
+  const opponentId = getOpponentId(playerId);
+  const scores = calculateScores(state);
+  const player = state.players[playerId];
+  const opponent = state.players[opponentId];
+
+  const scoreDiff = scores[playerId] - scores[opponentId];
+  const roundWinsDiff = player.roundWins - opponent.roundWins;
+  const handAdvantage = player.hand.length - opponent.hand.length;
+  const deckAdvantage = player.deck.length - opponent.deck.length;
+  const boardUnitAdvantage =
+    countBoardUnits(state, playerId) - countBoardUnits(state, opponentId);
+
+  return (
+    scoreDiff * weights.scoreDiff +
+    roundWinsDiff * weights.roundWinsDiff +
+    handAdvantage * weights.handAdvantage +
+    deckAdvantage * weights.deckAdvantage +
+    boardUnitAdvantage * weights.boardUnitAdvantage
+  );
+}
+
+export function estimateCatchupPlan(
+  state: GameState,
+  playerId: PlayerId,
+): CatchupPlan {
+  const opponentId = getOpponentId(playerId);
+  const scores = calculateScores(state);
+  const pointsNeeded = Math.max(0, scores[opponentId] - scores[playerId] + 1);
+
+  if (pointsNeeded === 0) {
+    return {
+      pointsNeeded: 0,
+      cardsNeeded: 0,
+      totalEstimatedCost: 0,
+      canCatchUp: true,
+    };
+  }
+
+  const candidates = state.players[playerId].hand
+    .map((card) => ({
+      card,
+      points: estimateCardPointImpact(state, card),
+      cost: estimateCardResourceCost(state, card),
+    }))
+    .filter((candidate) => candidate.points > 0)
+    .sort((left, right) => {
+      const leftEfficiency = left.points / left.cost;
+      const rightEfficiency = right.points / right.cost;
+      return rightEfficiency - leftEfficiency;
+    });
+
+  let accumulatedPoints = 0;
+  let accumulatedCost = 0;
+  let cardsNeeded = 0;
+
+  for (const candidate of candidates) {
+    accumulatedPoints += candidate.points;
+    accumulatedCost += candidate.cost;
+    cardsNeeded += 1;
+
+    if (accumulatedPoints >= pointsNeeded) {
+      return {
+        pointsNeeded,
+        cardsNeeded,
+        totalEstimatedCost: accumulatedCost,
+        canCatchUp: true,
+      };
+    }
+  }
+
+  return {
+    pointsNeeded,
+    cardsNeeded,
+    totalEstimatedCost: accumulatedCost,
+    canCatchUp: false,
+  };
+}
+
+export function getRoundBudget(
+  state: GameState,
+  playerId: PlayerId,
+): RoundBudget {
+  const opponentId = getOpponentId(playerId);
+  const playerWins = state.players[playerId].roundWins;
+  const opponentWins = state.players[opponentId].roundWins;
+  const cardsPlayedThisRound = countCardsPlayedThisRound(state, playerId);
+
+  let maxCardsThisRound = 4;
+  if (state.currentRound >= 3) {
+    maxCardsThisRound = cardsPlayedThisRound + state.players[playerId].hand.length;
+  } else if (state.currentRound === 2 && playerWins > opponentWins) {
+    maxCardsThisRound = 3;
+  } else if (state.currentRound === 2 && playerWins < opponentWins) {
+    maxCardsThisRound = 6;
+  }
+
+  return {
+    maxCardsThisRound,
+    cardsPlayedThisRound,
+    isOverBudget: cardsPlayedThisRound >= maxCardsThisRound,
+  };
+}

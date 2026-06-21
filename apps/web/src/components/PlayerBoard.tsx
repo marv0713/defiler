@@ -1,4 +1,4 @@
-import type { PlayerState, Row } from "@warring-states/game-core";
+import type { CardDefinition, PlayerState, Row } from "@warring-states/game-core";
 import { CardView } from "./CardView";
 
 interface PlayerBoardProps {
@@ -7,6 +7,7 @@ interface PlayerBoardProps {
   isActive: boolean;
   score: number;
   rowOrder?: Row[];
+  cardDefinitions?: Record<string, CardDefinition>;
 }
 
 const ROW_LABELS: Record<Row, string> = {
@@ -21,6 +22,7 @@ export function PlayerBoard({
   isActive,
   score,
   rowOrder = ["melee", "ranged", "siege"],
+  cardDefinitions = {},
 }: PlayerBoardProps) {
   return (
     <div className={`player-board${isActive ? " player-board--active" : ""}`}>
@@ -49,7 +51,11 @@ export function PlayerBoard({
               <span className="board-row__label">{ROW_LABELS[row]}</span>
               <div className="board-row__cards">
                 {liveCards.map((card) => (
-                  <CardView key={card.instanceId} card={card} />
+                  <CardView
+                    key={card.instanceId}
+                    card={card}
+                    definition={cardDefinitions[card.cardId]}
+                  />
                 ))}
                 {liveCards.length === 0 && (
                   <span className="board-row__empty">—</span>
@@ -69,7 +75,12 @@ export function PlayerBoard({
           </span>
           <div className="graveyard-strip__cards">
             {player.graveyard.slice(-5).map((c) => (
-              <CardView key={c.instanceId} card={c} ghost />
+              <CardView
+                key={c.instanceId}
+                card={c}
+                definition={cardDefinitions[c.cardId]}
+                ghost
+              />
             ))}
           </div>
         </div>

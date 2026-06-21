@@ -2,7 +2,7 @@ export const GAME_CORE_VERSION = "0.0.0";
 
 export { INITIAL_CARDS } from "./cards/cardData";
 export { validateCards } from "./cards/cardValidation";
-export { FACTIONS, MAX_ROUND_WINS, ROWS, STARTING_HAND_SIZE } from "./constants";
+export { FACTIONS, MAX_ROUND_WINS, ROWS, STARTING_HAND_SIZE, DECK_SIZE, ROUND_DRAW_COUNTS } from "./constants";
 export { EFFECT_TYPES } from "./effects/effectTypes";
 export { resolveTargets } from "./effects/targetResolver";
 export { resolveEffects } from "./effects/effectResolver";
@@ -13,6 +13,14 @@ export { settleRound, startNextRound } from "./rules/round";
 export { calculatePlayerScore, calculateRowScore, calculateScores } from "./rules/scoring";
 export { createSeededRandom, shuffleWithSeed } from "./utils/random";
 export { chooseSimpleAIAction } from "./ai/simpleAI";
+export { chooseHeuristicAIAction } from "./ai/heuristicAI";
+export { chooseNormalAIAction, scoreNormalAIAction } from "./ai/normalAI";
+export { simulateGame } from "./simulator/simulateGame";
+export { formatSimulationReport } from "./simulator/report";
+export { simulateMatchup } from "./simulator/simulateMatchup";
+export { CAMPAIGN_LEVELS } from "./campaign/levelData";
+export type { DeckConstraint, LevelDefinition, WinCondition } from "./campaign/levelTypes";
+
 
 export type {
   BoardState,
@@ -57,3 +65,22 @@ export type {
 } from "./rules/actions";
 export type { ValidationResult } from "./cards/cardValidation";
 export type { CreateGameConfig } from "./rules/gameInit";
+export type {
+  ActionScoreBreakdown,
+} from "./ai/normalAI";
+export type {
+  CatchupPlan,
+  RoundBudget,
+  UtilityAIWeights,
+} from "./ai/aiEvaluation";
+export type {
+  SimulateActionSummary,
+  SimulateGameConfig,
+  SimulateGameResult,
+  SimulateGameStoppedReason,
+} from "./simulator/simulateGame";
+export type {
+  CardSimulationStats,
+  SimulationConfig,
+  SimulationReport,
+} from "./simulator/simulateMatchup";
