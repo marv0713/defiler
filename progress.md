@@ -400,3 +400,329 @@
   - `App.tsx` rewrite (Start → Game → Result screens)
   - `global.css` game board styling
   - Dev server validation
+
+## 2026-06-15
+
+### Bug Fix Session: Three Issues from Code Review
+
+#### Bug 1 (Medium): Round 3 draw tiebreaker — winnerId and roundWins inconsistent
+
+- **File**: `packages/game-core/src/rules/round.ts`
+- **Root cause**: `settleRound` set `winnerId = "opponent"` on a final-round draw but did
+  not increment `opponent.roundWins`, leaving the Result screen showing "OPPONENT WINS"
+  with "1 round win" (or 0).
+- **Fix**: Extracted `isFinalRoundDraw` flag; when true, also increment
+  `players["opponent"].roundWins` before returning, so `winnerId` and `roundWins` are
+  always consistent.
+- **Test update**: `round.test.ts` tiebreaker case now also asserts
+  `opponent.roundWins === 1` and `player.roundWins === 0`.
+
+#### Bug 2 (Low): Deck too small — 15 cards/faction, STARTING_HAND_SIZE = 10, deck exhausted in round 1
+
+- **File**: `apps/web/src/store/gameStore.ts`
+- **Root cause**: `buildDeck` returned only the 15 faction cards; after drawing 10, only 5
+  remained. AI had almost no cards in rounds 2–3.
+- **Fix**: `buildDeck` now duplicates the faction card array (`[...cards, ...cards]`),
+  giving 30 cards per player. After drawing 10, 20 remain for three full rounds of play.
+
+#### Bug 3 (Cosmetic): `tick()` — game_finished state flashes in GameScreen for one frame
+
+- **File**: `apps/web/src/store/gameStore.ts`
+- **Root cause**: `tick()` called `set({ gameState: next })` and then a separate
+  `set({ screen: "result", autoplay: false })`, giving React time to render the finished
+  board in GameScreen between the two updates.
+- **Fix**: Merged into a single `set({ gameState, lastAction, screen, autoplay })` call
+  when the game ends, so the transition is atomic.
+
+#### Verification
+
+- `pnpm test`: 84 tests / 14 files — all passed.
+- `pnpm typecheck`: clean.
+- `pnpm build`: clean (231 kB JS bundle).
+
+### Upgrade: AI vs AI Demo → Player vs AI Mode
+
+- **Goal**: Player manually plays cards; opponent AI responds automatically after each action.
+- **New file**: `apps/web/src/components/HandView.tsx`
+  - Displays player hand as clickable card buttons.
+  - Each card shows power, English name, row badge (M/R/S), and description tooltip.
+  - `canPlay` prop disables cards when it's not the player's turn or player has passed.
+- **Modified**: `apps/web/src/store/gameStore.ts`
+  - Removed: `tick`, `toggleAutoplay`, `autoplay`.
+  - Added: `playCard(cardInstanceId)`, `pass()`, `startNextRound()`.
+  - Added: `advanceOpponentAI()` — runs opponent turns until player's turn, round end, or game end.
+  - Added: `commitAfterPlayer()` — after any player action, runs AI and commits state atomically.
+  - `playCard` resolves the correct legal action (with row target) via `getLegalActions`.
+  - `startNextRound` also runs AI if opponent goes first in the new round.
+- **Modified**: `apps/web/src/App.tsx`
+  - `GameScreen` redesigned: opponent board (top) → HUD → player board → hand area (bottom).
+  - Hand area: status pill (Your turn / Opponent's turn / You passed / Round over).
+  - Hand area: `HandView` with clickable cards.
+  - Hand area: Pass button (visible only when player can act).
+  - `RoundResultBanner`: modal overlay when `status === "round_finished"`; shows winner, round wins, "Start Round N+1" button.
+  - Start screen: updated subtitle to describe Player vs AI.
+  - Result screen: `result-winner` now uses `--player` (red) or `--opponent` (blue) color.
+- **Modified**: `apps/web/src/styles/global.css`
+  - `game-screen` grid: changed from 3 rows to 4 rows (added hand area row).
+  - New sections: `.player-hand-area`, `.hand-status`, `.status-pill`, `.hand-view`, `.hand-card`, `.round-banner`.
+  - Added `.result-winner--player` and `.result-winner--opponent` color variants.
+- **Verification**:
+  - `pnpm test`: 84 tests / 14 files — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (234 kB JS bundle, +3 kB for new CSS).
+
+### Integration: Heuristic AI & Hover Tooltip Bug Fix
+
+- **AI Implementation**:
+  - Added Heuristic AI to packages/game-core (`heuristicAI.ts`).
+  - Added pass heuristic parameters (lead threshold, hand size, board placement constraints).
+  - Added card value estimator to pick the highest impact play.
+  - Verified with 9 new tests covering key pass triggers and full-game completions.
+  - Connected `chooseHeuristicAIAction` inside `gameStore.ts`.
+- **Hover Bug Fix**:
+  - Modified `apps/web/src/components/HandView.tsx` to remove the HTML `disabled` attribute from the card buttons.
+  - Handled click protection purely in JS using `onClick={() => canPlay && onPlay(card.instanceId)}`.
+  - Allowed cards to receive pointer hover events at all times (resolves browser disabled-hover tooltip block).
+  - Extended tooltips to display `englishName` + `description` in Gwent-style.
+- **Verification**:
+  - `pnpm test`: 93 tests / 15 files — all passed.
+  - `pnpm typecheck` & `pnpm build` clean.
+
+## 2026-06-17
+
+### Code Review & Bug Fix Session
+
+Reviewed all three docs (`progress.md`, `findings.md`, `task_plan.md`) against the
+current implementation. Found and fixed 4 issues:
+
+#### Bug 1 (Medium-High): Round-3 draw tiebreaker ignores prior roundWins
+
+- **File**: `packages/game-core/src/rules/round.ts`
+- **Root cause**: The final-round-draw tiebreaker unconditionally awarded the match to
+  the opponent, ignoring any round wins a player had already earned. E.g., if the
+  player won round 1 (1–0) and both round 2 and round 3 were draws, the opponent was
+  declared match winner despite never winning a round.
+- **Fix**: The tiebreaker now awards the match to the player with more `roundWins`.
+  Only when `roundWins` are also tied (true 0–0 deadlock) does the opponent win as
+  a termination fallback (and `opponent.roundWins` is bumped so `winnerId` and
+  `roundWins` stay consistent).
+- **Tests added**: 2 new cases in `round.test.ts`:
+  - "awards the match to the round-win leader on a round-3 draw" (1–0 → round-3 draw)
+  - "falls back to opponent-wins when round wins are also tied on round 3" (0–0 → round-3 draw, preserves original behavior)
+
+#### Issue 2: Stale documentation in `findings.md`
+
+- Fixed 4 out-of-date claims in `findings.md`:
+  1. Tie-round behavior → added note about the updated round-3 tiebreaker logic.
+  2. Task 4.2 status → corrected from "skipped" to "Complete" (heuristic AI shipped).
+  3. Phase 5 UI Architecture → rewritten to describe the current Player-vs-AI mode
+     (tick/autoplay removed, heuristic AI connected, component structure updated).
+  4. Added DRAW_DISCARD caveat documenting that discarded cards always come from
+     freshly-drawn cards (net advantage still +1 as designed).
+
+#### Issue 3: Stale `task_plan.md` current phase
+
+- Updated "Current Phase" from "Phase 3: Card Data and Effect System" to
+  "Phase 5: React Web UI (Player vs AI) — Complete. Next: Phase 6".
+
+#### Issue 4: No integration tests for `gameStore.ts`
+
+- Added Vitest as a devDependency to `apps/web` (matching `game-core` setup).
+- Updated root `package.json` test script from `pnpm --filter @warring-states/game-core test`
+  to `pnpm -r test` so both packages are tested.
+- Added `apps/web/src/store/gameStore.test.ts` — 10 tests covering:
+  - Store lifecycle (start screen, startGame, restart, faction setters)
+  - playCard (unit card moves to board, leaves hand; unknown card guard; wrong-turn guard)
+  - pass + round flow (pass marks player passed, atomic screen transition)
+  - Full match termination (driven to game_finished via store API without hanging)
+- **Verification**:
+  - `pnpm test`: 105 tests / 16 files (95 game-core + 10 web) — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (236 kB JS bundle, 10.7 kB CSS).
+
+## 2026-06-21
+
+### Task 4.3: Game Simulation (Complete)
+
+- **Goal**: Backfill the skipped Phase 4 simulator so AI vs AI games can be run
+  without the React UI. This is the measurement foundation for tuning the weak
+  AI behavior where it can over-spend cards in early rounds.
+- **Added**: `packages/game-core/src/simulator/simulateGame.ts`
+  - `simulateGame(config)` creates an initial game state and advances it until
+    `game_finished` or `maxTurns`.
+  - Originally defaulted to `chooseHeuristicAIAction`; after Normal Utility AI
+    tuning, defaults to `chooseNormalAIAction`. Still accepts a custom `chooseAction`
+    function for tests and future AI difficulty comparisons.
+  - Builds default 30-card faction decks by duplicating the faction card pool,
+    matching the current web app deck behavior.
+  - Automatically applies `START_NEXT_ROUND` when the game reaches
+    `round_finished`.
+  - Returns `winner`, `rounds`, `turns`, `finalScores`, `roundWins`,
+    `actionSummary`, `stoppedReason`, and `finalState`.
+- **Added**: `packages/game-core/src/simulator/simulateGame.test.ts`
+  - Verified one full AI vs AI game completes.
+  - Verified `maxTurns` prevents infinite loops.
+  - Verified custom AI chooser support.
+- **Modified**: `packages/game-core/src/index.ts`
+  - Exported `simulateGame` and its public result/config types.
+- **TDD note**:
+  - First simulator test run failed as expected because `./simulateGame` did not exist.
+  - Implementation was added after the red test.
+- **Verification**:
+  - `pnpm --filter @warring-states/game-core test -- --run src/simulator/simulateGame.test.ts`: 98 game-core tests / 16 files — all passed.
+  - `pnpm test`: 98 game-core tests + 10 web tests — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (236.29 kB JS bundle, 10.70 kB CSS).
+
+### Task 4.4: Matchup Simulation Report (Complete)
+
+- **Goal**: Backfill the skipped Phase 4 batch simulator so AI and faction balance
+  can be measured outside the UI.
+- **Added**: `packages/game-core/src/simulator/simulateMatchup.ts`
+  - `simulateMatchup(config)` runs many `simulateGame` matches for
+    `factionA` vs `factionB`.
+  - Aggregates games, completed games, max-turn stops, faction wins, draws, win
+    rates, average rounds, average turns, and average final scores.
+  - Adds card stats: `timesDrawn`, `timesPlayed`, `winsWhenPlayed`,
+    `winRateWhenPlayed`, and `averageContribution`.
+  - Accepts custom `chooseAction` so future Easy / Normal / Hard AI comparisons
+    can reuse the same report pipeline.
+- **Added**: `packages/game-core/src/simulator/report.ts`
+  - `formatSimulationReport(report)` creates a readable text report with matchup
+    rates and top played cards.
+- **Added tests**:
+  - `simulateMatchup.test.ts`: aggregate stats, card stats, and 1000-game smoke.
+  - `report.test.ts`: readable text formatting.
+- **Modified**: `packages/game-core/src/index.ts`
+  - Exported `simulateMatchup`, `formatSimulationReport`, and public report types.
+- **TDD note**:
+  - First Task 4.4 test run failed as expected because `./simulateMatchup` and
+    `./report` did not exist.
+  - Implementation was added after the red test.
+- **Verification**:
+  - `pnpm --filter @warring-states/game-core test -- --run src/simulator/simulateMatchup.test.ts src/simulator/report.test.ts`: 102 game-core tests / 18 files — all passed.
+  - `pnpm test`: 102 game-core tests + 10 web tests — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (236.29 kB JS bundle, 10.70 kB CSS).
+
+### AI Tuning: Normal Utility AI (Complete)
+
+- **Goal**: Implement the Utility AI direction from
+  `docs/ai_evolution_design.md` so the default opponent values hand resources,
+  catch-up cost, and round budget instead of only using hard-coded pass rules.
+- **Added**: `packages/game-core/src/ai/aiEvaluation.ts`
+  - `evaluateStateForPlayer` scores score diff, round wins, hand advantage, deck
+    advantage, and board unit advantage.
+  - `estimateCardResourceCost` assigns generic resource cost from card power,
+    effect templates, and rarity.
+  - `estimateCatchupPlan` estimates points/cards/cost needed to overtake the
+    current round score.
+  - `getRoundBudget` gives early rounds a soft card budget and lets round 3 spend
+    freely.
+- **Added**: `packages/game-core/src/ai/normalAI.ts`
+  - `scoreNormalAIAction` returns an inspectable score breakdown for legal
+    actions.
+  - `chooseNormalAIAction` scores all legal actions and chooses deterministically.
+  - PASS is now a scored action, not a top-level `shouldPass` shortcut.
+- **Added tests**:
+  - `aiEvaluation.test.ts`: state evaluation, catch-up planning, round budget,
+    current-round play counts, card resource cost.
+  - `normalAI.test.ts`: legal action guarantee, pass when safely ahead, pass when
+    catch-up is too expensive, play when one cheap card overtakes, pass after
+    early-round budget, spend more freely in round 3, score breakdown shape.
+- **Modified defaults**:
+  - `simulateGame` and `simulateMatchup` now default to `chooseNormalAIAction`.
+  - `apps/web/src/store/gameStore.ts` now uses `chooseNormalAIAction` for the
+    opponent.
+  - `packages/game-core/src/index.ts` exports Normal AI APIs and evaluation types.
+- **10-game Qin vs Chu check**:
+  - Completed: 10/10, max-turn stops: 0.
+  - Result: Qin 9 wins, Chu 1 win.
+  - Average rounds: 3.00; average turns: 27.90.
+  - Average final scores: Qin 28.80 / Chu 19.70.
+  - Per-round play counts showed early conservation and round-3 commitment:
+    round 1 mostly 1-5 plays, round 2 mostly 2-6 plays, round 3 mostly 9-14 plays.
+  - Interpretation: the "dump the whole hand early" behavior is improved; Qin vs
+    Chu still looks skewed and should be investigated as faction balance / Chu AI
+    sequencing rather than only pass timing.
+- **Verification**:
+  - `pnpm --filter @warring-states/game-core test -- src/ai/aiEvaluation.test.ts src/ai/normalAI.test.ts`: 115 game-core tests / 20 files — all passed.
+  - `pnpm test`: 115 game-core tests + 10 web tests — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (239.54 kB JS bundle, 10.70 kB CSS).
+
+## 2026-06-21 (Phase 6 Planning)
+
+### Phase 6 Design Approved
+
+- **Goal**: Campaign system with Gwent-aligned deck rules and 6 challenge levels.
+- **User decisions** (confirmed interactively):
+  - Deck size: **25 cards** for both Quick Battle and Campaign (unified).
+  - Per-round draw: Gwent original — entering round 2 draws +2, round 3 draws +1.
+  - No narrative framing; pure rules-based challenge levels.
+  - No card unlock rewards; player always has access to all 60 cards.
+  - No mulligan mechanic (out of scope for MVP).
+- **Documents updated**: `task_plan.md`, `findings.md`, `progress.md` all synced with
+  Phase 6 design decisions.
+- **Implementation plan** written and approved (stored in agent artifacts).
+- **Next action**: Begin Layer 1 — add `DECK_SIZE` / `ROUND_DRAW_COUNTS` constants
+  and implement `drawForNextRound` in `round.ts` with tests.
+
+### Phase 6 Implementation (Complete)
+
+All 6 layers executed in a single session. Summary of changes:
+
+#### Layer 1: Gwent draw mechanic (game-core)
+- `constants.ts`: Added `DECK_SIZE = 25`, `ROUND_DRAW_COUNTS = { 2: 2, 3: 1 }`.
+- `round.ts`: Added `drawForNextRound(player, count)` — takes from deck head
+  (already shuffled), returns updated player state with hand enlarged and deck
+  shrunk. Called in `startNextRound` with `ROUND_DRAW_COUNTS[nextRound] ?? 0`.
+- `round.test.ts`: 3 new tests (entering round 2 → +2 cards; entering round 3
+  → +1 card; deck exhaustion graceful fallback).
+
+#### Layer 2: Unified 25-card decks
+- `simulator/simulateGame.ts`: `buildDefaultDeck` changed from `[...pool, ...pool]`
+  (30 cards) to cyclic fill to `DECK_SIZE` (25 cards).
+- `apps/web/src/store/gameStore.ts`: Same change to `buildDeck`.
+- `index.ts`: Exported `DECK_SIZE` and `ROUND_DRAW_COUNTS`.
+
+#### Layer 3: Campaign data (game-core)
+- `campaign/levelTypes.ts`: New file — `DeckConstraint`, `WinCondition`,
+  `LevelDefinition` types.
+- `campaign/levelData.ts`: New file — `CAMPAIGN_LEVELS` array with 6 levels,
+  each with a 25-card hand-crafted opponent deck and a per-level constraint.
+- `index.ts`: Exported `CAMPAIGN_LEVELS` and campaign types.
+
+#### Layer 4: Save store
+- `apps/web/src/store/saveStore.ts`: Zustand `persist` store backed by
+  `localStorage` under key `"warring-states-save"`. Stores `completedLevelIds`,
+  exposes `markComplete`, `isComplete`, `reset`.
+
+#### Layer 5: gameStore extension
+- `AppScreen` type extended: `"level_select"`, `"deck_builder"` added.
+- New fields: `selectedLevel`, `playerDeck`, `deckBuildError`, `campaignMode`.
+- New actions: `goToLevelSelect`, `selectLevel`, `toggleCardInDeck`,
+  `validateDeck`, `startLevelGame`, `levelPassed`.
+- `startLevelGame` resolves card IDs → `CardDefinition[]` for both player and
+  opponent and calls `createInitialGameState` with the custom decks.
+- `restart` clears all campaign fields.
+
+#### Layer 6: UI components
+- `LevelSelectScreen.tsx`: 6 level cards in a responsive grid. Shows title,
+  subtitle, difficulty stars, opponent faction, constraint badges, and a ✓
+  when the level is complete (from `saveStore`).
+- `DeckBuilderScreen.tsx`: Full 60-card pool (left, grouped by faction) with
+  click-to-add/remove; deck list panel (right) with count, constraint tags,
+  deck error message, and Start Battle button. Token cards excluded.
+- `App.tsx`: Added campaign imports, split the Start button into Quick Battle +
+  Campaign, wired `level_select`/`deck_builder` routes, updated `ResultScreen`
+  with campaign pass/fail banner and Back to Levels / Next Level buttons.
+  `markComplete` is called when the campaign `ResultScreen` renders with a pass.
+- `global.css`: Added ~280 lines of new CSS for all campaign screens (level
+  grid, deck builder split layout, constraint tags, result banner, dual-button
+  start actions).
+
+#### Verification
+- `pnpm test`: 128 tests / 21 files (118 game-core + 10 web) — all passed.
+- `pnpm typecheck`: clean.
+- `pnpm build`: clean (255.28 kB JS, 16.59 kB CSS).

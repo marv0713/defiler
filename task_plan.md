@@ -13,7 +13,9 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 3: Card Data and Effect System
+Phase 6: Campaign System — **In Progress**.
+Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
+See Phase 6 task breakdown below.
 
 ## Task Status
 
@@ -38,43 +40,83 @@ Phase 3: Card Data and Effect System
 | Phase 3 / Task 3.6 | Complete | Resource effects (DRAW_DISCARD, REVIVE, LOCK) implemented. |
 | Phase 3 / Task 3.7 | Complete | 60 cards (15/faction) with real effect configs. Validation passes. |
 | Phase 4 / Task 4.1 | Complete | Simple AI: random play-card selection, always legal, full-game tested. |
-| Phase 4 / Task 4.2 | Skipped | Heuristic AI — deferred; simple AI sufficient for UI demo. |
-| Phase 4 / Task 4.3 | Skipped | Single-game simulation — deferred. |
-| Phase 4 / Task 4.4 | Skipped | Matchup report — deferred. |
-| Phase 5 / Task 5.x | **In Progress** | AI vs AI demo UI in `apps/web`. |
+| Phase 4 / Task 4.2 | Complete | Heuristic AI: added card valuation and pass timing logic with tests. Connected to web app. |
+| Phase 4 / Task 4.3 | Complete | Single-game AI vs AI simulator added in `packages/game-core/src/simulator/simulateGame.ts`. |
+| Phase 4 / Task 4.4 | Complete | Batch matchup simulation and readable report added in `packages/game-core/src/simulator`. |
+| AI Tuning / Normal Utility AI | Complete | Added Utility AI scoring, catch-up cost, round budget, and switched web/simulator defaults to `chooseNormalAIAction`. |
+| Phase 5 / Task 5.x | **Complete** | Player vs AI UI in `apps/web`. HandView + gameStore refactor. |
+| Fix / 2026-06-17 | **Complete** | Round-3 tiebreaker now respects prior roundWins (leader wins). 2 new regression tests. |
+| Fix / 2026-06-17 | **Complete** | Updated stale docs (findings.md, task_plan.md phase label). |
+| Fix / 2026-06-17 | **Complete** | Added `apps/web/src/store/gameStore.test.ts` (10 integration tests). Root test script now runs both packages. |
+| Phase 6 / Layer 1 | **Complete** | Gwent draw mechanic: `DECK_SIZE=25`, `ROUND_DRAW_COUNTS`, `drawForNextRound` in `round.ts`. |
+| Phase 6 / Layer 2 | **Complete** | Unified `buildDefaultDeck` to 25 cards in simulator and gameStore. |
+| Phase 6 / Layer 3 | **Complete** | Campaign data: `levelTypes.ts` + `levelData.ts` (6 levels, hand-crafted opponent decks). |
+| Phase 6 / Layer 4 | **Complete** | Save store: Zustand persist to localStorage for completed level IDs. |
+| Phase 6 / Layer 5 | **Complete** | gameStore extension: level_select / deck_builder screens, validateDeck, startLevelGame. |
+| Phase 6 / Layer 6 | **Complete** | UI: LevelSelectScreen, DeckBuilderScreen, App routing, ResultScreen campaign mode. |
 
 ---
 
-## Current Task: 5.x AI vs AI Demo UI
+## Current Task: Phase 6 — Campaign System
 
-### Goal
+Gwent-style rules + 6 challenge levels + Deck Builder. Approved 2026-06-21.
 
-Build a browser UI where two simpleAI bots play each other. The player watches and controls pace (Next / autoplay).
+### Design Decisions
 
-### Screens
+- **Deck size**: 25 cards (both Quick Battle and Campaign, aligned with Gwent).
+- **Per-round draw**: entering round 2 each player draws +2; entering round 3 draws +1.
+  Implemented in `startNextRound` in `round.ts`.
+- **Quick Battle**: faction pool (15 cards) filled/repeated to 25. No Deck Builder needed.
+- **Campaign (Deck Builder)**: player chooses any 25 cards from all 60. Per-level
+  constraints (e.g. must include ≥3 Qin cards, no duplicates, ≥2 factions).
+- **6 level designs** (see `findings.md` Phase 6 section for details).
+- **Save**: completed level IDs persisted to `localStorage` via Zustand persist.
+- **WinCondition evaluation**: done post-game in `ResultScreen`, not in reducer.
 
-1. **Start** — choose factions for both sides, click Start.
-2. **Game** — live board view updating each turn. Controls: Next Step / Autoplay toggle.
-3. **Result** — shows winner, round wins, final scores.
-
-### Files
+### Files (Phase 5, complete)
 
 | File | Status |
 |------|--------|
-| `apps/web/src/store/gameStore.ts` | ✅ Done |
+| `apps/web/src/store/gameStore.ts` | ✅ Done (Player vs AI) |
+| `apps/web/src/components/HandView.tsx` | ✅ Done |
 | `apps/web/src/components/CardView.tsx` | ✅ Done |
 | `apps/web/src/components/PlayerBoard.tsx` | ✅ Done |
-| `apps/web/src/App.tsx` | 🔲 Rewrite needed |
-| `apps/web/src/styles/global.css` | 🔲 Game board styles needed |
+| `apps/web/src/App.tsx` | ✅ Done (Start/Game/Result screens) |
+| `apps/web/src/styles/global.css` | ✅ Done |
+| `apps/web/src/store/gameStore.test.ts` | ✅ Done (10 integration tests) |
+| `packages/game-core/src/simulator/simulateGame.ts` | ✅ Done (Task 4.3) |
+| `packages/game-core/src/simulator/simulateMatchup.ts` | ✅ Done (Task 4.4) |
+| `packages/game-core/src/simulator/report.ts` | ✅ Done (Task 4.4) |
+| `packages/game-core/src/ai/aiEvaluation.ts` | ✅ Done (Normal Utility AI) |
+| `packages/game-core/src/ai/normalAI.ts` | ✅ Done (Normal Utility AI) |
 
-### Acceptance Criteria
+### Files (Phase 6, in progress)
 
-- [ ] App loads; Start screen shows faction pickers.
-- [ ] Game screen updates live as AI plays.
-- [ ] Next Step and Autoplay controls work.
-- [ ] Result screen shows winner.
-- [ ] `pnpm typecheck` clean.
-- [ ] `pnpm build` passes.
+| File | Status |
+|------|--------|
+| `packages/game-core/src/constants.ts` | 🔄 Add `DECK_SIZE`, `ROUND_DRAW_COUNTS` |
+| `packages/game-core/src/rules/round.ts` | 🔄 Add `drawForNextRound` |
+| `packages/game-core/src/rules/round.test.ts` | 🔄 Add 3 draw tests |
+| `packages/game-core/src/simulator/simulateGame.ts` | 🔄 `buildDefaultDeck` → 25 cards |
+| `packages/game-core/src/campaign/levelTypes.ts` | ⬜ New |
+| `packages/game-core/src/campaign/levelData.ts` | ⬜ New (6 levels) |
+| `packages/game-core/src/index.ts` | 🔄 Export campaign module |
+| `apps/web/src/store/saveStore.ts` | ⬜ New (localStorage persist) |
+| `apps/web/src/store/gameStore.ts` | 🔄 Add campaign screens + actions |
+| `apps/web/src/store/gameStore.test.ts` | 🔄 Add campaign tests |
+| `apps/web/src/components/LevelSelectScreen.tsx` | ⬜ New |
+| `apps/web/src/components/DeckBuilderScreen.tsx` | ⬜ New |
+| `apps/web/src/App.tsx` | 🔄 Add level_select / deck_builder routing |
+
+### Acceptance Criteria (Phase 6)
+
+- [ ] Quick Battle deck = 25 cards; each player draws +2 at round 2, +1 at round 3.
+- [ ] Campaign button on Start screen leads to Level Select.
+- [ ] 6 levels with distinct constraints and opponent decks.
+- [ ] Deck Builder validates constraints and blocks Start when violated.
+- [ ] Completed levels marked with ✓; state survives page refresh (localStorage).
+- [ ] `pnpm test` all pass.
+- [ ] `pnpm build` clean.
 
 ---
 

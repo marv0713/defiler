@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @warring-states/web dev",
     "build": "pnpm --filter @warring-states/web build",
-    "test": "pnpm --filter @warring-states/game-core test",
+    "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
