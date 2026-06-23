@@ -268,4 +268,19 @@ export const enMessages: MessageDictionary = {
   "deckbuilder.needsFaction": "Needs ≥1 {faction}",
   "deckbuilder.minFactions": "≥{count} factions",
   "deckbuilder.mustWinRound2": "Must win Round 2",
+
+  // ── Campaign Level Text ───────────────────────────────────────────────────
+  "level.level-1-iron-wall.subtitle": "Face the relentless Qin war machine — raw power, no tricks.",
+  "level.level-1-iron-wall.hint": "Out-tempo the opponent: play strong cards early and pass before they do.",
+  "level.level-2-swarm.subtitle": "Chu tokens flood the board — bring high-power answers.",
+  "level.level-2-swarm.hint": "Include at least 3 Qin cards. High single-unit power beats a swarm of weak tokens.",
+  "level.level-3-scholar.subtitle": "Qi masters hand advantage — your deck cannot repeat a single card.",
+  "level.level-3-scholar.hint": "No duplicates allowed — build a tight 25-card selection from the full card pool.",
+  "level.level-4-comeback.subtitle": "Zhao saves its burst for rounds 2 and 3 — you must win round 2.",
+  "level.level-4-comeback.hint": "The opponent will concede round 1. Conserve your best cards for round 2 — you must win it.",
+  "level.level-5-coalition.subtitle": "Elite warriors from all four states — no single weakness to exploit.",
+  "level.level-5-coalition.hint": "Your deck must span at least 2 factions. Mixing strengths is the only way to match the coalition.",
+  "level.level-6-apex.subtitle": "The full Qin arsenal at peak efficiency — no restrictions, no mercy.",
+  "level.level-6-apex.hint": "No restrictions. Study the previous levels and build the deck you trust most.",
 };
+

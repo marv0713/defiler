@@ -25,10 +25,10 @@ export type WinCondition =
 export interface LevelDefinition {
   /** Unique stable identifier used as the save-store key. */
   id: string;
-  /** Short display title. */
+  /** Short display title (bilingual, e.g. "铁壁 · Iron Wall"). */
   title: string;
-  /** One-line description shown on the level card. */
-  subtitle: string;
+  /** i18n key for the one-line subtitle shown on the level card. */
+  subtitleTextId: string;
   /** Difficulty 1 (easiest) → 5 (hardest). */
   difficulty: 1 | 2 | 3 | 4 | 5;
   opponentFaction: Faction;
@@ -39,6 +39,6 @@ export interface LevelDefinition {
   opponentDeck: string[];
   deckConstraint: DeckConstraint;
   winCondition: WinCondition;
-  /** Brief strategy hint shown in the Deck Builder. */
-  hint: string;
+  /** i18n key for the brief strategy hint shown in the Deck Builder. */
+  hintTextId: string;
 }

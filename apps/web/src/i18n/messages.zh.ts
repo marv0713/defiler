@@ -327,4 +327,19 @@ export const zhMessages: MessageDictionary = {
   "deckbuilder.needsFaction": "需含 {faction} 牌",
   "deckbuilder.minFactions": "≥{count} 个阵营",
   "deckbuilder.mustWinRound2": "必须赢得第 2 轮",
+
+  // ── Campaign Level Text ───────────────────────────────────────────────────
+  "level.level-1-iron-wall.subtitle": "面对秦军铁血战机——没有技巧，只有累累战力。",
+  "level.level-1-iron-wall.hint": "争先手：尽早打出高战力牌，在对手之前先行放弃。",
+  "level.level-2-swarm.subtitle": "楚军小兵铺天盖地——带上高战力单体打破局面。",
+  "level.level-2-swarm.hint": "必须含至少 3 张秦牌。高战力单体才能抑制弱小兵牌的浪潮。",
+  "level.level-3-scholar.subtitle": "齐国求穷手牌优势——你的牌组不允许重复任一张牌。",
+  "level.level-3-scholar.hint": "不允许重复——从全部牌组中精心筛选 25 张不重复的牌。",
+  "level.level-4-comeback.subtitle": "赵军将爆发力留到第 2、3 轮——你必须赢下第 2 轮。",
+  "level.level-4-comeback.hint": "对手会主动放弃第 1 轮。把最强的牌留到第 2 轮——你必须赢。",
+  "level.level-5-coalition.subtitle": "四国精英联手出阵——无单一弱点可突破。",
+  "level.level-5-coalition.hint": "牌组必须覆盖至少 2 个阵营。只有混合优势才能对抗联军。",
+  "level.level-6-apex.subtitle": "秦军全阵出动，极致效能——没有限制，没有怀柔。",
+  "level.level-6-apex.hint": "无任何限制。总结前几局的经验，构建你最信赖的牌组。",
 };
+

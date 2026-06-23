@@ -92,7 +92,7 @@ export function DeckBuilderScreen() {
         </button>
         <div className="deck-builder-level-info">
           <span className="deck-builder-level-name">{selectedLevel.title}</span>
-          <span className="deck-builder-hint">💡 {selectedLevel.hint}</span>
+          <span className="deck-builder-hint">💡 {t(selectedLevel.hintTextId)}</span>
         </div>
         <div className="deck-counter">
           {playerDeck.length} / {deckSize}

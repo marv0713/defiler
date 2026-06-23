@@ -33,7 +33,7 @@ export function LevelSelectScreen() {
               <div className="level-card-number">{done ? "✓" : i + 1}</div>
               <div className="level-card-body">
                 <div className="level-card-title">{level.title}</div>
-                <div className="level-card-subtitle">{level.subtitle}</div>
+                <div className="level-card-subtitle">{t(level.subtitleTextId)}</div>
                 <div className="level-card-meta">
                   <span className="level-difficulty">
                     {DIFFICULTY_STARS(level.difficulty)}

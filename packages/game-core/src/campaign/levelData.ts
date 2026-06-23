@@ -29,19 +29,19 @@ import type { LevelDefinition } from "./levelTypes";
  * Level 6 — 王道 Apex
  *   Strongest Qin selection. Normal AI at its best.
  *   No player constraint; full 60-card pool available.
+ *
+ * Text IDs
+ * ────────
+ * subtitleTextId / hintTextId resolve via the i18n dictionary in apps/web.
+ * Pattern: "level.<id>.subtitle" and "level.<id>.hint".
  */
 export const CAMPAIGN_LEVELS: LevelDefinition[] = [
   {
     id: "level-1-iron-wall",
     title: "铁壁 · Iron Wall",
-    subtitle: "Face the relentless Qin war machine — raw power, no tricks.",
+    subtitleTextId: "level.level-1-iron-wall.subtitle",
     difficulty: 1,
     opponentFaction: "qin",
-    // 25 pure-power Qin units (no effect cards), duplicates from the 7
-    // power-only cards: qin-infantry(5), qin-veteran(7), iron-eagle-soldier(6),
-    // qin-spear-guard(4), qin-siege-engineer(5), qin-war-chariot(7 — has effect
-    // but works as body), qin-arbalest(5 — has effect but mainly body).
-    // We keep it to pure body cards only for the tutorial feel.
     opponentDeck: [
       "qin-infantry",
       "qin-infantry",
@@ -71,16 +71,15 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
     ],
     deckConstraint: { allowDuplicates: true },
     winCondition: { type: "standard" },
-    hint: "Out-tempo the opponent: play strong cards early and pass before they do.",
+    hintTextId: "level.level-1-iron-wall.hint",
   },
 
   {
     id: "level-2-swarm",
     title: "蜂涌 · The Swarm",
-    subtitle: "Chu tokens flood the board — bring high-power answers.",
+    subtitleTextId: "level.level-2-swarm.subtitle",
     difficulty: 2,
     opponentFaction: "chu",
-    // Heavy on token generators and row buffs.
     opponentDeck: [
       "chu-shaman",
       "chu-shaman",
@@ -113,16 +112,15 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
       requiredFactions: ["qin"],
     },
     winCondition: { type: "standard" },
-    hint: "Include at least 3 Qin cards. High single-unit power beats a swarm of weak tokens.",
+    hintTextId: "level.level-2-swarm.hint",
   },
 
   {
     id: "level-3-scholar",
     title: "谋算 · The Scholar",
-    subtitle: "Qi masters hand advantage — your deck cannot repeat a single card.",
+    subtitleTextId: "level.level-3-scholar.subtitle",
     difficulty: 3,
     opponentFaction: "qi",
-    // Qi hand-control: lots of DRAW_DISCARD to keep quality high.
     opponentDeck: [
       "jixia-scholar",
       "jixia-scholar",
@@ -151,20 +149,18 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
       "qi-siege-crew",
     ],
     deckConstraint: {
-      allowDuplicates: false, // All 25 cards must be unique
+      allowDuplicates: false,
     },
     winCondition: { type: "standard" },
-    hint: "No duplicates allowed — build a tight 25-card selection from the full card pool.",
+    hintTextId: "level.level-3-scholar.hint",
   },
 
   {
     id: "level-4-comeback",
     title: "逆转 · The Comeback",
-    subtitle: "Zhao saves its burst for rounds 2 and 3 — you must win round 2.",
+    subtitleTextId: "level.level-4-comeback.subtitle",
     difficulty: 3,
     opponentFaction: "zhao",
-    // Zhao burst: CONDITIONAL_BOOST when behind; opponent concedes round 1
-    // cheaply, then pours everything into rounds 2 and 3.
     opponentDeck: [
       "zhao-heavy-cavalry",
       "zhao-heavy-cavalry",
@@ -194,16 +190,15 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
     ],
     deckConstraint: { allowDuplicates: true },
     winCondition: { type: "must_win_round2" },
-    hint: "The opponent will concede round 1. Conserve your best cards for round 2 — you must win it.",
+    hintTextId: "level.level-4-comeback.hint",
   },
 
   {
     id: "level-5-coalition",
     title: "合纵 · Coalition",
-    subtitle: "Elite warriors from all four states — no single weakness to exploit.",
+    subtitleTextId: "level.level-5-coalition.subtitle",
     difficulty: 4,
-    opponentFaction: "qin", // Mixed deck; faction label is cosmetic
-    // Best units spread across all four factions.
+    opponentFaction: "qin",
     opponentDeck: [
       // Qin elites
       "bai-qi",
@@ -241,16 +236,15 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
       minFactions: 2,
     },
     winCondition: { type: "standard" },
-    hint: "Your deck must span at least 2 factions. Mixing strengths is the only way to match the coalition.",
+    hintTextId: "level.level-5-coalition.hint",
   },
 
   {
     id: "level-6-apex",
     title: "王道 · Apex",
-    subtitle: "The full Qin arsenal at peak efficiency — no restrictions, no mercy.",
+    subtitleTextId: "level.level-6-apex.subtitle",
     difficulty: 5,
     opponentFaction: "qin",
-    // Optimal Qin 25: highest-value cards, two copies of the best ones.
     opponentDeck: [
       "bai-qi",
       "bai-qi",
@@ -280,6 +274,6 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
     ],
     deckConstraint: { allowDuplicates: true },
     winCondition: { type: "standard" },
-    hint: "No restrictions. Study the previous levels and build the deck you trust most.",
+    hintTextId: "level.level-6-apex.hint",
   },
 ];
