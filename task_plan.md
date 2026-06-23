@@ -61,6 +61,8 @@ No open tasks — system is stable. See Phase 7 ideas below.
 | i18n / UI Screens | **Complete** | DeckBuilderScreen and LevelSelectScreen fully wired to useI18n(). 16 new deckbuilder.* and levelselect.* keys added to both locales. |
 | Deck Builder / Tooltip | **Complete** | Hover/focus tooltip panel shows i18n card name + description below the pool list. |
 | Deck Builder / Faction Filter | **Complete** | Faction selector bar at pool top; pool filtered to playerFaction + neutral. startLevelGame uses actual playerFaction. |
+| Fix / 2026-06-23 | **Complete** | Campaign level subtitle/hint: LevelDefinition.subtitle→subtitleTextId; 12 new i18n keys. |
+| i18n / Game Log | **Complete** | lastAction migrated from string to LogMessage{id,params}; resolveLog() in App.tsx; 7 new game.* keys. |
 
 ---
 

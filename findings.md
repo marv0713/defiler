@@ -414,3 +414,36 @@ App.tsx
   It does not use `position: absolute` / `position: fixed` to avoid z-index
   complexity and viewport edge clamping concerns.
 
+## i18n Completeness Audit (2026-06-23)
+
+### LevelDefinition Text Fields
+
+- **Bug found**: `LevelDefinition` had `subtitle: string` and `hint: string`
+  fields containing raw English text. The component rendered them directly
+  (`{level.subtitle}`) without going through `t()`. Switching to Chinese had
+  no effect on these strings.
+- **Fix**: replaced both fields with `subtitleTextId: string` and
+  `hintTextId: string`. Components call `t(level.subtitleTextId)` instead.
+- **Convention**: level text keys follow `level.<level-id>.subtitle` and
+  `level.<level-id>.hint` (e.g. `"level.level-1-iron-wall.subtitle"`).
+- **Lesson**: any `LevelDefinition` or similar data-layer type should never
+  carry pre-baked display strings. All human-visible text must be an i18n key
+  reference if the data lives outside the component tree.
+
+### Game Log: LogMessage Architecture
+
+- **Bug**: `lastAction` in `gameStore.ts` was assembled as a formatted English
+  string before being stored. This is the "store knows the language" anti-pattern.
+- **Solution A chosen** over Solution B (per-client translation logic):
+  - Store emits `LogMessage { id: string; params?: Record<string, string|number> }`.
+  - UI resolves it: `resolveLog(msg)` in `App.tsx` calls `t(msg.id, params)`.
+  - Card name is passed as `nameId` (itself an i18n key like `"card.bai-qi.name"`),
+    which `resolveLog` resolves via a nested `t(nameId)` call before substitution.
+  - This keeps the store layer completely language-agnostic.
+- **LogMessage export**: `LogMessage` is exported from `gameStore.ts` so any
+  future rendering target can import the type and implement its own `resolveLog`.
+- **Effect type labels** (`fx` param): effect type names (e.g. `"DESTROY"`,
+  `"BUFF"`) are currently passed as raw strings in the log. They are intentionally
+  not translated for now — they serve as debug-level identifiers. If a more
+  user-friendly effect description is needed in future, a `"effect.DESTROY.label"`
+  key can be added without changing the store layer.

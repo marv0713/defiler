@@ -837,3 +837,48 @@ still English — placeholder in effect.
 **Verification**: `npm test` — 135 tests / 23 files all passed; `npm run build` clean
 (280.81 kB JS, 18.22 kB CSS).
 
+## 2026-06-23
+
+### Fix: Campaign level subtitle/hint always displayed in English
+
+**Root cause**: `LevelDefinition.subtitle` and `.hint` were raw English strings
+stored directly in `levelData.ts` and rendered verbatim in `LevelSelectScreen`
+and `DeckBuilderScreen` without going through `t()`.
+
+**Fix**:
+- `levelTypes.ts`: replaced `subtitle: string` / `hint: string` with
+  `subtitleTextId: string` / `hintTextId: string`.
+- `levelData.ts`: updated all 6 levels to reference
+  `"level.<id>.subtitle"` / `"level.<id>.hint"` key strings.
+- `messages.zh.ts` + `messages.en.ts`: added 12 new keys
+  (6 subtitles + 6 hints) with proper Chinese translations.
+- `LevelSelectScreen.tsx`: `{level.subtitle}` → `{t(level.subtitleTextId)}`.
+- `DeckBuilderScreen.tsx`: `{selectedLevel.hint}` → `{t(selectedLevel.hintTextId)}`.
+- Verification: 135 tests pass; build clean.
+
+### Feat: Game log messages migrated to structured LogMessage (Solution A)
+
+**Problem**: `lastAction` in `gameStore.ts` was a pre-baked English string
+(e.g. `"🔵 Opponent plays 白起 [⚡ DESTROY]"`). Any future client — native
+app, WeChat Mini-Program — would need to duplicate the string-assembly logic.
+
+**Solution A chosen**: `lastAction` now stores `LogMessage { id, params }`
+and the UI resolves it to a translated string via `t()` at render time.
+
+**Architecture**:
+
+```
+store emits:  { id: "game.opponentPlayWithFx", params: { nameId: "card.bai-qi.name", fx: "DESTROY" } }
+App.tsx resolveLog():
+  1. t(params.nameId)  →  "白起"  (or "Bai Qi" in English)
+  2. t(msg.id, { name: "白起", fx: "DESTROY" })  →  "🔵 对手打出了 白起【DESTROY】"
+```
+
+**Files changed**:
+- `gameStore.ts`: added `LogMessage` export type; changed `lastAction: string|null`
+  to `LogMessage|null`; updated 6 assignment sites.
+- `App.tsx`: added `resolveLog()` helper; updated `hud__log` render.
+- `messages.en.ts` + `messages.zh.ts`: 7 new `game.*` keys each; updated `game.yourTurn`.
+- `gameStore.test.ts`: updated `lastAction` assertion to check `LogMessage.id`.
+- Verification: 135 tests pass; build clean (283.85 kB JS).
+
