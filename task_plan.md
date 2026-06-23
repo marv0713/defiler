@@ -13,9 +13,11 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 6: Campaign System — **In Progress**.
+Phase 6: Campaign System — **Complete**.
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
-See Phase 6 task breakdown below.
+Full English/Chinese i18n pass is complete (card text, all UI screens).
+Deck Builder fixes complete: faction-filtered pool, in-page card description tooltip, full i18n wiring.
+No open tasks — system is stable. See Phase 7 ideas below.
 
 ## Task Status
 
@@ -44,6 +46,7 @@ See Phase 6 task breakdown below.
 | Phase 4 / Task 4.3 | Complete | Single-game AI vs AI simulator added in `packages/game-core/src/simulator/simulateGame.ts`. |
 | Phase 4 / Task 4.4 | Complete | Batch matchup simulation and readable report added in `packages/game-core/src/simulator`. |
 | AI Tuning / Normal Utility AI | Complete | Added Utility AI scoring, catch-up cost, round budget, and switched web/simulator defaults to `chooseNormalAIAction`. |
+| UI / I18n First Pass | Complete | Added lightweight text-id translation runtime, English/Chinese dictionaries, language persistence, language switcher, localized main UI, and card text ids. |
 | Phase 5 / Task 5.x | **Complete** | Player vs AI UI in `apps/web`. HandView + gameStore refactor. |
 | Fix / 2026-06-17 | **Complete** | Round-3 tiebreaker now respects prior roundWins (leader wins). 2 new regression tests. |
 | Fix / 2026-06-17 | **Complete** | Updated stale docs (findings.md, task_plan.md phase label). |
@@ -54,12 +57,23 @@ See Phase 6 task breakdown below.
 | Phase 6 / Layer 4 | **Complete** | Save store: Zustand persist to localStorage for completed level IDs. |
 | Phase 6 / Layer 5 | **Complete** | gameStore extension: level_select / deck_builder screens, validateDeck, startLevelGame. |
 | Phase 6 / Layer 6 | **Complete** | UI: LevelSelectScreen, DeckBuilderScreen, App routing, ResultScreen campaign mode. |
+| i18n / Card Translation | **Complete** | Static zh+en dictionaries with proper Chinese translations for all 62 card entries. Both message files are now fully static (no INITIAL_CARDS import). |
+| i18n / UI Screens | **Complete** | DeckBuilderScreen and LevelSelectScreen fully wired to useI18n(). 16 new deckbuilder.* and levelselect.* keys added to both locales. |
+| Deck Builder / Tooltip | **Complete** | Hover/focus tooltip panel shows i18n card name + description below the pool list. |
+| Deck Builder / Faction Filter | **Complete** | Faction selector bar at pool top; pool filtered to playerFaction + neutral. startLevelGame uses actual playerFaction. |
 
 ---
 
-## Current Task: Phase 6 — Campaign System
+## Phase 7 Ideas (Not Started)
 
-Gwent-style rules + 6 challenge levels + Deck Builder. Approved 2026-06-21.
+Potential next areas — none approved yet:
+
+- **Deck persistence**: save the last-built deck per level to localStorage so players don't have to rebuild from scratch.
+- **Card rarity badges**: show rarity colour indicators (common / elite / hero / legend) on pool cards and in the deck list.
+- **Quick Battle deck picker**: let Quick Battle players choose a faction deck before playing (currently auto-assigned).
+- **Game log i18n**: `lastAction` strings in `gameStore.ts` are still hardcoded English; migrate to `{ id, params }` message format.
+- **AI difficulty settings**: expose Simple / Heuristic / Normal AI selector on the start screen.
+- **Weather effects**: implement the weather system stubbed in `types.ts`.
 
 ### Design Decisions
 

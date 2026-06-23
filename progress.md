@@ -651,6 +651,53 @@ current implementation. Found and fixed 4 issues:
   - `pnpm typecheck`: clean.
   - `pnpm build`: clean (239.54 kB JS bundle, 10.70 kB CSS).
 
+### UI I18n: English / Chinese First Pass (Complete)
+
+- **Goal**: Add a lightweight text-id based multilingual layer for English and
+  Chinese, following `docs/i18n_implementation_plan.md`.
+- **Added**: `apps/web/src/i18n/`
+  - `types.ts`: `Language`, `TextId`, `TranslationParams`, `MessageDictionary`.
+  - `messages.en.ts`: English UI dictionary plus generated card text entries.
+  - `messages.zh.ts`: Chinese UI dictionary plus generated card text entries.
+  - `i18n.ts`: `translate`, interpolation, English fallback, card-name helpers.
+  - `I18nProvider.tsx`: React context + `useI18n` hook backed by settings store.
+  - `i18n.test.ts` and `messages.test.ts`: translation lookup, interpolation,
+    fallback, dictionary parity, and card text id coverage.
+- **Added**: `apps/web/src/store/settingsStore.ts`
+  - Stores `language: "en" | "zh"` with Zustand persist under
+    `warring-states-settings`.
+- **Modified UI**:
+  - `main.tsx` wraps App with `I18nProvider`.
+  - `App.tsx` now uses `t(id)` for main start/game/result screen text and includes
+    an English/Chinese language switcher on the start screen.
+  - `HandView`, `CardView`, and `PlayerBoard` now support localized labels,
+    localized card names/descriptions, localized row/hand/deck labels, and
+    localized accessibility labels/tooltips.
+  - `global.css` includes language switcher styling.
+- **Modified game-core card data**:
+  - `CardDefinition` now supports optional `nameTextId` and
+    `descriptionTextId`.
+  - `INITIAL_CARDS` automatically assigns `card.<id>.name` and
+    `card.<id>.description`.
+  - `validateCards` warns when text ids are missing.
+  - `cardData.test.ts` asserts stable text ids for all cards.
+- **Current limitation**:
+  - Main UI strings have real English/Chinese entries.
+  - Card text ids are present in both dictionaries, but Chinese card name and
+    description entries currently mirror existing card data where no final
+    localized translation exists yet. This is intentional for the first pass so
+    the id/config architecture is in place before translation polish.
+- **Manual browser check**:
+  - Opened `http://localhost:5175/`.
+  - Verified English start screen text.
+  - Clicked `中文`; verified Chinese title/subtitle/faction labels/buttons render.
+- **Verification**:
+  - `pnpm --filter @warring-states/web test -- src/i18n/i18n.test.ts src/i18n/messages.test.ts`: 16 web tests — all passed.
+  - `pnpm --filter @warring-states/game-core test -- src/cards/cardData.test.ts src/cards/cardValidation.test.ts`: 119 game-core tests — all passed.
+  - `pnpm test`: 119 game-core tests + 16 web tests — all passed.
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (261.39 kB JS bundle, 17.00 kB CSS).
+
 ## 2026-06-21 (Phase 6 Planning)
 
 ### Phase 6 Design Approved
@@ -726,3 +773,67 @@ All 6 layers executed in a single session. Summary of changes:
 - `pnpm test`: 128 tests / 21 files (118 game-core + 10 web) — all passed.
 - `pnpm typecheck`: clean.
 - `pnpm build`: clean (255.28 kB JS, 16.59 kB CSS).
+
+## 2026-06-22
+
+### Card Translation Pass (zh i18n)
+
+**Problem found**: `messages.zh.ts` was generating Chinese text by falling back to
+`card.name` (English) and `card.description` (English) via a dynamic loop over
+`INITIAL_CARDS`. All 62 card entries in the Chinese dictionary were therefore
+still English — placeholder in effect.
+
+**Fix**:
+- Rewrote both `messages.zh.ts` and `messages.en.ts` as **static, explicit
+  dictionaries** — no more `INITIAL_CARDS` import or runtime loop.
+- Provided proper Chinese translations for all 62 card entries (60 playable +
+  2 tokens across Qin / Chu / Qi / Zhao), covering both name and description.
+- Translation principles:
+  - Historical figures use canonical Chinese names (商鞅、白起、廉颇、李牧 etc.).
+  - Unit names follow faction + role pattern (秦国步卒、楚国武士 etc.).
+  - Skill descriptions mirror the English exactly in meaning and numeric values,
+    with one-sentence historical flavour added where appropriate.
+- `messages.test.ts` "card text ids exist in all dictionaries" test remained
+  green (keys unchanged, values now genuinely Chinese).
+- Verification: `npm test` — 135 tests / 23 files all passed; `npm run build` clean.
+
+### Deck Builder UX Fixes
+
+**Problems found**:
+1. `DeckBuilderScreen` did not import `useI18n` — all UI text was hardcoded English.
+2. Card descriptions were only available as native `title` attribute (browser
+   tooltip) — no visible in-page explanation.
+3. Card pool showed all 60 cards regardless of player faction — no balance
+   constraint.
+
+**Fixes**:
+
+#### 1. Full i18n wiring — `DeckBuilderScreen.tsx` & `LevelSelectScreen.tsx`
+- Both screens now call `useI18n()` and replace every hardcoded string with `t()`.
+- 16 new translation keys added under `deckbuilder.*` and `levelselect.*`
+  namespaces in both `messages.en.ts` and `messages.zh.ts`.
+
+#### 2. Card description tooltip panel
+- Added `useState<TooltipCard | null>` for hover state.
+- `onMouseEnter`/`onMouseLeave` (and matching `onFocus`/`onBlur` for keyboard)
+  populate the tooltip with the i18n-translated card name + description.
+- Tooltip renders as a styled box pinned below the card list in the left panel,
+  not as a browser `title` attribute — always visible in the chosen language.
+- New CSS classes: `.pool-card-tooltip`, `.pool-card-tooltip__header`,
+  `.pool-card-tooltip__name`, `.pool-card-tooltip__power`,
+  `.pool-card-tooltip__desc`.
+
+#### 3. Faction-filtered card pool
+- `DeckBuilderScreen` now reads `playerFaction` from the store.
+- A **faction selector** bar (4 faction buttons) appears at the top of the card
+  pool. Clicking a faction calls `setPlayerFaction`, immediately re-filtering the list.
+- Pool shows only cards whose `faction === playerFaction` or `faction === "neutral"`.
+  Tokens (`qin-token`, `chu-token`) remain excluded.
+- `startLevelGame` now passes `get().playerFaction` instead of hardcoded `"qin"`,
+  so the faction banner in the game screen reflects the player's actual choice.
+- New CSS classes: `.pool-faction-selector`, `.pool-faction-btn`,
+  `.pool-faction-btn--active`.
+
+**Verification**: `npm test` — 135 tests / 23 files all passed; `npm run build` clean
+(280.81 kB JS, 18.22 kB CSS).
+

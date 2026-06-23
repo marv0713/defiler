@@ -356,7 +356,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const initialState = createInitialGameState({
       seed: seedFromNow(),
-      playerFaction: "qin", // faction is cosmetic in campaign; player chose cards freely
+      playerFaction: get().playerFaction,
       opponentFaction: selectedLevel.opponentFaction,
       playerDeck: playerCardDefs,
       opponentDeck: opponentCardDefs,

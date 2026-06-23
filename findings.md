@@ -246,6 +246,47 @@ App.tsx
   Chu-specific sequencing improvements through generic effect valuation, not
   card-id-specific AI rules.
 
+## I18n First Pass (2026-06-22)
+
+- Multilingual support is implemented in `apps/web/src/i18n`.
+- The runtime is intentionally lightweight:
+  - `translate(language, id, params)` resolves a text id.
+  - `{param}` placeholders are interpolated with string/number values.
+  - Missing locale entries fall back to English.
+  - Missing ids fall back to the id string instead of crashing.
+- Supported languages in the first pass: `en` and `zh`.
+- Language state lives in `apps/web/src/store/settingsStore.ts` and is persisted
+  with Zustand persist under `warring-states-settings`.
+- `I18nProvider` exposes `useI18n()` with `language`, `setLanguage`, and `t`.
+- `packages/game-core` remains independent from React/browser/i18n runtime. It
+  only exposes stable text id fields on `CardDefinition`.
+- `CardDefinition` now supports:
+  - `nameTextId?: string`
+  - `descriptionTextId?: string`
+- `INITIAL_CARDS` auto-generates card text ids:
+  - `card.<cardId>.name`
+  - `card.<cardId>.description`
+- Translation dictionaries auto-generate base card entries from `INITIAL_CARDS`
+  so all card text ids exist in both English and Chinese dictionaries.
+- Current limitation: Chinese card entries currently mirror existing card data
+  where no final localized translation exists. The UI shell has real Chinese
+  strings; card translation polish remains a content task.
+- Localized surfaces in the first pass:
+  - start screen,
+  - language switcher,
+  - faction labels,
+  - game HUD round/status labels,
+  - player board hand/deck/passed labels,
+  - row labels,
+  - hand empty text,
+  - card names/descriptions via text ids,
+  - result/round overlay primary labels.
+- Dynamic store action labels (`lastAction`) still use string labels from
+  `gameStore.ts`; a later pass should migrate them to `{ id, params }` messages
+  as described in `docs/i18n_implementation_plan.md`.
+- Tests now cover translation lookup, interpolation, fallback, dictionary key
+  parity, card text id dictionary coverage, and stable card text id assignment.
+
 ## Phase 6: Campaign System (2026-06-21)
 
 ### Deck Rule Alignment — Gwent Style
@@ -311,3 +352,65 @@ App.tsx
   to import on any platform.
 - `saveStore.ts` uses `localStorage`; a Mini-Program port would replace the
   persist storage adapter with `wx.setStorage` without touching game-core.
+
+## i18n Architecture (2026-06-22)
+
+### Static vs. Dynamic Card Dictionaries
+
+- **Initial design** (first i18n pass): `messages.zh.ts` and `messages.en.ts`
+  imported `INITIAL_CARDS` and generated card entries dynamically via
+  `flatMap`. This led to a silent bug — the Chinese dictionary fell back to
+  `card.name` (English strings) for all 62 card name entries, making the zh
+  localization appear complete in tests while being entirely English in the UI.
+- **Fix**: Both files are now **fully static** explicit dictionaries with one
+  key-value line per card name and description. The `INITIAL_CARDS` import was
+  removed from both message files.
+- **Trade-off**: Adding a new card now requires updating both message files in
+  addition to `cardData.ts`. The `messages.test.ts` "card text ids exist in all
+  dictionaries" test will catch any new card whose keys are missing.
+- **Chinese translation convention**:
+  - Historical figures: use canonical Chinese names (e.g. 商鞅, 白起, 廉颇).
+  - Generic units: faction + role in Chinese (e.g. 秦国步卒, 楚国武士).
+  - Skill descriptions: numeric values and targets exactly match English;
+    one sentence of historical context added where space permits.
+
+### Deck Builder i18n Gap
+
+- `DeckBuilderScreen` was the only major screen that never called `useI18n()`.
+  All string literals were hardcoded English. Found and fixed 2026-06-22.
+- New key namespaces: `deckbuilder.*` (16 keys), `levelselect.*` (4 keys).
+  Both zh and en dictionaries updated in the same commit.
+
+## Deck Builder Design (2026-06-22)
+
+### Faction-Filtered Card Pool
+
+- **Decision**: the card pool in the Deck Builder is scoped to the player's
+  chosen faction plus any neutral cards. The player selects the faction via a
+  button bar at the top of the pool panel.
+- **Rationale**: showing all 60 cards without filtering is unbalanced — a player
+  could freely mix every faction's best cards. The faction selector enforces
+  thematic identity while remaining simple (no "unlock" mechanic).
+- **Implementation**: `poolCards` is `useMemo`-derived from `playerFaction`;
+  `setPlayerFaction` (existing store action) drives re-filtering without any new
+  store state. No changes to `levelData.ts` or `levelTypes.ts` needed.
+- **Token exclusion**: `qin-token` and `chu-token` are always excluded from the
+  pool (they are only reachable via SUMMON effects, not direct play).
+- **Neutral faction**: the `"neutral"` faction bucket is included in the filter
+  for future-proofing. No neutral cards exist yet in `cardData.ts`.
+
+### In-Page Card Description Tooltip
+
+- **Decision**: card descriptions are displayed in a styled panel below the card
+  list on hover/focus, not as a browser `title` attribute.
+- **Rationale**: `title` tooltips are rendered by the browser in the system font
+  with no i18n support — they would always appear in English regardless of the
+  selected language. A React-controlled panel renders the translated description.
+- **State**: `useState<{ name, description, power, row } | null>` local to
+  `DeckBuilderScreen`; no store changes needed.
+- **Keyboard accessibility**: `onFocus`/`onBlur` mirror `onMouseEnter`/`onMouseLeave`
+  so the tooltip is accessible to keyboard-only users.
+- **Positioning**: the tooltip is appended to the bottom of the `.card-pool` div.
+  It does not use `position: absolute` / `position: fixed` to avoid z-index
+  complexity and viewport edge clamping concerns.
+

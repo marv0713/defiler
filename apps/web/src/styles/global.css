@@ -62,6 +62,33 @@ body {
   text-align: center;
 }
 
+.language-switcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+}
+
+.language-switcher__button {
+  min-width: 74px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.language-switcher__button--active {
+  background: var(--gold);
+  color: #120e08;
+}
+
 .eyebrow {
   font-size: 0.7rem;
   font-weight: 700;
@@ -858,6 +885,75 @@ body {
 }
 .pool-faction-section { margin-bottom: 16px; }
 .pool-faction-label { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; }
+
+/* Faction picker inside the card pool */
+.pool-faction-selector {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.pool-faction-selector__label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 6px;
+}
+.pool-faction-selector__buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pool-faction-btn {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-row);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pool-faction-btn:hover { border-color: var(--gold-dim); color: var(--parchment); }
+.pool-faction-btn--active {
+  background: #1a1508;
+  font-weight: 700;
+}
+
+/* Card description tooltip (appears below the pool list) */
+.pool-card-tooltip {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #141008;
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.pool-card-tooltip__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.pool-card-tooltip__name {
+  font-weight: 700;
+  color: var(--gold);
+}
+.pool-card-tooltip__power {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.pool-card-tooltip__desc {
+  color: var(--parchment-dim, var(--text-dim));
+  margin: 0;
+}
+
 .pool-card-list { display: flex; flex-direction: column; gap: 3px; }
 .pool-card {
   display: flex;
