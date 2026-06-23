@@ -100,7 +100,12 @@ describe("useGameStore — pass + round flow", () => {
     useGameStore.getState().pass();
     const s = useGameStore.getState().gameState!;
     expect(s.players.player.hasPassed).toBe(true);
-    expect(useGameStore.getState().lastAction).toContain("pass");
+    // lastAction is now a LogMessage; after player passes the opponent may
+    // respond, so the id will be either "game.youPass" or an opponent action.
+    const la = useGameStore.getState().lastAction;
+    expect(la).not.toBeNull();
+    expect(typeof la?.id).toBe("string");
+    expect(la?.id).toMatch(/^game\./);
   });
 
   it("atomic round-over transition: pass that ends the round lands in round_finished, not a flash of game_finished", () => {

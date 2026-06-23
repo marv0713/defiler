@@ -283,7 +283,8 @@ export const zhMessages: MessageDictionary = {
   "game.round": "第 {round} / 3 回合",
   "game.roundOver": "回合结束",
   "game.gameStarted": "游戏开始",
-  "game.yourTurn": "轮到你了：打出一张牌或选择放弃本轮",
+  "game.yourTurn": "轮到你了，出牌或放弃。",
+
   "game.opponentTurn": "对手行动中…",
   "game.playerPassed": "你已放弃本轮，等待对手行动…",
   "game.roundOverStatus": "回合结束，查看结果",
@@ -312,6 +313,15 @@ export const zhMessages: MessageDictionary = {
   "levelselect.title": "战役",
   "levelselect.subtitle": "构建 25 张牌组，攻克六场挑战。",
   "levelselect.vs": "对阵",
+
+  // ── Game Log Messages ───────────────────────────────────────────────────
+  "game.roundStarted": "⚔️ 新一轮开始——轮到你了！",
+  "game.youPlay": "🔴 你打出了 {name}",
+  "game.youPlayWithFx": "🔴 你打出了 {name}【{fx}】",
+  "game.youPass": "🔴 你放弃出牌",
+  "game.opponentPlay": "🔵 对手打出了 {name}",
+  "game.opponentPlayWithFx": "🔵 对手打出了 {name}【{fx}】",
+  "game.opponentPass": "🔵 对手放弃出牌",
 
   // ── Deck Builder Screen ───────────────────────────────────────────────────
   "deckbuilder.backToLevels": "返回关卡",

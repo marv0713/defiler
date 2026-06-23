@@ -23,6 +23,16 @@ export type AppScreen =
   | "game"
   | "result";
 
+/**
+ * Structured log message — resolved to a translated string in the UI via t().
+ * Keeping it as { id, params } instead of a pre-baked string means every
+ * rendering target (web, future native) can translate in its own locale.
+ */
+export interface LogMessage {
+  id: string;
+  params?: Record<string, string | number>;
+}
+
 // Re-export so UI layer can use without importing game-core directly.
 export type { LevelDefinition, WinCondition };
 export { CAMPAIGN_LEVELS };
@@ -30,7 +40,7 @@ export { CAMPAIGN_LEVELS };
 interface GameStore {
   screen: AppScreen;
   gameState: GameState | null;
-  lastAction: string | null;
+  lastAction: LogMessage | null;
   playerFaction: Faction;
   opponentFaction: Faction;
 
@@ -90,10 +100,10 @@ function seedFromNow() {
  */
 function advanceOpponentAI(state: GameState): {
   state: GameState;
-  lastAction: string;
+  lastAction: LogMessage;
 } {
   let current = state;
-  let lastAction = "";
+  let lastAction: LogMessage = { id: "game.opponentPass" };
 
   while (
     current.status === "playing" &&
@@ -101,18 +111,22 @@ function advanceOpponentAI(state: GameState): {
   ) {
     const action = chooseNormalAIAction(current, "opponent");
 
-    // Build a descriptive label before the state changes.
-    let actionLabel = "🔵 Opponent passes";
+    // Build a structured log message before the state changes.
+    let actionLabel: LogMessage = { id: "game.opponentPass" };
     if (action.type === "PLAY_CARD") {
       const card = current.players.opponent.hand.find(
         (c) => c.instanceId === action.cardInstanceId,
       );
       const def = card ? current.cardDefinitions[card.cardId] : undefined;
-      const name = def?.englishName ?? "a card";
-      const fx = def && def.effects.length > 0
-        ? ` [⚡ ${def.effects.map((e) => e.type).join(", ")}]`
-        : "";
-      actionLabel = `🔵 Opponent plays ${name}${fx}`;
+      const nameId = def ? `card.${def.id}.name` : "";
+      if (def && def.effects.length > 0) {
+        actionLabel = {
+          id: "game.opponentPlayWithFx",
+          params: { nameId, fx: def.effects.map((e) => e.type).join(", ") },
+        };
+      } else {
+        actionLabel = { id: "game.opponentPlay", params: { nameId } };
+      }
     }
 
     current = applyAction(current, action);
@@ -128,7 +142,7 @@ function advanceOpponentAI(state: GameState): {
  */
 function commitAfterPlayer(
   stateAfterPlayer: GameState,
-  playerLabel: string,
+  playerLabel: LogMessage,
   set: (partial: Partial<GameStore>) => void,
 ) {
   let next = stateAfterPlayer;
@@ -175,7 +189,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: "game",
       gameState: state,
-      lastAction: lastAction || "Your turn — play a card or pass.",
+      lastAction: lastAction?.id ? lastAction : { id: "game.yourTurn" },
     });
   },
 
@@ -201,16 +215,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     );
     if (!action) return; // not a legal play
 
-    // Build a descriptive label.
+    // Build a structured log message.
     const card = gameState.players.player.hand.find(
       (c) => c.instanceId === cardInstanceId,
     );
     const def = card ? gameState.cardDefinitions[card.cardId] : undefined;
-    const name = def?.englishName ?? "a card";
-    const fx = def && def.effects.length > 0
-      ? ` [⚡ ${def.effects.map((e) => e.type).join(", ")}]`
-      : "";
-    const playerLabel = `🔴 You play ${name}${fx}`;
+    const nameId = def ? `card.${def.id}.name` : "";
+    let playerLabel: LogMessage;
+    if (def && def.effects.length > 0) {
+      playerLabel = {
+        id: "game.youPlayWithFx",
+        params: { nameId, fx: def.effects.map((e) => e.type).join(", ") },
+      };
+    } else {
+      playerLabel = { id: "game.youPlay", params: { nameId } };
+    }
 
     const next = applyAction(gameState, action);
     commitAfterPlayer(next, playerLabel, set);
@@ -223,7 +242,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (gameState.players.player.hasPassed) return;
 
     const next = applyAction(gameState, { type: "PASS", playerId: "player" });
-    commitAfterPlayer(next, "🔴 You pass", set);
+    commitAfterPlayer(next, { id: "game.youPass" }, set);
   },
 
   startNextRound() {
@@ -231,7 +250,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!gameState || gameState.status !== "round_finished") return;
 
     let next = applyAction(gameState, { type: "START_NEXT_ROUND" });
-    let lastAction = "⚔️ Round started — your turn!";
+    let lastAction: LogMessage = { id: "game.roundStarted" };
 
     // If opponent goes first in the new round, let AI respond immediately.
     if (next.status === "playing" && next.currentPlayerId === "opponent") {
@@ -367,7 +386,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: "game",
       gameState: state,
-      lastAction: lastAction || "Your turn — play a card or pass.",
+      lastAction: lastAction?.id ? lastAction : { id: "game.yourTurn" },
     });
   },
 

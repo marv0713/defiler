@@ -1,4 +1,5 @@
 import { useGameStore } from "./store/gameStore";
+import type { LogMessage } from "./store/gameStore";
 import { useSaveStore } from "./store/saveStore";
 import { PlayerBoard } from "./components/PlayerBoard";
 import { HandView } from "./components/HandView";
@@ -147,6 +148,17 @@ function GameScreen() {
   const { gameState, lastAction, playCard, pass, scores } = useGameStore();
   const { t } = useI18n();
 
+  /** Resolve a structured LogMessage to a translated string. */
+  function resolveLog(msg: LogMessage): string {
+    const params = msg.params ? { ...msg.params } : {};
+    // nameId is itself an i18n key — resolve it first.
+    if (typeof params.nameId === "string" && params.nameId) {
+      params.name = t(params.nameId);
+      delete params.nameId;
+    }
+    return t(msg.id, params as Record<string, string | number>);
+  }
+
   if (!gameState) return null;
 
   const s = scores();
@@ -192,7 +204,9 @@ function GameScreen() {
         {/* Center */}
         <div className="hud__center">
           <div className="hud__round">{t("game.round", { round })}</div>
-          <div className="hud__log">{lastAction ?? t("game.gameStarted")}</div>
+          <div className="hud__log">
+            {lastAction ? resolveLog(lastAction) : t("game.gameStarted")}
+          </div>
           {isRoundOver && (
             <div className="hud__round-over">⚑ {t("game.roundOver")}</div>
           )}

@@ -223,7 +223,8 @@ export const enMessages: MessageDictionary = {
   "game.round": "Round {round} / 3",
   "game.roundOver": "Round Over",
   "game.gameStarted": "Game started",
-  "game.yourTurn": "Your turn — choose a card or pass",
+  "game.yourTurn": "Your turn — play a card or pass.",
+
   "game.opponentTurn": "Opponent's turn…",
   "game.playerPassed": "You passed — waiting for opponent…",
   "game.roundOverStatus": "Round Over — see result below",
@@ -253,6 +254,15 @@ export const enMessages: MessageDictionary = {
   "levelselect.title": "Campaign",
   "levelselect.subtitle": "Build a 25-card deck and conquer all six challenges.",
   "levelselect.vs": "vs",
+
+  // ── Game Log Messages ───────────────────────────────────────────────────
+  "game.roundStarted": "⚔️ Round started — your turn!",
+  "game.youPlay": "🔴 You play {name}",
+  "game.youPlayWithFx": "🔴 You play {name} [⚡ {fx}]",
+  "game.youPass": "🔴 You pass",
+  "game.opponentPlay": "🔵 Opponent plays {name}",
+  "game.opponentPlayWithFx": "🔵 Opponent plays {name} [⚡ {fx}]",
+  "game.opponentPass": "🔵 Opponent passes",
 
   // ── Deck Builder Screen ───────────────────────────────────────────────────
   "deckbuilder.backToLevels": "Back to Levels",
