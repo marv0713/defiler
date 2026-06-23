@@ -1,0 +1,271 @@
+import type { MessageDictionary } from "./types";
+
+// ---------------------------------------------------------------------------
+// Card translations — English (en)
+// ---------------------------------------------------------------------------
+
+const enCardMessages: MessageDictionary = {
+  // ── QIN ───────────────────────────────────────────────────────────────────
+
+  "card.qin-infantry.name": "Qin Infantry",
+  "card.qin-infantry.description": "A dependable Qin melee unit with straightforward power.",
+
+  "card.qin-veteran.name": "Qin Veteran",
+  "card.qin-veteran.description": "A hardened Qin front-line unit built for steady pressure.",
+
+  "card.iron-eagle-soldier.name": "Iron Eagle Soldier",
+  "card.iron-eagle-soldier.description": "An elite Qin attacker with high standalone strength.",
+
+  "card.legalist-officer.name": "Legalist Officer",
+  "card.legalist-officer.description": "On play: boost the allied unit with the lowest power by 3.",
+
+  "card.qin-crossbow-formation.name": "Qin Crossbow Formation",
+  "card.qin-crossbow-formation.description": "On play: deal 2 damage to a random enemy unit twice.",
+
+  "card.qin-spear-guard.name": "Qin Spear Guard",
+  "card.qin-spear-guard.description": "A reliable Qin spearman holding the front line.",
+
+  "card.qin-siege-engineer.name": "Qin Siege Engineer",
+  "card.qin-siege-engineer.description": "A Qin engineering specialist operating heavy siege weapons.",
+
+  "card.qin-war-chariot.name": "Qin War Chariot",
+  "card.qin-war-chariot.description": "On play: deal 2 damage to the enemy unit with the lowest power.",
+
+  "card.qin-arbalest.name": "Qin Arbalest",
+  "card.qin-arbalest.description": "On play: deal 3 damage to the enemy unit with the highest power.",
+
+  "card.shang-yang.name": "Shang Yang",
+  "card.shang-yang.description": "On play: boost all allied melee units by 2. The architect of Qin's power.",
+
+  "card.bai-qi.name": "Bai Qi",
+  "card.bai-qi.description": "On play: destroy the enemy unit with the lowest power. The God of Slaughter.",
+
+  "card.wang-jian.name": "Wang Jian",
+  "card.wang-jian.description": "On play: if you are ahead on points, gain 3 power. A general who fights from strength.",
+
+  "card.qin-cavalry-charge.name": "Qin Cavalry Charge",
+  "card.qin-cavalry-charge.description": "Deal 2 damage to a random enemy unit twice.",
+
+  "card.qin-conscription.name": "Qin Conscription",
+  "card.qin-conscription.description": "Summon two Qin Conscripts to the melee row.",
+
+  "card.qin-token.name": "Qin Conscript",
+  "card.qin-token.description": "A summoned Qin conscript. Weak alone, dangerous in numbers.",
+
+  // ── CHU ───────────────────────────────────────────────────────────────────
+
+  "card.chu-spearman.name": "Chu Spearman",
+  "card.chu-spearman.description": "A modest Chu melee unit that supports swarm strategies.",
+
+  "card.chu-archer.name": "Chu Archer",
+  "card.chu-archer.description": "A basic Chu ranged unit for building board presence.",
+
+  "card.chu-shaman.name": "Chu Shaman",
+  "card.chu-shaman.description": "On play: summon one Chu Warrior to the melee row.",
+
+  "card.chunshen-retainer.name": "Lord Chunshen's Retainer",
+  "card.chunshen-retainer.description": "On play: boost 2 random allied units by 1.",
+
+  "card.xiang-yan.name": "Xiang Yan",
+  "card.xiang-yan.description": "On play: if you control 4 or more units, gain 3 power. Strength in numbers.",
+
+  "card.chu-footsoldier.name": "Chu Footsoldier",
+  "card.chu-footsoldier.description": "A basic Chu frontline soldier, one of many.",
+
+  "card.chu-shield-bearer.name": "Chu Shield Bearer",
+  "card.chu-shield-bearer.description": "A Chu soldier with a heavy shield, holding the melee line.",
+
+  "card.chu-river-guard.name": "Chu River Guard",
+  "card.chu-river-guard.description": "A Chu defender positioned at river crossings.",
+
+  "card.chu-war-dancer.name": "Chu War Dancer",
+  "card.chu-war-dancer.description": "On play: boost the allied unit with the lowest power by 3.",
+
+  "card.chu-herald.name": "Chu Herald",
+  "card.chu-herald.description": "On play: summon one Chu Warrior, then boost the weakest ally by 1.",
+
+  "card.lord-chunshen.name": "Lord Chunshen",
+  "card.lord-chunshen.description": "On play: boost all allied melee units by 1. One of the Four Lords of the Warring States.",
+
+  "card.king-of-chu.name": "King of Chu",
+  "card.king-of-chu.description": "On play: if you control 6 or more units, gain 4 power. The might of Chu unleashed.",
+
+  "card.chu-battle-cry.name": "Chu Battle Cry",
+  "card.chu-battle-cry.description": "Summon two Chu Warriors, then boost the weakest ally by 1.",
+
+  "card.chu-flood-tactic.name": "Chu Flood Tactic",
+  "card.chu-flood-tactic.description": "Boost all allied ranged units by 2.",
+
+  "card.chu-token.name": "Chu Warrior",
+  "card.chu-token.description": "A summoned Chu warrior. Small alone, overwhelming in a swarm.",
+
+  // ── QI ────────────────────────────────────────────────────────────────────
+
+  "card.qi-warrior.name": "Qi Warrior",
+  "card.qi-warrior.description": "A sturdy Qi melee unit with solid baseline power.",
+
+  "card.jixia-scholar.name": "Jixia Scholar",
+  "card.jixia-scholar.description": "On play: draw 1 card, then discard 1. Filter your hand for better options.",
+
+  "card.guan-zhong-legacy.name": "Guan Zhong's Legacy",
+  "card.guan-zhong-legacy.description": "Draw 2 cards, then discard 1. The wisdom of Qi's greatest statesman.",
+
+  "card.sun-bin.name": "Sun Bin",
+  "card.sun-bin.description": "On play: deal 3 damage to the enemy unit with the highest power. A master of disruption.",
+
+  "card.tian-ji.name": "Tian Ji",
+  "card.tian-ji.description": "On play: draw 1 card, then discard 1. Renowned for strategic flexibility.",
+
+  "card.qi-spearman.name": "Qi Spearman",
+  "card.qi-spearman.description": "A dependable Qi front-line spearman.",
+
+  "card.qi-crossbowman.name": "Qi Crossbowman",
+  "card.qi-crossbowman.description": "A skilled Qi ranged unit with a powerful crossbow.",
+
+  "card.qi-siege-crew.name": "Qi Siege Crew",
+  "card.qi-siege-crew.description": "A Qi crew operating siege equipment at a distance.",
+
+  "card.jixia-strategist.name": "Jixia Strategist",
+  "card.jixia-strategist.description": "On play: draw 2 cards, then discard 1. A senior Jixia Academy thinker.",
+
+  "card.qi-scout.name": "Qi Scout",
+  "card.qi-scout.description": "On play: draw 1, discard 1, and deal 1 damage to a random enemy.",
+
+  "card.tian-dan.name": "Tian Dan",
+  "card.tian-dan.description": "On play: deal 3 damage to the enemy's strongest unit, then gain 1 power. Defender of Qi.",
+
+  "card.sun-tzu.name": "Sun Tzu",
+  "card.sun-tzu.description": "On play: draw 2 cards discard 1, then deal 3 damage to the strongest enemy. The Art of War personified.",
+
+  "card.guan-zhong.name": "Guan Zhong",
+  "card.guan-zhong.description": "On play: boost the weakest ally by 2, then draw 1 and discard 1. Qi's greatest prime minister.",
+
+  "card.qi-iron-cavalry.name": "Qi Iron Cavalry",
+  "card.qi-iron-cavalry.description": "On play: deal 2 damage to the enemy unit with the lowest power.",
+
+  "card.plan-of-jixia.name": "Plan of Jixia",
+  "card.plan-of-jixia.description": "Draw 3 cards, then discard 2. Refresh your hand with Jixia precision.",
+
+  // ── ZHAO ──────────────────────────────────────────────────────────────────
+
+  "card.zhao-border-cavalry.name": "Zhao Border Cavalry",
+  "card.zhao-border-cavalry.description": "A mobile Zhao cavalry unit with reliable melee strength.",
+
+  "card.hu-clothing-cavalry.name": "Hu Clothing Cavalry",
+  "card.hu-clothing-cavalry.description": "Boost all allied melee units by 1. The cavalry reform that made Zhao feared.",
+
+  "card.li-mu.name": "Li Mu",
+  "card.li-mu.description": "On play: if you are losing on points, gain 3 power. Zhao's greatest defender.",
+
+  "card.lian-po.name": "Lian Po",
+  "card.lian-po.description": "On play: if your opponent has passed this round, gain 2 power. A general who punishes hesitation.",
+
+  "card.zhao-raid.name": "Zhao Raid",
+  "card.zhao-raid.description": "Deal 2 damage to a random enemy unit twice. Swift and brutal.",
+
+  "card.zhao-footsoldier.name": "Zhao Footsoldier",
+  "card.zhao-footsoldier.description": "A sturdy Zhao foot soldier trained for the northern frontier.",
+
+  "card.zhao-archer.name": "Zhao Archer",
+  "card.zhao-archer.description": "A Zhao ranged unit skilled with the composite bow.",
+
+  "card.zhao-siege-crew.name": "Zhao Siege Crew",
+  "card.zhao-siege-crew.description": "A Zhao crew managing catapults at the rear.",
+
+  "card.zhao-heavy-cavalry.name": "Zhao Heavy Cavalry",
+  "card.zhao-heavy-cavalry.description": "On play: if you are losing on points, gain 2 power. Zhao cavalry at its fiercest when cornered.",
+
+  "card.zhao-vanguard.name": "Zhao Vanguard",
+  "card.zhao-vanguard.description": "On play: boost the allied unit with the lowest power by 3.",
+
+  "card.zhao-warlord.name": "Zhao Warlord",
+  "card.zhao-warlord.description": "On play: lock the enemy unit with the highest power, disabling its skill.",
+
+  "card.lin-xiangru.name": "Lin Xiangru",
+  "card.lin-xiangru.description": "On play: if you are losing on points, gain 4 power. Zhao's defiant voice at the court of Qin.",
+
+  "card.zhao-she.name": "Zhao She",
+  "card.zhao-she.description": "On play: deal 3 damage to the enemy unit with the lowest power. Father of the warrior poet.",
+
+  "card.king-of-zhao.name": "King of Zhao",
+  "card.king-of-zhao.description": "On play: if losing, gain 3 power; then boost the weakest ally by 2. Zhao's last hope.",
+
+  "card.zhao-ambush.name": "Zhao Ambush",
+  "card.zhao-ambush.description": "Deal 2 damage to a random enemy, then lock the enemy's strongest unit.",
+};
+
+export const enMessages: MessageDictionary = {
+  ...enCardMessages,
+  "app.eyebrow": "Warring States · Card Tactics",
+  "app.title": "Warring States",
+  "start.subtitle": "Choose your faction and battle the AI across three rounds. Score the most points to conquer each round — win two to claim victory.",
+  "start.yourFaction": "Your Faction",
+  "start.opponentFaction": "Opponent (AI)",
+  "start.quickBattle": "Quick Battle",
+  "start.campaign": "Campaign",
+  "common.vs": "VS",
+  "common.language": "Language",
+  "common.english": "English",
+  "common.chinese": "中文",
+  "common.pointsShort": "{score}pt",
+  "common.roundWins": "{count} round win{suffix}",
+  "player.you": "You",
+  "player.opponent": "Opponent",
+  "board.hand": "Hand: {count}",
+  "board.deck": "Deck: {count}",
+  "board.passed": "PASSED",
+  "row.melee": "Melee",
+  "row.ranged": "Ranged",
+  "row.siege": "Siege",
+  "hand.empty": "— no cards in hand —",
+  "hand.playCardLabel": "Play {card}, power {power}{rowText}",
+  "hand.rowText": ", row: {row}",
+  "game.round": "Round {round} / 3",
+  "game.roundOver": "Round Over",
+  "game.gameStarted": "Game started",
+  "game.yourTurn": "Your turn — choose a card or pass",
+  "game.opponentTurn": "Opponent's turn…",
+  "game.playerPassed": "You passed — waiting for opponent…",
+  "game.roundOverStatus": "Round Over — see result below",
+  "game.passRound": "Pass Round",
+  "round.title": "Round {round} Over",
+  "round.playerWon": "You won the round!",
+  "round.opponentWon": "Opponent won the round.",
+  "round.draw": "Round drawn — no wins awarded.",
+  "round.startNext": "Start Round {round}",
+  "result.battleConcluded": "Battle Concluded",
+  "result.winner": "{faction} WINS!",
+  "result.levelComplete": "Level Complete!",
+  "result.levelFailed": "Conditions not met — try again",
+  "result.roundsPlayed": "Rounds played",
+  "result.totalActions": "Total actions",
+  "result.backToLevels": "Back to Levels",
+  "result.nextLevel": "Next Level",
+  "result.newBattle": "New Battle",
+  "faction.qin.name": "Qin",
+  "faction.chu.name": "Chu",
+  "faction.qi.name": "Qi",
+  "faction.zhao.name": "Zhao",
+  "debug.missingInZh": "Debug fallback",
+
+  // ── Level Select Screen ───────────────────────────────────────────────────
+  "levelselect.back": "Back",
+  "levelselect.title": "Campaign",
+  "levelselect.subtitle": "Build a 25-card deck and conquer all six challenges.",
+  "levelselect.vs": "vs",
+
+  // ── Deck Builder Screen ───────────────────────────────────────────────────
+  "deckbuilder.backToLevels": "Back to Levels",
+  "deckbuilder.chooseFaction": "Choose Faction",
+  "deckbuilder.cardPool": "Card Pool",
+  "deckbuilder.yourDeck": "Your Deck",
+  "deckbuilder.emptyHint": "Click cards to add them.",
+  "deckbuilder.removeCard": "Remove",
+  "deckbuilder.startBattle": "Start Battle",
+  "deckbuilder.cards": "cards",
+  "deckbuilder.tooltipPower": "power",
+  "deckbuilder.noDuplicates": "No duplicates",
+  "deckbuilder.needsFaction": "Needs ≥1 {faction}",
+  "deckbuilder.minFactions": "≥{count} factions",
+  "deckbuilder.mustWinRound2": "Must win Round 2",
+};

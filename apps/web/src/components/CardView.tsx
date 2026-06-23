@@ -1,9 +1,11 @@
 import type { CardDefinition, CardInstance } from "@warring-states/game-core";
+import { getCardDescription, getCardName } from "../i18n/i18n";
 
 interface CardViewProps {
   card: CardInstance;
   definition?: CardDefinition;
   ghost?: boolean;
+  t?: (id: string) => string;
 }
 
 function getFactionColor(card: CardInstance): string {
@@ -26,7 +28,7 @@ function getEffectBadge(def: CardDefinition | undefined): string | null {
   return "⚡";
 }
 
-export function CardView({ card, definition, ghost = false }: CardViewProps) {
+export function CardView({ card, definition, ghost = false, t }: CardViewProps) {
   const factionColor = getFactionColor(card);
   const cls = [
     "card",
@@ -38,18 +40,17 @@ export function CardView({ card, definition, ghost = false }: CardViewProps) {
     .filter(Boolean)
     .join(" ");
 
-  // Prefer the definition's English name; fall back to deriving from cardId.
   const displayName =
-    definition?.englishName ??
-    card.cardId
-      .replace(/^(qin|chu|qi|zhao|neutral)-/, "")
-      .replace(/-token$/, " ★")
-      .replace(/-/g, " ");
+    t ? getCardName(t, definition, card.cardId) :
+      definition?.englishName ??
+      card.cardId
+        .replace(/^(qin|chu|qi|zhao|neutral)-/, "")
+        .replace(/-token$/, " ★")
+        .replace(/-/g, " ");
 
   const effectBadge = getEffectBadge(definition);
-  const tooltip = definition
-    ? `${definition.englishName}${definition.description ? `\n${definition.description}` : ""}`
-    : card.cardId;
+  const description = t ? getCardDescription(t, definition) : (definition?.description ?? "");
+  const tooltip = description ? `${displayName}\n${description}` : displayName;
 
   return (
     <div className={cls} title={tooltip}>

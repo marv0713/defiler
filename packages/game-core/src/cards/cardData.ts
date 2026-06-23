@@ -974,9 +974,17 @@ const zhaoCards: CardDefinition[] = [
 // Combined pool
 // ---------------------------------------------------------------------------
 
+function withTextIds(card: CardDefinition): CardDefinition {
+  return {
+    ...card,
+    nameTextId: `card.${card.id}.name`,
+    descriptionTextId: `card.${card.id}.description`,
+  };
+}
+
 export const INITIAL_CARDS: CardDefinition[] = [
   ...qinCards,
   ...chuCards,
   ...qiCards,
   ...zhaoCards,
-];
+].map(withTextIds);

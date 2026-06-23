@@ -103,7 +103,11 @@ describe("validateCards", () => {
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([
       "Card missing budget: missing-budget",
+      "Card missing nameTextId: missing-budget",
+      "Card missing descriptionTextId: missing-budget",
       "Card missing description: missing-description",
+      "Card missing nameTextId: missing-description",
+      "Card missing descriptionTextId: missing-description",
     ]);
   });
 });

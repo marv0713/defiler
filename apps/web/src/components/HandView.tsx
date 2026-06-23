@@ -1,4 +1,5 @@
 import type { CardDefinition, CardInstance } from "@warring-states/game-core";
+import { getCardDescription, getCardName } from "../i18n/i18n";
 
 const ROW_BADGE: Record<string, string> = {
   melee: "M",
@@ -18,6 +19,7 @@ interface HandViewProps {
   /** Whether the player is currently allowed to play cards. */
   canPlay: boolean;
   onPlay: (cardInstanceId: string) => void;
+  t: (id: string, params?: Record<string, string | number>) => string;
 }
 
 export function HandView({
@@ -25,24 +27,31 @@ export function HandView({
   cardDefinitions,
   canPlay,
   onPlay,
+  t,
 }: HandViewProps) {
   return (
     <div className="hand-view">
       <div className="hand-view__cards">
         {cards.map((card) => {
           const def = cardDefinitions[card.cardId];
-          const displayName = def?.englishName ?? card.cardId.replace(/-/g, " ");
+          const displayName = getCardName(t, def, card.cardId);
+          const description = getCardDescription(t, def);
+          const rowText = card.row
+            ? t("hand.rowText", { row: t(`row.${card.row}`) })
+            : "";
           return (
             <button
               key={card.instanceId}
               className={`hand-card${canPlay ? " hand-card--playable" : ""}`}
               onClick={() => canPlay && onPlay(card.instanceId)}
               title={
-                def
-                  ? `${def.englishName}${def.description ? `\n${def.description}` : ""}`
-                  : displayName
+                description ? `${displayName}\n${description}` : displayName
               }
-              aria-label={`Play ${displayName}, power ${card.currentPower}${card.row ? `, row: ${card.row}` : ""}`}
+              aria-label={t("hand.playCardLabel", {
+                card: displayName,
+                power: card.currentPower,
+                rowText,
+              })}
             >
               <span className="hand-card__power">{card.currentPower}</span>
               <span className="hand-card__name">{displayName}</span>
@@ -58,7 +67,7 @@ export function HandView({
           );
         })}
         {cards.length === 0 && (
-          <span className="hand-view__empty">— no cards in hand —</span>
+          <span className="hand-view__empty">{t("hand.empty")}</span>
         )}
       </div>
     </div>

@@ -58,6 +58,14 @@ export function validateCards(cards: CardDefinition[]): ValidationResult {
     if (card.description.trim().length === 0) {
       warnings.push(`Card missing description: ${card.id}`);
     }
+
+    if (!card.nameTextId) {
+      warnings.push(`Card missing nameTextId: ${card.id}`);
+    }
+
+    if (!card.descriptionTextId) {
+      warnings.push(`Card missing descriptionTextId: ${card.id}`);
+    }
   }
 
   return {

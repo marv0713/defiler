@@ -41,4 +41,11 @@ describe("initial card data", () => {
       }
     }
   });
+
+  it("assigns stable text ids for localization", () => {
+    for (const card of INITIAL_CARDS) {
+      expect(card.nameTextId).toBe(`card.${card.id}.name`);
+      expect(card.descriptionTextId).toBe(`card.${card.id}.description`);
+    }
+  });
 });

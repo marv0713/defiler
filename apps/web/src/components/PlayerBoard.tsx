@@ -8,12 +8,13 @@ interface PlayerBoardProps {
   score: number;
   rowOrder?: Row[];
   cardDefinitions?: Record<string, CardDefinition>;
+  t?: (id: string, params?: Record<string, string | number>) => string;
 }
 
 const ROW_LABELS: Record<Row, string> = {
-  melee: "⚔️ Melee",
-  ranged: "🏹 Ranged",
-  siege: "💣 Siege",
+  melee: "melee",
+  ranged: "ranged",
+  siege: "siege",
 };
 
 export function PlayerBoard({
@@ -23,7 +24,16 @@ export function PlayerBoard({
   score,
   rowOrder = ["melee", "ranged", "siege"],
   cardDefinitions = {},
+  t,
 }: PlayerBoardProps) {
+  const translate = t ?? ((id: string, params?: Record<string, string | number>) => {
+    if (id === "common.pointsShort") return `${params?.score ?? 0}pt`;
+    if (id === "board.hand") return `Hand: ${params?.count ?? 0}`;
+    if (id === "board.deck") return `Deck: ${params?.count ?? 0}`;
+    if (id === "board.passed") return "PASSED";
+    if (id.startsWith("row.")) return id.slice(4);
+    return id;
+  });
   return (
     <div className={`player-board${isActive ? " player-board--active" : ""}`}>
       {/* Header */}
@@ -34,10 +44,10 @@ export function PlayerBoard({
           <span className="faction-tag">[{player.faction}]</span>
         </span>
         <span className="player-board__meta">
-          <span className="meta-badge score-badge">{score}pt</span>
-          <span className="meta-badge">Hand: {player.hand.length}</span>
-          <span className="meta-badge">Deck: {player.deck.length}</span>
-          {player.hasPassed && <span className="meta-badge passed-badge">PASSED</span>}
+          <span className="meta-badge score-badge">{translate("common.pointsShort", { score })}</span>
+          <span className="meta-badge">{translate("board.hand", { count: player.hand.length })}</span>
+          <span className="meta-badge">{translate("board.deck", { count: player.deck.length })}</span>
+          {player.hasPassed && <span className="meta-badge passed-badge">{translate("board.passed")}</span>}
         </span>
       </div>
 
@@ -48,13 +58,14 @@ export function PlayerBoard({
           const rowScore = liveCards.reduce((sum, c) => sum + c.currentPower, 0);
           return (
             <div key={row} className="board-row">
-              <span className="board-row__label">{ROW_LABELS[row]}</span>
+              <span className="board-row__label">{translate(`row.${ROW_LABELS[row]}`)}</span>
               <div className="board-row__cards">
                 {liveCards.map((card) => (
                   <CardView
                     key={card.instanceId}
                     card={card}
                     definition={cardDefinitions[card.cardId]}
+                    t={t}
                   />
                 ))}
                 {liveCards.length === 0 && (
@@ -80,6 +91,7 @@ export function PlayerBoard({
                 card={c}
                 definition={cardDefinitions[c.cardId]}
                 ghost
+                t={t}
               />
             ))}
           </div>

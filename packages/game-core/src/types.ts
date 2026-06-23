@@ -20,6 +20,8 @@ export interface CardDefinition {
   id: string;
   name: string;
   englishName: string;
+  nameTextId?: string;
+  descriptionTextId?: string;
   faction: Faction;
   type: CardType;
   row?: Row;
