@@ -76,6 +76,8 @@ export interface GameActionLogEntry {
   message: string;
   playerId?: PlayerId;
   round: number;
+  cardInstanceId?: string;
+  cardId?: string;
 }
 
 export interface WeatherState {

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useSaveStore } from "./saveStore";
 import {
   createInitialGameState,
   applyAction,
@@ -8,6 +9,8 @@ import {
   DECK_SIZE,
   calculateScores,
   CAMPAIGN_LEVELS,
+  NORMAL_AI_WEIGHTS,
+  getAIWeightsForDifficulty,
 } from "@warring-states/game-core";
 import type {
   GameState,
@@ -53,6 +56,10 @@ interface GameStore {
   deckBuildError: string | null;
   /** True while the player is in Campaign mode (level_select → game). */
   campaignMode: boolean;
+  /** True after the player has clicked a campaign faction on Level Select. */
+  campaignFactionChosen: boolean;
+  /** True after the player enters a campaign level/deck build for the current run. */
+  campaignFactionLocked: boolean;
 
   startGame: (playerFaction: Faction, opponentFaction: Faction) => void;
   setPlayerFaction: (f: Faction) => void;
@@ -69,8 +76,12 @@ interface GameStore {
   // ── Campaign actions ───────────────────────────────────────────────────────
   goToLevelSelect: () => void;
   selectLevel: (level: LevelDefinition) => void;
-  /** Toggle a card in/out of the player deck being built. */
+  /** Add a card from the current campaign faction pool to the player deck. */
   toggleCardInDeck: (cardId: string) => void;
+  /** Remove one copy of a card from the player deck being built. */
+  removeCardFromDeck: (cardId: string) => void;
+  /** Fill the current campaign deck to DECK_SIZE with legal faction cards. */
+  autoFillDeck: () => void;
   /** Returns an error message if the current playerDeck violates the selected level's
    * DeckConstraint, or null if it is valid. */
   validateDeck: () => string | null;
@@ -94,6 +105,36 @@ function seedFromNow() {
   return `game-${Date.now()}`;
 }
 
+function findCardDefinition(cardId: string) {
+  return INITIAL_CARDS.find((c) => c.id === cardId);
+}
+
+export function getMaxCardCopies(cardId: string, allowDuplicates: boolean): number {
+  if (!allowDuplicates) return 1;
+  const def = findCardDefinition(cardId);
+  if (!def) return 1;
+  if (def.rarity === "legend" || def.rarity === "hero") return 1;
+  if (def.rarity === "elite") return 2;
+  return 3; // common
+}
+
+function isAllowedCampaignDeckCard(cardId: string, playerFaction: Faction) {
+  const def = findCardDefinition(cardId);
+  return Boolean(
+    def &&
+      (def.type === "unit" || def.type === "special") &&
+      def.id !== "qin-token" &&
+      def.id !== "chu-token" &&
+      (def.faction === playerFaction || def.faction === "neutral"),
+  );
+}
+
+function getCampaignDeckPool(playerFaction: Faction) {
+  return INITIAL_CARDS.filter((card) =>
+    isAllowedCampaignDeckCard(card.id, playerFaction),
+  );
+}
+
 /**
  * Runs opponent AI turns until it is the player's turn, the round ends,
  * or the game ends. Returns the final state and the last action label.
@@ -105,11 +146,18 @@ function advanceOpponentAI(state: GameState): {
   let current = state;
   let lastAction: LogMessage = { id: "game.opponentPass" };
 
+  const storeState = useGameStore.getState();
+  const campaignMode = storeState.campaignMode;
+  const selectedLevel = storeState.selectedLevel;
+  const weights = (campaignMode && selectedLevel)
+    ? getAIWeightsForDifficulty(selectedLevel.difficulty)
+    : NORMAL_AI_WEIGHTS;
+
   while (
     current.status === "playing" &&
     current.currentPlayerId === "opponent"
   ) {
-    const action = chooseNormalAIAction(current, "opponent");
+    const action = chooseNormalAIAction(current, "opponent", weights);
 
     // Build a structured log message before the state changes.
     let actionLabel: LogMessage = { id: "game.opponentPass" };
@@ -172,6 +220,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   playerDeck: [],
   deckBuildError: null,
   campaignMode: false,
+  campaignFactionChosen: false,
+  campaignFactionLocked: false,
 
   startGame(playerFaction, opponentFaction) {
     const initialState = createInitialGameState({
@@ -194,6 +244,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   setPlayerFaction(f) {
+    const { campaignMode, campaignFactionLocked } = get();
+    if (campaignMode && campaignFactionLocked) return;
+    if (campaignMode) {
+      set({
+        playerFaction: f,
+        campaignFactionChosen: true,
+        playerDeck: [],
+        deckBuildError: null,
+        selectedLevel: null,
+      });
+      return;
+    }
     set({ playerFaction: f });
   },
   setOpponentFaction(f) {
@@ -271,6 +333,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       playerDeck: [],
       deckBuildError: null,
       campaignMode: false,
+      campaignFactionChosen: false,
+      campaignFactionLocked: false,
     });
   },
 
@@ -283,41 +347,126 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // ── Campaign actions ─────────────────────────────────────────────────────
 
   goToLevelSelect() {
-    set({ screen: "level_select", campaignMode: true });
-  },
-
-  selectLevel(level) {
+    const isNewCampaign = !get().campaignMode;
     set({
-      selectedLevel: level,
-      playerDeck: [],
+      screen: "level_select",
+      campaignMode: true,
+      selectedLevel: null,
       deckBuildError: null,
-      screen: "deck_builder",
+      ...(isNewCampaign
+        ? {
+            campaignFactionChosen: false,
+            campaignFactionLocked: false,
+            playerDeck: [],
+          }
+        : {}),
     });
   },
 
+  selectLevel(level) {
+    const { campaignFactionChosen, playerDeck, validateDeck, startLevelGame } = get();
+    if (!campaignFactionChosen) return;
+
+    // Check if the level is unlocked.
+    const saveStore = useSaveStore.getState();
+    const isComplete = saveStore.isComplete;
+    const isCampaignCleared = isComplete("level-6-apex");
+    const levelIndex = CAMPAIGN_LEVELS.findIndex((l) => l.id === level.id);
+    const isUnlocked =
+      isCampaignCleared ||
+      levelIndex === 0 ||
+      (levelIndex > 0 && isComplete(CAMPAIGN_LEVELS[levelIndex - 1].id));
+
+    if (!isUnlocked) return;
+
+    set({
+      selectedLevel: level,
+      deckBuildError: null,
+      campaignFactionLocked: true,
+    });
+
+    if (playerDeck.length === DECK_SIZE) {
+      const error = validateDeck();
+      if (!error) {
+        startLevelGame();
+        return;
+      }
+      set({ deckBuildError: error, screen: "deck_builder" });
+      return;
+    }
+
+    set({ screen: "deck_builder" });
+  },
+
   toggleCardInDeck(cardId) {
-    const { playerDeck, selectedLevel } = get();
+    const { playerDeck, selectedLevel, playerFaction, campaignMode } = get();
     const constraint = selectedLevel?.deckConstraint;
     const idx = playerDeck.indexOf(cardId);
 
-    if (idx !== -1) {
-      // Remove one copy.
+    if (campaignMode && !isAllowedCampaignDeckCard(cardId, playerFaction)) {
+      return;
+    }
+
+    if (idx !== -1 && constraint && !constraint.allowDuplicates) {
+      // Unique-deck levels use the pool click as a toggle.
       const next = [...playerDeck];
       next.splice(idx, 1);
       set({ playerDeck: next, deckBuildError: null });
-    } else {
-      // Add a copy if there is room.
-      if (playerDeck.length >= DECK_SIZE) return;
-      // Duplicate check: if not allowed and card already present, skip.
-      if (constraint && !constraint.allowDuplicates && playerDeck.includes(cardId)) {
-        return;
-      }
-      set({ playerDeck: [...playerDeck, cardId], deckBuildError: null });
+      return;
     }
+
+    // Add a copy if there is room.
+    if (playerDeck.length >= DECK_SIZE) return;
+    
+    const allowDuplicates = constraint ? constraint.allowDuplicates : true;
+    const currentCount = playerDeck.filter((id) => id === cardId).length;
+    const maxCopies = getMaxCardCopies(cardId, allowDuplicates);
+    if (currentCount >= maxCopies) {
+      return;
+    }
+    
+    set({ playerDeck: [...playerDeck, cardId], deckBuildError: null });
+  },
+
+  removeCardFromDeck(cardId) {
+    const { playerDeck } = get();
+    const idx = playerDeck.indexOf(cardId);
+    if (idx === -1) return;
+    const next = [...playerDeck];
+    next.splice(idx, 1);
+    set({ playerDeck: next, deckBuildError: null });
+  },
+
+  autoFillDeck() {
+    const { playerDeck, selectedLevel, playerFaction, campaignMode } = get();
+    if (!campaignMode || !selectedLevel) return;
+
+    const constraint = selectedLevel.deckConstraint;
+    const pool = getCampaignDeckPool(playerFaction);
+    if (pool.length === 0) return;
+
+    const next = playerDeck.filter((cardId) =>
+      isAllowedCampaignDeckCard(cardId, playerFaction),
+    );
+
+    let poolIndex = 0;
+    while (next.length < DECK_SIZE && poolIndex < pool.length * DECK_SIZE) {
+      const cardId = pool[poolIndex % pool.length].id;
+      poolIndex++;
+
+      const currentCount = next.filter((id) => id === cardId).length;
+      const maxCopies = getMaxCardCopies(cardId, constraint.allowDuplicates);
+      if (currentCount >= maxCopies) {
+        continue;
+      }
+      next.push(cardId);
+    }
+
+    set({ playerDeck: next.slice(0, DECK_SIZE), deckBuildError: null });
   },
 
   validateDeck() {
-    const { playerDeck, selectedLevel } = get();
+    const { playerDeck, selectedLevel, campaignMode, playerFaction } = get();
     if (!selectedLevel) return "No level selected.";
     const constraint = selectedLevel.deckConstraint;
 
@@ -330,10 +479,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return "This level requires all 25 cards to be unique — remove duplicates.";
       }
     }
+    if (
+      campaignMode &&
+      playerDeck.some((cardId) => !isAllowedCampaignDeckCard(cardId, playerFaction))
+    ) {
+      return "Deck can only contain cards from your campaign faction.";
+    }
     if (constraint.requiredFactions && constraint.requiredFactions.length > 0) {
       for (const faction of constraint.requiredFactions) {
         const hasIt = playerDeck.some((id) => {
-          const def = INITIAL_CARDS.find((c) => c.id === id);
+          const def = findCardDefinition(id);
           return def?.faction === faction;
         });
         if (!hasIt) {
@@ -344,13 +499,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (constraint.minFactions) {
       const factions = new Set(
         playerDeck
-          .map((id) => INITIAL_CARDS.find((c) => c.id === id)?.faction)
+          .map((id) => findCardDefinition(id)?.faction)
           .filter(Boolean),
       );
       if (factions.size < constraint.minFactions) {
         return `Your deck must include cards from at least ${constraint.minFactions} factions.`;
       }
     }
+
+    // Check card copy limits based on rarity
+    const counts: Record<string, number> = {};
+    for (const id of playerDeck) {
+      counts[id] = (counts[id] ?? 0) + 1;
+      const maxCopies = getMaxCardCopies(id, constraint.allowDuplicates);
+      if (counts[id] > maxCopies) {
+        const def = findCardDefinition(id);
+        const name = def ? def.name : id;
+        return `Too many copies of "${name}" (max ${maxCopies} allowed).`;
+      }
+    }
+
     return null;
   },
 
@@ -365,12 +533,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Resolve player card IDs → CardDefinition[].
     const playerCardDefs = playerDeck
-      .map((id) => INITIAL_CARDS.find((c) => c.id === id))
+      .map((id) => findCardDefinition(id))
       .filter((c): c is NonNullable<typeof c> => c !== undefined);
 
     // Resolve opponent card IDs → CardDefinition[].
     const opponentCardDefs = selectedLevel.opponentDeck
-      .map((id) => INITIAL_CARDS.find((c) => c.id === id))
+      .map((id) => findCardDefinition(id))
       .filter((c): c is NonNullable<typeof c> => c !== undefined);
 
     const initialState = createInitialGameState({

@@ -310,10 +310,9 @@ App.tsx
 - **Entry**: StartScreen gains a "Campaign" button alongside "Quick Battle".
   Quick Battle retains the existing faction-picker flow (no Deck Builder).
 - **Screens**: `AppScreen` extended with `"level_select"` and `"deck_builder"`.
-- **Deck Builder**: player picks any 25 cards from all 60 in the pool.
-  Per-level `DeckConstraint` can require: a minimum faction mix, specific
-  factions included, or no duplicate cards. Constraints are validated before
-  the Start Battle button is enabled.
+- **Deck Builder**: player picks 25 cards from the selected campaign faction
+  plus neutral cards. Copies are capped by rarity so decks can reach 25 cards
+  without stacking top-end cards.
 - **Opponent decks**: each level uses a hand-crafted 25-card opponent deck
   (card IDs stored in `levelData.ts`). The opponent always uses Normal AI.
 
@@ -322,10 +321,10 @@ App.tsx
 | # | Title | Opponent Strategy | Player Constraint | Win Condition |
 |---|---|---|---|---|
 | 1 | 铁壁 Iron Wall | Qin pure power — no effects | None | Standard 2/3 |
-| 2 | 蜂涌 The Swarm | Chu SUMMON token flood | ≥3 Qin cards | Standard 2/3 |
-| 3 | 谋算 The Scholar | Qi DRAW_DISCARD hand control | No duplicate cards (25 unique) | Standard 2/3 |
+| 2 | 蜂涌 The Swarm | Chu SUMMON token flood | Rarity copy limits | Standard 2/3 |
+| 3 | 谋算 The Scholar | Qi DRAW_DISCARD hand control | Rarity copy limits | Standard 2/3 |
 | 4 | 逆转 The Comeback | Zhao CONDITIONAL_BOOST burst | None | Must win round 2 |
-| 5 | 合纵 Coalition | Mixed elite units (4 factions) | ≥2 factions in deck | Standard 2/3 |
+| 5 | 合纵 Coalition | Mixed elite units (4 factions) | Rarity copy limits | Standard 2/3 |
 | 6 | 王道 Apex | Normal AI + best Qin 25 | None | Standard 2/3 |
 
 ### WinCondition Evaluation Strategy
@@ -381,23 +380,34 @@ App.tsx
 - New key namespaces: `deckbuilder.*` (16 keys), `levelselect.*` (4 keys).
   Both zh and en dictionaries updated in the same commit.
 
-## Deck Builder Design (2026-06-22)
+## Deck Builder Design (2026-06-22, updated 2026-06-23)
 
 ### Faction-Filtered Card Pool
 
-- **Decision**: the card pool in the Deck Builder is scoped to the player's
-  chosen faction plus any neutral cards. The player selects the faction via a
-  button bar at the top of the pool panel.
+- **Updated decision**: Campaign faction is selected on the Level Select screen.
+  Deck Builder treats that faction as locked and only exposes cards from that
+  faction plus neutral cards.
 - **Rationale**: showing all 60 cards without filtering is unbalanced — a player
-  could freely mix every faction's best cards. The faction selector enforces
-  thematic identity while remaining simple (no "unlock" mechanic).
+  could freely mix every faction's best cards. Locking the faction before deck
+  construction makes Campaign identity clearer than allowing faction changes
+  inside the builder.
 - **Implementation**: `poolCards` is `useMemo`-derived from `playerFaction`;
-  `setPlayerFaction` (existing store action) drives re-filtering without any new
-  store state. No changes to `levelData.ts` or `levelTypes.ts` needed.
+  `LevelSelectScreen` owns the faction picker via `setPlayerFaction`, while
+  `DeckBuilderScreen` only displays the locked faction badge.
+- **Store guard**: `toggleCardInDeck` rejects off-faction cards during Campaign,
+  so the rule is enforced below the UI layer as well.
+- **Copy limits**: because each faction has fewer than 25 directly buildable
+  non-token cards, legal copies are allowed, but capped by rarity: legend/hero
+  1, elite 2, common 3. Removing a card is handled by `removeCardFromDeck`
+  from the deck list.
+- **Campaign constraints**: old `requiredFactions`, `minFactions`, and
+  no-duplicates level constraints are incompatible with one-faction decks and
+  were removed from the current 6 levels.
 - **Token exclusion**: `qin-token` and `chu-token` are always excluded from the
   pool (they are only reachable via SUMMON effects, not direct play).
-- **Neutral faction**: the `"neutral"` faction bucket is included in the filter
-  for future-proofing. No neutral cards exist yet in `cardData.ts`.
+- **Neutral faction**: the `"neutral"` faction bucket is included in the filter. 6 neutral cards exist in `cardData.ts` and are available to all factions during deck building.
+- **Target selectors**: Added `"ALLY_HIGHEST"` target selector to find the highest-power active allied unit (used by `sun-tzu-art-of-war`).
+
 
 ### In-Page Card Description Tooltip
 
@@ -447,3 +457,80 @@ App.tsx
   not translated for now — they serve as debug-level identifiers. If a more
   user-friendly effect description is needed in future, a `"effect.DESTROY.label"`
   key can be added without changing the store layer.
+
+### Deck Builder: Card Copy Limits (2026-06-23)
+
+- **Rule**: Card copies in a deck are limited based on their rarity (even when duplicate cards are allowed in general by a campaign level):
+  - Legend: max **1** copy
+  - Hero: max **1** copy
+  - Elite: max **2** copies
+  - Common: max **3** copies
+- **Unique decks constraint**: If a campaign level has `allowDuplicates: false`, the limit is strictly **1** copy for all card rarities.
+- **Visual feedback**: In the card pool, each card displays its count in the current deck along with its limit (e.g. `0/1`, `1/3`). Cards at their limit are visually disabled (`opacity: 0.35; cursor: default;`) and unclickable.
+- **Store-level enforcement**: Both `toggleCardInDeck`, `autoFillDeck`, and `validateDeck` enforce these limits to prevent invalid decks from starting games.
+
+## Campaign UX / Battle Readability (2026-06-24)
+
+### One Campaign Deck
+
+- **Decision**: Campaign uses one deck for the currently selected faction across
+  levels. Selecting a different level no longer clears `playerDeck`.
+- **Level selection**: after a legal 25-card campaign deck exists, selecting a
+  level starts that battle directly. Deck Builder is only shown for the first
+  deck build or when the existing deck fails validation for the selected level.
+- **Faction lock**: on the Campaign screen, clicking a faction marks it as
+  chosen and reveals its trait, but the picker stays available so the player can
+  change their mind. Entering a level/deck build locks the faction; after that,
+  the picker disappears and the store ignores further campaign
+  `setPlayerFaction` calls until the player restarts / begins a fresh campaign.
+- **Faction trait display**: faction traits are intentionally hidden before the
+  choice is made, then shown after a faction is chosen using normal UI text
+  sizing rather than a separate oversized style.
+- **Rationale**: campaign should feel like taking one army through a sequence of
+  challenges, not rebuilding from scratch before every fight.
+
+### Battle Row Layout
+
+- **Decision**: rows are arranged in the Gwent-like physical order:
+  - opponent: siege / ranged / melee,
+  - player: melee / ranged / siege.
+- **Rationale**: melee rows should touch near the center of the battlefield; siege
+  rows should be farthest away.
+
+### Action History Panel
+
+- `GameActionLogEntry` now carries optional `cardInstanceId` and `cardId` for
+  `PLAY_CARD` entries.
+- The web game screen renders a right-side scrollable history panel from
+  `gameState.actionLog`, translating card ids through `cardDefinitions`.
+- The center HUD still shows only the latest action; the side panel is for
+  reviewing earlier plays and passes.
+
+### Fixed Battle Viewport
+
+- The web battle screen is constrained to exactly one viewport height. The page
+  body/root no longer scroll vertically during battle.
+- Oversized history/hand content uses internal scroll areas instead of dragging
+  the whole page.
+- Board cards and hand cards were slightly compacted so the Gwent-style row
+  layout, HUD, hand, and right-side history can coexist on a 1440x900 viewport.
+
+## Campaign Sequential Level Unlocking (Phase 7 / Task 7.4)
+
+- **Rule**: Campaign levels must be completed in sequential order (Level 1 → Level 6). Once a player has cleared the final level (`level-6-apex`), the campaign is considered "cleared," and all levels are unlocked for free selection.
+- **Implementation**:
+  - `selectLevel` in `gameStore.ts` checks if the target level is unlocked. A level `i` is unlocked if: `isCampaignCleared` is true, or `i === 0` (first level), or the previous level `i - 1` is marked complete in the `saveStore` (`isComplete(CAMPAIGN_LEVELS[i - 1].id)`).
+  - In `LevelSelectScreen.tsx`, locked levels are rendered with a padlock icon `🔒` in place of their index number, styled with `.level-card--locked`, and their button element is disabled.
+- **Verification**: Tests in `gameStore.test.ts` assert the correctness of lock/unlock state transitions, save store synchronization, and free select upon campaign completion.
+
+## AI Difficulty Profiles (Phase 7 / Task 7.3)
+
+- **Rule**: AI difficulty should feel natural, progressive, and challenging.
+- **Implementation**:
+  - `chooseNormalAIAction` was modified to accept a `weights: UtilityAIWeights` parameter, forwarding it to `scoreNormalAIAction` to control evaluation priorities.
+  - Three distinct weight profiles were defined in `aiEvaluation.ts`:
+    - `EASY_AI_WEIGHTS`: Low card resource cost and hopeless chase penalties; low value on saving hand cards. AI plays aggressively/recklessly and dumps hand cards easily.
+    - `NORMAL_AI_WEIGHTS`: Standard balanced utility-based valuation.
+    - `HARD_AI_WEIGHTS`: High card resource cost and hopeless chase penalties; extremely high value on hand advantage and passing once a safe lead is secured. AI conserves cards carefully in rounds 1-2, and fights with maximum urgency in round 3.
+  - Mapped difficulty ratings (1-5) to weights: difficulty 1-2 uses Easy weights, 3 uses Normal weights, and 4-5 uses Hard weights.
+- **Verification**: Unit tests in `normalAI.test.ts` verify that passing different weights to `chooseNormalAIAction` under the exact same game state results in divergent decisions (e.g. Easy AI chooses to play a card while Normal AI chooses to pass to conserve resources).

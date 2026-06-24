@@ -6,6 +6,12 @@ import {
   makeTestPlayer,
   makeTestState,
 } from "./aiTestHelpers";
+import {
+  getAIWeightsForDifficulty,
+  EASY_AI_WEIGHTS,
+  NORMAL_AI_WEIGHTS,
+  HARD_AI_WEIGHTS,
+} from "./aiEvaluation";
 
 describe("chooseNormalAIAction", () => {
   test("returns a legal action", () => {
@@ -113,5 +119,39 @@ describe("scoreNormalAIAction", () => {
     expect(score.action).toEqual(action);
     expect(Number.isFinite(score.total)).toBe(true);
     expect(Number.isFinite(score.cardCost)).toBe(true);
+  });
+
+  test("getAIWeightsForDifficulty returns appropriate weight profiles", () => {
+    expect(getAIWeightsForDifficulty(1)).toBe(EASY_AI_WEIGHTS);
+    expect(getAIWeightsForDifficulty(2)).toBe(EASY_AI_WEIGHTS);
+    expect(getAIWeightsForDifficulty(3)).toBe(NORMAL_AI_WEIGHTS);
+    expect(getAIWeightsForDifficulty(4)).toBe(HARD_AI_WEIGHTS);
+    expect(getAIWeightsForDifficulty(5)).toBe(HARD_AI_WEIGHTS);
+  });
+
+  test("chooseNormalAIAction respects custom weights", () => {
+    // Set up a state where:
+    // opponent is behind, round 1, has 1 cheap unit card (instance "o-h1", power 5).
+    // The budget for round 1 is exceeded (opponent has played 4 cards).
+    const state = makeTestState(
+      makeTestPlayer("player", [], [makeTestCard("p-board", 8, "player")]),
+      makeTestPlayer("opponent", [makeTestCard("o-h1", 5)], [
+        makeTestCard("o-board", 7),
+      ]),
+      1,
+    );
+    state.actionLog = [
+      { id: "1", message: "PLAY_CARD", playerId: "opponent", round: 1 },
+      { id: "2", message: "PLAY_CARD", playerId: "opponent", round: 1 },
+      { id: "3", message: "PLAY_CARD", playerId: "opponent", round: 1 },
+      { id: "4", message: "PLAY_CARD", playerId: "opponent", round: 1 },
+    ];
+
+    // Under Normal weights (overBudgetPenalty: 8), the AI should PASS.
+    expect(chooseNormalAIAction(state, "opponent", NORMAL_AI_WEIGHTS).type).toBe("PASS");
+
+    // Under Easy weights (overBudgetPenalty: 3, hopelessChasePenalty: 8, cardResourceCost: 0.15),
+    // the penalty is low, so the AI should choose to PLAY_CARD.
+    expect(chooseNormalAIAction(state, "opponent", EASY_AI_WEIGHTS).type).toBe("PLAY_CARD");
   });
 });

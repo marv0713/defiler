@@ -45,6 +45,43 @@ export const NORMAL_AI_WEIGHTS: UtilityAIWeights = {
   finalRoundUrgency: 12,
 };
 
+export const EASY_AI_WEIGHTS: UtilityAIWeights = {
+  scoreDiff: 1,
+  roundWinsDiff: 20,
+  handAdvantage: 2,
+  deckAdvantage: 0.5,
+  boardUnitAdvantage: 0.5,
+  cardResourceCost: 0.15,
+  overBudgetPenalty: 3,
+  hopelessChasePenalty: 8,
+  opponentPassedLeadBonus: 15,
+  finalRoundUrgency: 6,
+};
+
+export const HARD_AI_WEIGHTS: UtilityAIWeights = {
+  scoreDiff: 1.2,
+  roundWinsDiff: 30,
+  handAdvantage: 8,
+  deckAdvantage: 1.5,
+  boardUnitAdvantage: 1.5,
+  cardResourceCost: 0.5,
+  overBudgetPenalty: 12,
+  hopelessChasePenalty: 24,
+  opponentPassedLeadBonus: 45,
+  finalRoundUrgency: 20,
+};
+
+export function getAIWeightsForDifficulty(difficulty: number): UtilityAIWeights {
+  if (difficulty <= 2) {
+    return EASY_AI_WEIGHTS;
+  }
+  if (difficulty === 3) {
+    return NORMAL_AI_WEIGHTS;
+  }
+  return HARD_AI_WEIGHTS;
+}
+
+
 export function getOpponentId(playerId: PlayerId): PlayerId {
   return playerId === "player" ? "opponent" : "player";
 }

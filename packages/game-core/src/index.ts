@@ -15,6 +15,7 @@ export { createSeededRandom, shuffleWithSeed } from "./utils/random";
 export { chooseSimpleAIAction } from "./ai/simpleAI";
 export { chooseHeuristicAIAction } from "./ai/heuristicAI";
 export { chooseNormalAIAction, scoreNormalAIAction } from "./ai/normalAI";
+export { NORMAL_AI_WEIGHTS, EASY_AI_WEIGHTS, HARD_AI_WEIGHTS, getAIWeightsForDifficulty } from "./ai/aiEvaluation";
 export { simulateGame } from "./simulator/simulateGame";
 export { formatSimulationReport } from "./simulator/report";
 export { simulateMatchup } from "./simulator/simulateMatchup";

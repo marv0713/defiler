@@ -13,11 +13,11 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 6: Campaign System — **Complete**.
+Phase 7: Campaign PvE Polish — **Complete**.
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
-Full English/Chinese i18n pass is complete (card text, all UI screens).
-Deck Builder fixes complete: faction-filtered pool, in-page card description tooltip, full i18n wiring.
-No open tasks — system is stable. See Phase 7 ideas below.
+Full English/Chinese i18n pass is complete.
+Deck Builder fixes complete: faction-locked campaign pool, in-page tooltip, copy limits.
+Campaign sequential unlocking and AI difficulty profiles complete.
 
 ## Task Status
 
@@ -60,21 +60,29 @@ No open tasks — system is stable. See Phase 7 ideas below.
 | i18n / Card Translation | **Complete** | Static zh+en dictionaries with proper Chinese translations for all 62 card entries. Both message files are now fully static (no INITIAL_CARDS import). |
 | i18n / UI Screens | **Complete** | DeckBuilderScreen and LevelSelectScreen fully wired to useI18n(). 16 new deckbuilder.* and levelselect.* keys added to both locales. |
 | Deck Builder / Tooltip | **Complete** | Hover/focus tooltip panel shows i18n card name + description below the pool list. |
-| Deck Builder / Faction Filter | **Complete** | Faction selector bar at pool top; pool filtered to playerFaction + neutral. startLevelGame uses actual playerFaction. |
+| Deck Builder / Faction Filter | **Complete** | Superseded by 7.1: Campaign faction selected on Level Select; Deck Builder locked to playerFaction + neutral. |
 | Fix / 2026-06-23 | **Complete** | Campaign level subtitle/hint: LevelDefinition.subtitle→subtitleTextId; 12 new i18n keys. |
 | i18n / Game Log | **Complete** | lastAction migrated from string to LogMessage{id,params}; resolveLog() in App.tsx; 7 new game.* keys. |
+| Phase 7 / Task 7.1 | **Complete** | Campaign faction is selected on Level Select and locked in Deck Builder; deck pool/store validation only allow selected faction + neutral; rarity-based copy limits prevent high-card stacking; campaign constraints made one-faction compatible. |
+| Phase 7 / Task 7.2 | **Complete** | Campaign UX/readability: faction choice locks per campaign run, trait shown after selection, one deck reused across levels, Gwent-style row order, fixed-screen battle layout, right-side action history. |
+| Fix / 2026-06-23 (2) | **Complete** | Fixed compile/test failures: changed `DRAW` to `DRAW_DISCARD` on neutral cards; implemented `ALLY_HIGHEST` target; added missing neutral card translations; fixed auto-fill test assertion. |
+| Fix / 2026-06-23 (3) | **Complete** | Implemented rarity-based card copy limits (Legend: 1, Hero: 1, Elite: 2, Common: 3) in deck builder store and UI; added visual `count/limit` indicators in pool; updated test suite. |
+| Phase 7 / Task 7.3 | **Complete** | Campaign AI difficulty profiles: defined EASY_AI_WEIGHTS and HARD_AI_WEIGHTS, changed `chooseNormalAIAction` to accept weights, and mapped level difficulty to AI weight sets in `gameStore.ts`. Added tests. |
+| Phase 7 / Task 7.4 | **Complete** | Sequential campaign level unlocking: level `i` is unlocked if Level 1, previous level is complete, or the campaign is cleared (last level complete). Enforced in `gameStore.ts` and shown via padlocks `🔒` in `LevelSelectScreen.tsx`. Added tests. |
 
 ---
 
-## Phase 7 Ideas (Not Started)
+## Phase 7 Work Queue
 
-Potential next areas — none approved yet:
+Approved / likely next areas:
 
-- **Deck persistence**: save the last-built deck per level to localStorage so players don't have to rebuild from scratch.
+- None (all campaign polish items completed).
+
+Potential later polish:
+
+- **Deck persistence**: save the current campaign deck to localStorage so it survives refresh.
 - **Card rarity badges**: show rarity colour indicators (common / elite / hero / legend) on pool cards and in the deck list.
 - **Quick Battle deck picker**: let Quick Battle players choose a faction deck before playing (currently auto-assigned).
-- **Game log i18n**: `lastAction` strings in `gameStore.ts` are still hardcoded English; migrate to `{ id, params }` message format.
-- **AI difficulty settings**: expose Simple / Heuristic / Normal AI selector on the start screen.
 - **Weather effects**: implement the weather system stubbed in `types.ts`.
 
 ### Design Decisions
@@ -83,8 +91,22 @@ Potential next areas — none approved yet:
 - **Per-round draw**: entering round 2 each player draws +2; entering round 3 draws +1.
   Implemented in `startNextRound` in `round.ts`.
 - **Quick Battle**: faction pool (15 cards) filled/repeated to 25. No Deck Builder needed.
-- **Campaign (Deck Builder)**: player chooses any 25 cards from all 60. Per-level
-  constraints (e.g. must include ≥3 Qin cards, no duplicates, ≥2 factions).
+- **Campaign (Deck Builder)**: player chooses a campaign faction on Level Select.
+  Deck Builder is locked to that faction plus neutral cards. Copies are capped
+  by rarity (legend/hero 1, elite 2, common 3) so the deck can reach 25 cards
+  without allowing stacks of top-end cards.
+- **Campaign deck lifecycle**: one campaign deck is reused across levels for the
+  selected faction. On the Campaign screen the player can switch factions freely
+  before choosing a level; entering a level/deck build locks that faction until
+  the player returns to the start screen / begins a new campaign. Once a valid
+  25-card campaign deck exists, selecting another level starts battle directly;
+  the Deck Builder is only shown when the deck is missing or invalid.
+- **Battle row layout**: near rows meet in the middle: opponent siege/ranged/melee
+  above the HUD, player melee/ranged/siege below the HUD.
+- **Battle history**: right-side panel renders chronological action history from
+  `GameState.actionLog` and can scroll back through prior actions.
+- **Battle viewport**: the battle screen is fixed to one viewport; board, hand,
+  and history areas fit without whole-page vertical scrolling.
 - **6 level designs** (see `findings.md` Phase 6 section for details).
 - **Save**: completed level IDs persisted to `localStorage` via Zustand persist.
 - **WinCondition evaluation**: done post-game in `ResultScreen`, not in reducer.
@@ -105,36 +127,6 @@ Potential next areas — none approved yet:
 | `packages/game-core/src/simulator/report.ts` | ✅ Done (Task 4.4) |
 | `packages/game-core/src/ai/aiEvaluation.ts` | ✅ Done (Normal Utility AI) |
 | `packages/game-core/src/ai/normalAI.ts` | ✅ Done (Normal Utility AI) |
-
-### Files (Phase 6, in progress)
-
-| File | Status |
-|------|--------|
-| `packages/game-core/src/constants.ts` | 🔄 Add `DECK_SIZE`, `ROUND_DRAW_COUNTS` |
-| `packages/game-core/src/rules/round.ts` | 🔄 Add `drawForNextRound` |
-| `packages/game-core/src/rules/round.test.ts` | 🔄 Add 3 draw tests |
-| `packages/game-core/src/simulator/simulateGame.ts` | 🔄 `buildDefaultDeck` → 25 cards |
-| `packages/game-core/src/campaign/levelTypes.ts` | ⬜ New |
-| `packages/game-core/src/campaign/levelData.ts` | ⬜ New (6 levels) |
-| `packages/game-core/src/index.ts` | 🔄 Export campaign module |
-| `apps/web/src/store/saveStore.ts` | ⬜ New (localStorage persist) |
-| `apps/web/src/store/gameStore.ts` | 🔄 Add campaign screens + actions |
-| `apps/web/src/store/gameStore.test.ts` | 🔄 Add campaign tests |
-| `apps/web/src/components/LevelSelectScreen.tsx` | ⬜ New |
-| `apps/web/src/components/DeckBuilderScreen.tsx` | ⬜ New |
-| `apps/web/src/App.tsx` | 🔄 Add level_select / deck_builder routing |
-
-### Acceptance Criteria (Phase 6)
-
-- [ ] Quick Battle deck = 25 cards; each player draws +2 at round 2, +1 at round 3.
-- [ ] Campaign button on Start screen leads to Level Select.
-- [ ] 6 levels with distinct constraints and opponent decks.
-- [ ] Deck Builder validates constraints and blocks Start when violated.
-- [ ] Completed levels marked with ✓; state survives page refresh (localStorage).
-- [ ] `pnpm test` all pass.
-- [ ] `pnpm build` clean.
-
----
 
 ## Archived: Task 3.7 Detail
 

@@ -11,11 +11,9 @@ import type { LevelDefinition } from "./levelTypes";
  *
  * Level 2 — 蜂涌 The Swarm
  *   Chu token flood. Opponent can spike the board count quickly via SUMMON.
- *   Player constraint: ≥3 Qin cards (pushes toward high-power answers).
  *
  * Level 3 — 谋算 The Scholar
  *   Qi hand-control. Opponent generates card advantage with DRAW_DISCARD.
- *   Player constraint: no duplicates (forces a curated 25-card unique build).
  *
  * Level 4 — 逆转 The Comeback
  *   Zhao burst. Opponent is stacked with CONDITIONAL_BOOST and deliberately
@@ -24,7 +22,6 @@ import type { LevelDefinition } from "./levelTypes";
  *
  * Level 5 — 合纵 Coalition
  *   Mixed elite units from all four factions. No obvious hole to exploit.
- *   Player constraint: deck must span ≥2 factions.
  *
  * Level 6 — 王道 Apex
  *   Strongest Qin selection. Normal AI at its best.
@@ -109,7 +106,6 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
     ],
     deckConstraint: {
       allowDuplicates: true,
-      requiredFactions: ["qin"],
     },
     winCondition: { type: "standard" },
     hintTextId: "level.level-2-swarm.hint",
@@ -148,9 +144,7 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
       "qi-crossbowman",
       "qi-siege-crew",
     ],
-    deckConstraint: {
-      allowDuplicates: false,
-    },
+    deckConstraint: { allowDuplicates: true },
     winCondition: { type: "standard" },
     hintTextId: "level.level-3-scholar.hint",
   },
@@ -231,10 +225,7 @@ export const CAMPAIGN_LEVELS: LevelDefinition[] = [
       "plan-of-jixia",
       "chu-battle-cry",
     ],
-    deckConstraint: {
-      allowDuplicates: true,
-      minFactions: 2,
-    },
+    deckConstraint: { allowDuplicates: true },
     winCondition: { type: "standard" },
     hintTextId: "level.level-5-coalition.hint",
   },

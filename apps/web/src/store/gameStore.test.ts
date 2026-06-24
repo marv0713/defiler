@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useGameStore } from "./gameStore";
+import { DECK_SIZE, INITIAL_CARDS } from "@warring-states/game-core";
+import { useGameStore, CAMPAIGN_LEVELS } from "./gameStore";
+import { useSaveStore } from "./saveStore";
 
 // Reset the shared Zustand store between tests so state never leaks across cases.
 beforeEach(() => {
   useGameStore.getState().restart();
+  useSaveStore.getState().reset();
 });
 
 describe("useGameStore — lifecycle", () => {
@@ -174,5 +177,246 @@ describe("useGameStore — full match terminates", () => {
     expect(final.screen).toBe("result");
     expect(final.gameState!.winnerId).toBeDefined();
     expect(turns).toBeLessThan(MAX_TURNS);
+  });
+});
+
+describe("useGameStore — campaign deck building", () => {
+  it("only adds cards from the selected campaign faction", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qi");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    useGameStore.getState().toggleCardInDeck("qin-infantry");
+    expect(useGameStore.getState().playerDeck).toEqual([]);
+
+    useGameStore.getState().toggleCardInDeck("qi-spearman");
+    expect(useGameStore.getState().playerDeck).toEqual(["qi-spearman"]);
+  });
+
+  it("allows repeated copies when the selected campaign level allows duplicates", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("chu");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    useGameStore.getState().toggleCardInDeck("chu-footsoldier");
+    useGameStore.getState().toggleCardInDeck("chu-footsoldier");
+
+    expect(useGameStore.getState().playerDeck).toEqual([
+      "chu-footsoldier",
+      "chu-footsoldier",
+    ]);
+  });
+
+  it("removes one copy from the campaign deck without changing the selected faction", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("zhao");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    useGameStore.getState().toggleCardInDeck("zhao-footsoldier");
+    useGameStore.getState().toggleCardInDeck("zhao-footsoldier");
+    useGameStore.getState().removeCardFromDeck("zhao-footsoldier");
+
+    expect(useGameStore.getState().playerFaction).toBe("zhao");
+    expect(useGameStore.getState().playerDeck).toEqual(["zhao-footsoldier"]);
+  });
+
+  it("starts a campaign game with the selected campaign faction", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qi");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    useGameStore.getState().autoFillDeck();
+    useGameStore.getState().startLevelGame();
+
+    const state = useGameStore.getState().gameState!;
+    expect(state.players.player.faction).toBe("qi");
+    expect(state.players.player.deck.every((c) => {
+      const def = INITIAL_CARDS.find((card) => card.id === c.cardId);
+      return def?.faction === "qi" || def?.faction === "neutral";
+    })).toBe(true);
+  });
+
+  it("keeps the built campaign deck when selecting another level", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    useGameStore.getState().autoFillDeck();
+    const builtDeck = useGameStore.getState().playerDeck;
+
+    useGameStore.getState().goToLevelSelect();
+    useSaveStore.getState().markComplete(CAMPAIGN_LEVELS[0].id);
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[1]);
+
+    expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[1].id);
+    expect(useGameStore.getState().playerDeck).toEqual(builtDeck);
+  });
+
+  it("starts the next campaign level directly when a valid campaign deck already exists", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("zhao");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    useGameStore.getState().autoFillDeck();
+    const builtDeck = useGameStore.getState().playerDeck;
+
+    useGameStore.getState().goToLevelSelect();
+    useSaveStore.getState().markComplete(CAMPAIGN_LEVELS[0].id);
+    useSaveStore.getState().markComplete(CAMPAIGN_LEVELS[1].id);
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[2]);
+
+    const state = useGameStore.getState();
+    expect(state.screen).toBe("game");
+    expect(state.selectedLevel?.id).toBe(CAMPAIGN_LEVELS[2].id);
+    expect(state.playerDeck).toEqual(builtDeck);
+    expect(state.gameState?.players.player.faction).toBe("zhao");
+    expect(state.gameState?.players.opponent.faction).toBe(CAMPAIGN_LEVELS[2].opponentFaction);
+  });
+
+  it("does not allow changing campaign faction after it is locked", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+    expect(useGameStore.getState().campaignFactionChosen).toBe(true);
+    expect(useGameStore.getState().campaignFactionLocked).toBe(false);
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    expect(useGameStore.getState().campaignFactionLocked).toBe(true);
+    useGameStore.getState().autoFillDeck();
+    const builtDeck = useGameStore.getState().playerDeck;
+    expect(builtDeck).toHaveLength(DECK_SIZE);
+
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("chu");
+
+    expect(useGameStore.getState().playerFaction).toBe("qin");
+    expect(useGameStore.getState().campaignFactionLocked).toBe(true);
+    expect(useGameStore.getState().playerDeck).toEqual(builtDeck);
+  });
+
+  it("allows switching campaign faction before selecting a level", () => {
+    useGameStore.getState().goToLevelSelect();
+
+    useGameStore.getState().setPlayerFaction("qin");
+    useGameStore.getState().setPlayerFaction("qi");
+
+    expect(useGameStore.getState().playerFaction).toBe("qi");
+    expect(useGameStore.getState().campaignFactionChosen).toBe(true);
+    expect(useGameStore.getState().campaignFactionLocked).toBe(false);
+  });
+
+  it("blocks level selection until a campaign faction is chosen", () => {
+    useGameStore.getState().goToLevelSelect();
+
+    expect(useGameStore.getState().campaignFactionChosen).toBe(false);
+    expect(useGameStore.getState().campaignFactionLocked).toBe(false);
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    expect(useGameStore.getState().screen).toBe("level_select");
+    expect(useGameStore.getState().selectedLevel).toBeNull();
+
+    useGameStore.getState().setPlayerFaction("zhao");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    expect(useGameStore.getState().screen).toBe("deck_builder");
+    expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[0].id);
+    expect(useGameStore.getState().campaignFactionLocked).toBe(true);
+  });
+
+  it("starts a fresh campaign with an unlocked faction choice after restart", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    useGameStore.getState().autoFillDeck();
+
+    useGameStore.getState().restart();
+    useGameStore.getState().goToLevelSelect();
+
+    expect(useGameStore.getState().campaignFactionLocked).toBe(false);
+    expect(useGameStore.getState().campaignFactionChosen).toBe(false);
+    expect(useGameStore.getState().playerDeck).toEqual([]);
+  });
+
+  it("auto-fills the campaign deck to 25 cards from the selected faction", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("zhao");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    useGameStore.getState().toggleCardInDeck("zhao-footsoldier");
+    useGameStore.getState().autoFillDeck();
+
+    const deck = useGameStore.getState().playerDeck;
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(deck[0]).toBe("zhao-footsoldier");
+    expect(
+      deck.every((id) => {
+        const faction = INITIAL_CARDS.find((card) => card.id === id)?.faction;
+        return faction === "zhao" || faction === "neutral";
+      }),
+    ).toBe(true);
+  });
+
+  it("enforces maximum card copy limits based on rarity", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+
+    // Legend (bai-qi): max 1
+    useGameStore.getState().toggleCardInDeck("bai-qi");
+    useGameStore.getState().toggleCardInDeck("bai-qi");
+    expect(useGameStore.getState().playerDeck.filter((id) => id === "bai-qi")).toHaveLength(1);
+
+    // Hero (shang-yang): max 1
+    useGameStore.getState().toggleCardInDeck("shang-yang");
+    useGameStore.getState().toggleCardInDeck("shang-yang");
+    expect(useGameStore.getState().playerDeck.filter((id) => id === "shang-yang")).toHaveLength(1);
+
+    // Elite (qin-war-chariot): max 2
+    useGameStore.getState().toggleCardInDeck("qin-war-chariot");
+    useGameStore.getState().toggleCardInDeck("qin-war-chariot");
+    useGameStore.getState().toggleCardInDeck("qin-war-chariot");
+    expect(useGameStore.getState().playerDeck.filter((id) => id === "qin-war-chariot")).toHaveLength(2);
+
+    // Common (qin-infantry): max 3
+    useGameStore.getState().toggleCardInDeck("qin-infantry");
+    useGameStore.getState().toggleCardInDeck("qin-infantry");
+    useGameStore.getState().toggleCardInDeck("qin-infantry");
+    useGameStore.getState().toggleCardInDeck("qin-infantry");
+    expect(useGameStore.getState().playerDeck.filter((id) => id === "qin-infantry")).toHaveLength(3);
+  });
+
+  it("enforces sequential level unlocking in campaign mode", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+
+    // Initially, Level 1 (index 0) is unlocked, but Level 2 (index 1) is locked.
+    // selectLevel for Level 1 should succeed (changes screen to deck_builder).
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    expect(useGameStore.getState().screen).toBe("deck_builder");
+    expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[0].id);
+
+    // Reset screen/selected level back to level_select.
+    useGameStore.getState().goToLevelSelect();
+
+    // selectLevel for Level 2 should fail (remains on level_select and selectedLevel is null).
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[1]);
+    expect(useGameStore.getState().screen).toBe("level_select");
+    expect(useGameStore.getState().selectedLevel).toBeNull();
+
+    // Mark Level 1 as complete.
+    useSaveStore.getState().markComplete(CAMPAIGN_LEVELS[0].id);
+
+    // Now selectLevel for Level 2 should succeed.
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[1]);
+    expect(useGameStore.getState().screen).toBe("deck_builder");
+    expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[1].id);
+  });
+
+  it("unlocks all levels once the campaign is cleared (last level complete)", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qin");
+
+    // Mark final level (Level 6) complete.
+    useSaveStore.getState().markComplete("level-6-apex");
+
+    // Even if intermediate levels are not complete, any level should be selectable.
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[4]); // Level 5
+    expect(useGameStore.getState().screen).toBe("deck_builder");
+    expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[4].id);
   });
 });

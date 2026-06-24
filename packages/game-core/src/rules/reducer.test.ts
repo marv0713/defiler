@@ -82,6 +82,12 @@ describe("applyAction", () => {
     ]);
     expect(nextState.currentPlayerId).toBe("opponent");
     expect(nextState.actionLog).toHaveLength(1);
+    expect(nextState.actionLog[0]).toEqual(
+      expect.objectContaining({
+        cardInstanceId: "unit-1",
+        cardId: "unit-1",
+      }),
+    );
   });
 
   it("plays a special card to graveyard", () => {

@@ -882,3 +882,280 @@ App.tsx resolveLog():
 - `gameStore.test.ts`: updated `lastAction` assertion to check `LogMessage.id`.
 - Verification: 135 tests pass; build clean (283.85 kB JS).
 
+### Phase 7 / Task 7.1: Campaign faction lock
+
+**Problem**: Campaign deck building was still too loose for the intended PvE
+identity. Deck Builder filtered the pool by `playerFaction`, but it also let the
+player switch between Qin / Chu / Qi / Zhao inside the builder. Some level
+constraints still assumed the old "pick from all 60 cards" design
+(`requiredFactions`, `minFactions`, no-duplicate deck). After locking to a
+single faction, those constraints would either be confusing or impossible.
+
+**Fix**:
+- `LevelSelectScreen.tsx`: added a Campaign faction selector above the level
+  grid. This is now where the player chooses their campaign faction.
+- `DeckBuilderScreen.tsx`: removed the in-builder faction switcher and replaced
+  it with a locked faction badge plus hint text.
+- `gameStore.ts`: enforced campaign card legality in the store. Campaign deck
+  additions now accept only selected faction cards plus future neutral cards.
+- `gameStore.ts`: changed pool-click semantics for duplicate-friendly levels:
+  clicking a legal pool card adds a copy; deck-list removal uses the new
+  `removeCardFromDeck(cardId)` action.
+- `levelData.ts`: removed incompatible `requiredFactions`, `minFactions`, and
+  no-duplicate constraints from the current campaign levels.
+- `messages.en.ts` / `messages.zh.ts` and `global.css`: added the small set of
+  labels and styles for the locked-faction flow.
+
+**Tests added**:
+- `apps/web/src/store/gameStore.test.ts`: campaign deck building only accepts
+  selected-faction cards, supports repeated legal copies, removes one copy via
+  `removeCardFromDeck`, and starts the campaign game with the selected faction.
+- `packages/game-core/src/campaign/levelData.test.ts`: campaign level deck
+  constraints stay compatible with one-faction deck building.
+
+**Verification**:
+- `pnpm --filter @warring-states/web test src/store/gameStore.test.ts`: 14 tests passed.
+- `pnpm --filter @warring-states/game-core test src/campaign/levelData.test.ts`: 1 test passed.
+- `npm test`: 140 tests passed across 24 files.
+- `pnpm typecheck`: clean.
+- `npm run build`: clean (285.18 kB JS, 19.18 kB CSS).
+
+## 2026-06-23 (Continued)
+
+### Bug Fix Session: Fixed Type Errors and Test Failures on Neutral Cards
+
+#### Bug 1 (Critical): Type Errors in Card Definitions & Unresolved Effects/Targets
+- **File**: `packages/game-core/src/cards/cardData.ts`, `packages/game-core/src/effects/effectTypes.ts`, `packages/game-core/src/effects/targetResolver.ts`
+- **Root cause**: The newly introduced neutral cards `scouts-report` and `sun-tzu-art-of-war` used an invalid effect type `DRAW` (instead of `DRAW_DISCARD`) and `sun-tzu-art-of-war` used an invalid target selector `ALLY_HIGHEST` that wasn't defined in types or handled by the engine. This broke typecheck builds and `cardValidation.test.ts`.
+- **Fix**:
+  - Replaced the `DRAW` effects in `scouts-report` and `sun-tzu-art-of-war` with the valid `DRAW_DISCARD` effect with `draw: 1, discard: 0`.
+  - Added `"ALLY_HIGHEST"` as a valid target selector type in `effectTypes.ts` and implemented its logic in `targetResolver.ts` so it returns the highest-power active allied unit.
+  - Added unit tests for `ALLY_HIGHEST` in `targetResolver.test.ts`.
+
+#### Bug 2 (Medium): Card text IDs dictionary coverage test failure
+- **File**: `apps/web/src/i18n/messages.en.ts`, `apps/web/src/i18n/messages.zh.ts`
+- **Root cause**: The 6 new neutral cards (`scouts-report`, `supply-wagon`, `forced-march`, `feigned-retreat`, `wandering-swordsman`, `sun-tzu-art-of-war`) were missing translation keys in the static translation files.
+- **Fix**: Appended English and Chinese translation keys for name and description for all 6 cards.
+
+#### Bug 3 (Low): gameStore auto-fill test failure
+- **File**: `apps/web/src/store/gameStore.test.ts`
+- **Root cause**: The deck builder auto-fill test asserted that all cards in an auto-filled deck belonged to the selected faction (e.g., `zhao`), but the store's auto-fill logic correctly includes both the player's faction and `neutral` cards.
+- **Fix**: Updated the test assertion to expect either the player faction or the `neutral` faction.
+
+#### Verification
+- `pnpm test`: 142 tests / 24 files — all passed.
+- `pnpm typecheck`: clean.
+- `pnpm build`: clean (289.37 kB JS, 19.64 kB CSS).
+
+### Feature: Rarity-Based Card Copy Limits in Deck Builder
+
+#### Goal
+Prevent players from adding unlimited copies of card rarities (such as selecting multiple `bai-qi` / Legendary cards) during campaign deck building.
+
+#### Implementation
+- **Copy limit configuration**:
+  - Legend: max **1** copy
+  - Hero: max **1** copy
+  - Elite: max **2** copies
+  - Common: max **3** copies
+- **Modified**: `apps/web/src/store/gameStore.ts`
+  - Added helper `getMaxCardCopies(cardId, allowDuplicates)` to compute limits.
+  - Updated `toggleCardInDeck` to reject clicks once the card limit is reached.
+  - Updated `autoFillDeck` to respect limits during auto-fill generation.
+  - Updated `validateDeck` to check for and reject decks exceeding copy limits.
+- **Modified**: `apps/web/src/components/DeckBuilderScreen.tsx`
+  - Rendered `count/limit` labels (e.g. `0/3` or `1/1`) instead of simple counts (`×Count`) in the card pool.
+  - Disabled and greyed out pool cards when the limit is reached or the deck is full.
+- **Modified**: `apps/web/src/styles/global.css`
+  - Styled `.pool-card-count--zero` to dim counts that are at `0` for cleaner scanning.
+- **Modified**: `apps/web/src/store/gameStore.test.ts`
+  - Fixed `starts a campaign game...` test which previously attempted to fill a deck with 25 copies of the same card (violating limits).
+  - Added new integration test `enforces maximum card copy limits based on rarity` to test limit boundaries.
+
+#### Verification
+- `pnpm test`: 143 tests / 24 files — all passed.
+- `pnpm typecheck`: clean.
+- `pnpm build`: clean (289.82 kB JS, 19.68 kB CSS).
+
+### Task 7.1 Closeout Review (2026-06-24)
+
+- Reviewed 7.1 implementation against the current Campaign PvE design.
+- Confirmed deck building is now: selected campaign faction + neutral cards,
+  with rarity-based copy limits preventing stacks of high-impact cards.
+- Fixed stale Level 3 hint/subtitle text that still described the removed
+  no-duplicate constraint.
+- Made card-pool cards at copy/deck limit truly disabled in the DOM, instead of
+  only visually dimmed.
+- Updated `task_plan.md` and `findings.md` to describe copy limits instead of
+  unconstrained repeated copies.
+- Verification:
+  - `npm test`: 143 tests passed across 24 files.
+  - `pnpm typecheck`: clean.
+  - `npm run build`: clean (289.84 kB JS, 19.84 kB CSS).
+
+### Bug Fix: Deck Builder visual flicker / noisy selected rows (2026-06-24)
+
+- User-reported issue: Deck Builder card pool could appear to flash with many
+  bright horizontal gold lines after selecting cards.
+- Root cause likely combined two UI behaviors:
+  - selected pool rows used a full bright gold border, so many selected cards
+    produced a screen full of high-contrast horizontal lines;
+  - the hover tooltip was mounted/unmounted below the scroll list, causing
+    layout reflow during hover changes.
+- Fix:
+  - kept the tooltip panel mounted with a fixed minimum height and hidden empty
+    state to avoid hover-driven layout shifts;
+  - toned selected pool cards down to `border-gold` + darker background;
+  - kept disabled selected rows from brightening on hover.
+- Verification:
+  - `npm test`: 143 tests passed across 24 files.
+  - `pnpm typecheck`: clean.
+  - `npm run build`: clean (289.88 kB JS, 19.92 kB CSS).
+
+### Phase 7 / Task 7.2: Campaign UX and battle readability
+
+**Scope approved**:
+- Campaign faction traits should be visible on the campaign screen.
+- Campaign deck should be built once and reused across levels.
+- Battle rows should be physically ordered like Gwent: melee rows meet near the
+  center, siege rows are farthest away.
+- Battle screen should keep a right-side scrollable action history panel.
+
+**Implementation**:
+- `LevelSelectScreen.tsx`: added selected-faction trait panel under the campaign
+  faction selector.
+- `messages.en.ts` / `messages.zh.ts`: added faction trait copy and action
+  history labels. Updated stale level hints that still referenced removed
+  multi-faction/no-duplicate constraints.
+- `gameStore.ts`: `selectLevel` now preserves `playerDeck`; `setPlayerFaction`
+  clears campaign deck and selected level only when changing faction in campaign
+  mode.
+- `types.ts` / `reducer.ts`: action log entries now include `cardInstanceId` and
+  `cardId` for played cards.
+- `App.tsx`: added `ActionHistoryPanel` and changed row order so opponent is
+  siege/ranged/melee and player is melee/ranged/siege.
+- `global.css`: added right-side history panel and faction trait styling.
+
+**Tests added**:
+- `gameStore.test.ts`: campaign deck persists when selecting another level and
+  clears when changing campaign faction.
+- `reducer.test.ts`: `PLAY_CARD` action logs include `cardInstanceId` and `cardId`.
+
+**Verification**:
+- `npm test`: 145 tests passed across 24 files.
+- `pnpm typecheck`: clean.
+- `npm run build`: clean (292.94 kB JS, 21.29 kB CSS).
+
+### Phase 7 / Task 7.2 Closeout polish: campaign lock + fixed battle viewport
+
+**User-reported issues**:
+- Campaign screen showed faction traits immediately and kept faction buttons
+  visible after selection.
+- Battle screen could be dragged vertically as a whole page instead of fitting
+  into one viewport.
+
+**Implementation**:
+- Added `campaignFactionChosen` and `campaignFactionLocked` to `gameStore`.
+- Campaign faction selection now has two states:
+  - before selection, level cards are disabled and trait text is hidden;
+  - after selection, the faction selector remains visible, the selected faction
+    is highlighted, trait text appears, and the player can still switch faction;
+  - entering a level/deck build locks the faction, replaces the selector with a
+    locked badge, and reuses the same campaign deck across levels;
+  - returning from a level/deck builder preserves the locked faction and deck;
+  - `restart()` / fresh campaign entry resets the lock and clears the campaign
+    deck.
+- Updated `LevelSelectScreen.tsx` to conditionally render selector, locked badge,
+  hint, and disabled level cards.
+- Updated battle CSS so `html/body/#root/.app-root` and `.game-screen` are
+  viewport-locked; hand/history scroll internally instead of scrolling the page.
+- Made battle board/hand card sizing slightly more compact to keep all rows,
+  HUD, hand, and right-side history visible.
+- Updated zh/en i18n with `levelselect.chooseFactionFirst`.
+- Updated `task_plan.md` and `findings.md` to reflect the locked-campaign rule.
+
+**Tests added/updated**:
+- `gameStore.test.ts`: faction can change before selecting a level.
+- `gameStore.test.ts`: faction cannot change after campaign lock.
+- `gameStore.test.ts`: level selection is blocked until faction is chosen.
+- `gameStore.test.ts`: restart followed by fresh campaign entry unlocks faction
+  choice and clears campaign deck.
+
+**Verification**:
+- `npm test`: 147 tests passed across 24 files.
+- `pnpm typecheck`: clean.
+- `npm run build`: clean (293.90 kB JS, 21.93 kB CSS).
+- `curl -I http://localhost:5173/`: 200 OK.
+- Browser smoke test:
+  - initial Campaign page: no trait panel, 6 disabled level cards, no body scroll;
+  - after choosing factions before a level: selector stays visible, active
+    faction changes, trait shown, level cards enabled;
+  - returning from Deck Builder preserves locked faction state and shows the
+    locked badge;
+  - Quick Battle game screen: `bodyScroll=false`, game height equals viewport
+    height, hand area bottom equals viewport bottom.
+
+### Fix: Campaign faction should not lock on first click
+
+- User-reported issue: clicking a faction on Campaign immediately hid the
+  picker, preventing switching to another faction before starting a level.
+- Root cause: `setPlayerFaction()` set `campaignFactionLocked=true` immediately.
+- Fix:
+  - added `campaignFactionChosen` for the pre-level selection state;
+  - `setPlayerFaction()` now only marks the faction as chosen;
+  - `selectLevel()` requires a chosen faction and then locks it.
+- Verification:
+  - `npm test`: 148 tests passed across 24 files.
+  - `pnpm typecheck`: clean.
+  - `npm run build`: clean (294.04 kB JS, 21.93 kB CSS).
+  - Browser smoke test confirmed Qin → Qi → Zhao switching works before level
+    selection, and only locks after entering / returning from Deck Builder.
+
+### Fix: Subsequent campaign levels should start directly with existing deck
+
+- User-reported issue: after playing earlier campaign levels and returning to
+  the level list, selecting a later level still opened Deck Builder.
+- Root cause: `selectLevel()` always set `screen: "deck_builder"` after writing
+  `selectedLevel`, even when `playerDeck` already held a legal 25-card deck.
+- Fix:
+  - `selectLevel()` now writes the selected level and locks the campaign faction;
+  - if `playerDeck.length === DECK_SIZE` and `validateDeck()` passes for that
+    level, it calls `startLevelGame()` immediately;
+  - if the deck is missing or invalid, it still falls back to Deck Builder with
+    the validation error.
+- Tests:
+  - added store regression test for selecting a later campaign level with an
+    existing legal deck and landing directly on `screen: "game"`.
+- Verification:
+  - `npm test`: 149 tests passed across 24 files.
+  - `pnpm typecheck`: clean.
+  - `npm run build`: clean (294.21 kB JS, 21.93 kB CSS).
+  - Browser smoke test: campaign choose Zhao → level 1 Deck Builder →
+    Auto Fill 25/25 → back to levels → click level 3 landed on Game screen,
+    not Deck Builder.
+
+## 2026-06-24 (Continued)
+
+### Phase 7 / Task 7.3 & 7.4: Campaign Sequential Level Unlocking and AI Difficulty Profiles
+
+- **Goal**:
+  1. Enforce sequential progression through the campaign levels. Once the campaign is cleared (last level complete), allow free select.
+  2. Implement an AI difficulty curve that varies opponent playstyle challenge dynamically based on the level difficulty rating (1-5).
+- **Implementation**:
+  - **Sequential Unlock**:
+    - `selectLevel` in `gameStore.ts` checks lock status. Level `i` is unlocked if: `isCampaignCleared` (Level 6 completed) OR `i === 0` OR previous level `i - 1` is completed in the save store.
+    - `LevelSelectScreen.tsx` displays padlock `🔒` icons for locked levels, applies the `.level-card--locked` styling, and disables the button.
+    - Added locked level button styling in `global.css`.
+  - **AI Difficulty**:
+    - Modified `chooseNormalAIAction` in `normalAI.ts` to take `weights: UtilityAIWeights`.
+    - Added `EASY_AI_WEIGHTS` and `HARD_AI_WEIGHTS` weight profiles in `aiEvaluation.ts`.
+    - Added `getAIWeightsForDifficulty(difficulty)` to map level difficulties (1-5) to weights.
+    - Updated `advanceOpponentAI` in `gameStore.ts` to lookup level difficulty and pass the corresponding weights to `chooseNormalAIAction` during campaign mode.
+    - Exported all weights and helper functions in `packages/game-core/src/index.ts`.
+- **Tests Added**:
+  - `gameStore.test.ts`: Added tests verifying level lock/unlock progression and campaign clear free select.
+  - `normalAI.test.ts`: Added tests verifying `getAIWeightsForDifficulty` returns the expected weights, and `chooseNormalAIAction` respects the passed weights and makes different decisions under identical state.
+- **Verification**:
+  - `pnpm test`: 151 tests passed across 25 files (all tests green).
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean, compiles successfully.

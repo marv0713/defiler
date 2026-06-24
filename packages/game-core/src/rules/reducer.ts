@@ -42,11 +42,19 @@ function createActionLogEntry(
   state: GameState,
   action: GameAction,
 ): GameActionLogEntry {
+  const playedCard = action.type === "PLAY_CARD"
+    ? state.players[action.playerId].hand.find(
+        (card) => card.instanceId === action.cardInstanceId,
+      )
+    : undefined;
+
   return {
     id: `action-${state.actionLog.length + 1}`,
     message: action.type,
     playerId: "playerId" in action ? action.playerId : undefined,
     round: state.currentRound,
+    cardInstanceId: playedCard?.instanceId,
+    cardId: playedCard?.cardId,
   };
 }
 

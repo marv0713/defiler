@@ -971,6 +971,103 @@ const zhaoCards: CardDefinition[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// NEUTRAL (6 cards) — Universal tactics, no faction identity.
+// Available in every Campaign faction's card pool.
+// ---------------------------------------------------------------------------
+
+const neutralCards: CardDefinition[] = [
+  {
+    id: "scouts-report",
+    name: "Scout's Report",
+    englishName: "Scout's Report",
+    faction: "neutral",
+    type: "special",
+    power: 0,
+    rarity: "common",
+    tags: ["tactic"],
+    effects: [{ type: "DRAW_DISCARD", draw: 1, discard: 0 }],
+    budget: 4,
+    description: "Draw 1 card from your deck.",
+  },
+  {
+    id: "supply-wagon",
+    name: "Supply Wagon",
+    englishName: "Supply Wagon",
+    faction: "neutral",
+    type: "unit",
+    row: "siege",
+    power: 4,
+    rarity: "common",
+    tags: ["support"],
+    effects: [{ type: "BUFF", target: { type: "ALLY_ROW", row: "siege" }, amount: 1 }],
+    budget: 6,
+    description: "A 4-power siege unit that buffs all allied siege units by 1.",
+  },
+  {
+    id: "forced-march",
+    name: "Forced March",
+    englishName: "Forced March",
+    faction: "neutral",
+    type: "special",
+    power: 0,
+    rarity: "elite",
+    tags: ["tactic"],
+    effects: [
+      { type: "BUFF", target: { type: "ALLY_LOWEST" }, amount: 3 },
+    ],
+    budget: 5,
+    description: "Buff your weakest unit by 3.",
+  },
+  {
+    id: "feigned-retreat",
+    name: "Feigned Retreat",
+    englishName: "Feigned Retreat",
+    faction: "neutral",
+    type: "special",
+    power: 0,
+    rarity: "elite",
+    tags: ["tactic"],
+    effects: [
+      { type: "DAMAGE", target: { type: "ENEMY_HIGHEST" }, amount: 3 },
+    ],
+    budget: 6,
+    description: "Deal 3 damage to the strongest enemy unit.",
+  },
+  {
+    id: "wandering-swordsman",
+    name: "Wandering Swordsman",
+    englishName: "Wandering Swordsman",
+    faction: "neutral",
+    type: "unit",
+    row: "melee",
+    power: 7,
+    rarity: "hero",
+    tags: ["warrior"],
+    effects: [{ type: "BUFF", target: { type: "SELF" }, amount: 2 }],
+    budget: 9,
+    description:
+      "A 7-power melee hero who buffs himself by 2 when played — effectively 9 power.",
+  },
+  {
+    id: "sun-tzu-art-of-war",
+    name: "Art of War",
+    englishName: "Art of War",
+    faction: "neutral",
+    type: "special",
+    power: 0,
+    rarity: "legend",
+    tags: ["tactic", "wisdom"],
+    effects: [
+      { type: "DRAW_DISCARD", draw: 1, discard: 0 },
+      { type: "BUFF", target: { type: "ALLY_HIGHEST" }, amount: 4 },
+    ],
+    budget: 12,
+    description:
+      "Draw 1 card, then buff your strongest unit by 4. The ultimate tactical tome.",
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Combined pool
 // ---------------------------------------------------------------------------
 
@@ -987,4 +1084,6 @@ export const INITIAL_CARDS: CardDefinition[] = [
   ...chuCards,
   ...qiCards,
   ...zhaoCards,
+  ...neutralCards,
 ].map(withTextIds);
+

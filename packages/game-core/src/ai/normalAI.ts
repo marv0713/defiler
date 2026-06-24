@@ -225,13 +225,14 @@ function isBetterScore(
 export function chooseNormalAIAction(
   state: GameState,
   playerId: PlayerId,
+  weights: UtilityAIWeights = NORMAL_AI_WEIGHTS,
 ): GameAction {
   const legalActions = getLegalActions(state, playerId);
   if (legalActions.length === 0) return { type: "PASS", playerId };
 
-  let best = scoreNormalAIAction(state, legalActions[0], playerId);
+  let best = scoreNormalAIAction(state, legalActions[0], playerId, weights);
   for (const action of legalActions.slice(1)) {
-    const candidate = scoreNormalAIAction(state, action, playerId);
+    const candidate = scoreNormalAIAction(state, action, playerId, weights);
     if (isBetterScore(state, playerId, candidate, best)) {
       best = candidate;
     }

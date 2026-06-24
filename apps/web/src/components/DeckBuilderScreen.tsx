@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { useGameStore } from "../store/gameStore";
+import { useGameStore, getMaxCardCopies } from "../store/gameStore";
 import { useI18n } from "../i18n/I18nProvider";
 import { INITIAL_CARDS } from "@warring-states/game-core";
-import type { Faction } from "@warring-states/game-core";
 import { getCardName, getCardDescription } from "../i18n/i18n";
 
 const FACTION_COLOR: Record<string, string> = {
@@ -12,9 +11,6 @@ const FACTION_COLOR: Record<string, string> = {
   zhao: "var(--zhao)",
   neutral: "var(--neutral, #888)",
 };
-
-
-const PLAYABLE_FACTIONS: Faction[] = ["qin", "chu", "qi", "zhao"];
 
 // All non-token cards grouped by faction.
 const ALL_CARDS = INITIAL_CARDS.filter(
@@ -36,10 +32,11 @@ export function DeckBuilderScreen() {
 
   const selectedLevel   = useGameStore((s) => s.selectedLevel);
   const playerFaction   = useGameStore((s) => s.playerFaction);
-  const setPlayerFaction = useGameStore((s) => s.setPlayerFaction);
   const playerDeck      = useGameStore((s) => s.playerDeck);
   const deckBuildError  = useGameStore((s) => s.deckBuildError);
   const toggleCardInDeck = useGameStore((s) => s.toggleCardInDeck);
+  const removeCardFromDeck = useGameStore((s) => s.removeCardFromDeck);
+  const autoFillDeck = useGameStore((s) => s.autoFillDeck);
   const validateDeck    = useGameStore((s) => s.validateDeck);
   const startLevelGame  = useGameStore((s) => s.startLevelGame);
   const goToLevelSelect = useGameStore((s) => s.goToLevelSelect);
@@ -102,27 +99,19 @@ export function DeckBuilderScreen() {
       <div className="deck-builder-body">
         {/* Left: Card Pool */}
         <div className="card-pool">
-          {/* Faction selector */}
-          <div className="pool-faction-selector">
+          <div className="pool-faction-lock">
             <span className="pool-faction-selector__label">
-              {t("deckbuilder.chooseFaction")}
+              {t("deckbuilder.lockedFaction")}
             </span>
-            <div className="pool-faction-selector__buttons">
-              {PLAYABLE_FACTIONS.map((f) => (
-                <button
-                  key={f}
-                  className={`pool-faction-btn${playerFaction === f ? " pool-faction-btn--active" : ""}`}
-                  style={
-                    playerFaction === f
-                      ? { borderColor: FACTION_COLOR[f], color: FACTION_COLOR[f] }
-                      : {}
-                  }
-                  onClick={() => setPlayerFaction(f)}
-                >
-                  {t(`faction.${f}.name`)}
-                </button>
-              ))}
-            </div>
+            <span
+              className="pool-faction-badge"
+              style={{ borderColor: FACTION_COLOR[playerFaction], color: FACTION_COLOR[playerFaction] }}
+            >
+              {t(`faction.${playerFaction}.name`)}
+            </span>
+            <span className="pool-faction-lock__hint">
+              {t("deckbuilder.lockedFactionHint")}
+            </span>
           </div>
 
           <h2 className="pool-heading">{t("deckbuilder.cardPool")}</h2>
@@ -131,17 +120,24 @@ export function DeckBuilderScreen() {
             {poolCards.map((card) => {
               const count = deckCount[card.id] ?? 0;
               const inDeck = count > 0;
-              const atMax =
-                playerDeck.length >= deckSize ||
-                (!constraint?.allowDuplicates && inDeck);
+              const allowDuplicates = constraint?.allowDuplicates ?? true;
+              const maxCopies = getMaxCardCopies(card.id, allowDuplicates);
+              const isDeckFull = playerDeck.length >= deckSize;
+              const atLimit = count >= maxCopies;
+
+              const atMax = allowDuplicates
+                ? (isDeckFull || atLimit)
+                : (inDeck ? false : isDeckFull);
+
               const cardName = getCardName(t, card, card.id);
               const cardDesc = getCardDescription(t, card);
               return (
                 <button
                   key={card.id}
                   id={`pool-card-${card.id}`}
-                  className={`pool-card ${inDeck ? "pool-card--selected" : ""} ${atMax && !inDeck ? "pool-card--disabled" : ""}`}
+                  className={`pool-card ${inDeck ? "pool-card--selected" : ""} ${atMax ? "pool-card--disabled" : ""}`}
                   onClick={() => toggleCardInDeck(card.id)}
+                  disabled={atMax}
                   onMouseEnter={() =>
                     setTooltip({
                       name: cardName,
@@ -169,30 +165,28 @@ export function DeckBuilderScreen() {
                       {t(`row.${card.row}`).slice(0, 1).toUpperCase()}
                     </span>
                   )}
-                  {count > 0 && (
-                    <span className="pool-card-count">×{count}</span>
-                  )}
+                  <span className={`pool-card-count ${count === 0 ? "pool-card-count--zero" : ""}`}>
+                    {count}/{maxCopies}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Hover tooltip panel */}
-          {tooltip && (
-            <div className="pool-card-tooltip">
-              <div className="pool-card-tooltip__header">
-                <span className="pool-card-tooltip__name">{tooltip.name}</span>
-                {tooltip.power > 0 && (
-                  <span className="pool-card-tooltip__power">
-                    {tooltip.power} {t("deckbuilder.tooltipPower")}
-                  </span>
-                )}
-              </div>
-              {tooltip.description && (
-                <p className="pool-card-tooltip__desc">{tooltip.description}</p>
+          {/* Stable hover tooltip panel. Keep it mounted to avoid layout flicker. */}
+          <div className={`pool-card-tooltip ${tooltip ? "" : "pool-card-tooltip--empty"}`}>
+            <div className="pool-card-tooltip__header">
+              <span className="pool-card-tooltip__name">{tooltip?.name ?? ""}</span>
+              {tooltip && tooltip.power > 0 && (
+                <span className="pool-card-tooltip__power">
+                  {tooltip.power} {t("deckbuilder.tooltipPower")}
+                </span>
               )}
             </div>
-          )}
+            {tooltip?.description && (
+              <p className="pool-card-tooltip__desc">{tooltip.description}</p>
+            )}
+          </div>
         </div>
 
         {/* Right: Deck List */}
@@ -235,7 +229,7 @@ export function DeckBuilderScreen() {
                 <span className="deck-item-name">{getCardName(t, def, def.id)}</span>
                 <button
                   className="deck-item-remove"
-                  onClick={() => toggleCardInDeck(def.id)}
+                  onClick={() => removeCardFromDeck(def.id)}
                   title={t("deckbuilder.removeCard")}
                 >
                   ✕
@@ -254,6 +248,13 @@ export function DeckBuilderScreen() {
                 {deckBuildError ?? validationError}
               </div>
             )}
+            <button
+              className="btn-auto-fill"
+              onClick={autoFillDeck}
+              disabled={playerDeck.length >= deckSize}
+            >
+              {t("deckbuilder.autoFill")}
+            </button>
             <button
               id="start-battle-btn"
               className={`btn-start-battle ${canStart ? "" : "btn-start-battle--disabled"}`}

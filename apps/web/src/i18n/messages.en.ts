@@ -192,6 +192,26 @@ const enCardMessages: MessageDictionary = {
 
   "card.zhao-ambush.name": "Zhao Ambush",
   "card.zhao-ambush.description": "Deal 2 damage to a random enemy, then lock the enemy's strongest unit.",
+
+  // ── NEUTRAL ───────────────────────────────────────────────────────────────
+
+  "card.scouts-report.name": "Scout's Report",
+  "card.scouts-report.description": "Draw 1 card from your deck.",
+
+  "card.supply-wagon.name": "Supply Wagon",
+  "card.supply-wagon.description": "A 4-power siege unit that buffs all allied siege units by 1.",
+
+  "card.forced-march.name": "Forced March",
+  "card.forced-march.description": "Buff your weakest unit by 3.",
+
+  "card.feigned-retreat.name": "Feigned Retreat",
+  "card.feigned-retreat.description": "Deal 3 damage to the strongest enemy unit.",
+
+  "card.wandering-swordsman.name": "Wandering Swordsman",
+  "card.wandering-swordsman.description": "A 7-power melee hero who buffs himself by 2 when played — effectively 9 power.",
+
+  "card.sun-tzu-art-of-war.name": "Art of War",
+  "card.sun-tzu-art-of-war.description": "Draw 1 card, then buff your strongest unit by 4. The ultimate tactical tome.",
 };
 
 export const enMessages: MessageDictionary = {
@@ -247,13 +267,19 @@ export const enMessages: MessageDictionary = {
   "faction.chu.name": "Chu",
   "faction.qi.name": "Qi",
   "faction.zhao.name": "Zhao",
+  "faction.qin.trait": "High power, direct damage, and clean removal. Qin wins by applying pressure and forcing inefficient answers.",
+  "faction.chu.trait": "Board swarm, summons, and row-wide buffs. Chu wins by filling the field and turning many small units into a wave.",
+  "faction.qi.trait": "Card flow, hand advantage, and precision damage. Qi wins by finding more options and controlling key threats.",
+  "faction.zhao.trait": "Comeback boosts, locks, and cavalry bursts. Zhao wins by conserving resources, then reversing the board at the right moment.",
   "debug.missingInZh": "Debug fallback",
 
   // ── Level Select Screen ───────────────────────────────────────────────────
   "levelselect.back": "Back",
   "levelselect.title": "Campaign",
-  "levelselect.subtitle": "Build a 25-card deck and conquer all six challenges.",
+  "levelselect.subtitle": "Build one 25-card campaign deck and carry it through all six challenges.",
   "levelselect.vs": "vs",
+  "levelselect.campaignFaction": "Campaign faction",
+  "levelselect.chooseFactionFirst": "Choose a campaign faction first. This campaign run will lock that faction and reuse one deck.",
 
   // ── Game Log Messages ───────────────────────────────────────────────────
   "game.roundStarted": "⚔️ Round started — your turn!",
@@ -263,15 +289,26 @@ export const enMessages: MessageDictionary = {
   "game.opponentPlay": "🔵 Opponent plays {name}",
   "game.opponentPlayWithFx": "🔵 Opponent plays {name} [⚡ {fx}]",
   "game.opponentPass": "🔵 Opponent passes",
+  "history.title": "History",
+  "history.empty": "No actions yet.",
+  "history.round": "R{round}",
+  "history.player": "You",
+  "history.opponent": "Opponent",
+  "history.play": "{actor} played {card}",
+  "history.pass": "{actor} passed",
+  "history.nextRound": "Next round started",
 
   // ── Deck Builder Screen ───────────────────────────────────────────────────
   "deckbuilder.backToLevels": "Back to Levels",
   "deckbuilder.chooseFaction": "Choose Faction",
+  "deckbuilder.lockedFaction": "Locked faction",
+  "deckbuilder.lockedFactionHint": "Deck can use this faction plus neutral cards.",
   "deckbuilder.cardPool": "Card Pool",
   "deckbuilder.yourDeck": "Your Deck",
   "deckbuilder.emptyHint": "Click cards to add them.",
   "deckbuilder.removeCard": "Remove",
   "deckbuilder.startBattle": "Start Battle",
+  "deckbuilder.autoFill": "Auto Fill",
   "deckbuilder.cards": "cards",
   "deckbuilder.tooltipPower": "power",
   "deckbuilder.noDuplicates": "No duplicates",
@@ -283,14 +320,13 @@ export const enMessages: MessageDictionary = {
   "level.level-1-iron-wall.subtitle": "Face the relentless Qin war machine — raw power, no tricks.",
   "level.level-1-iron-wall.hint": "Out-tempo the opponent: play strong cards early and pass before they do.",
   "level.level-2-swarm.subtitle": "Chu tokens flood the board — bring high-power answers.",
-  "level.level-2-swarm.hint": "Include at least 3 Qin cards. High single-unit power beats a swarm of weak tokens.",
-  "level.level-3-scholar.subtitle": "Qi masters hand advantage — your deck cannot repeat a single card.",
-  "level.level-3-scholar.hint": "No duplicates allowed — build a tight 25-card selection from the full card pool.",
+  "level.level-2-swarm.hint": "Use your faction's strongest answers and neutral tactics to break through the token flood.",
+  "level.level-3-scholar.subtitle": "Qi masters hand advantage — manage your limited copies carefully.",
+  "level.level-3-scholar.hint": "Use faction cards and neutral tactics together. High-rarity cards have strict copy limits.",
   "level.level-4-comeback.subtitle": "Zhao saves its burst for rounds 2 and 3 — you must win round 2.",
   "level.level-4-comeback.hint": "The opponent will concede round 1. Conserve your best cards for round 2 — you must win it.",
   "level.level-5-coalition.subtitle": "Elite warriors from all four states — no single weakness to exploit.",
-  "level.level-5-coalition.hint": "Your deck must span at least 2 factions. Mixing strengths is the only way to match the coalition.",
+  "level.level-5-coalition.hint": "Expect varied threats. Tune your single-faction deck with neutral cards before entering.",
   "level.level-6-apex.subtitle": "The full Qin arsenal at peak efficiency — no restrictions, no mercy.",
   "level.level-6-apex.hint": "No restrictions. Study the previous levels and build the deck you trust most.",
 };
-

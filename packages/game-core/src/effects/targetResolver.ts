@@ -33,6 +33,13 @@ export function resolveTargets(
       return units.filter((u) => u.currentPower === minPower).slice(0, 1);
     }
 
+    case "ALLY_HIGHEST": {
+      const units = activeOnly(getCardsFrom(state, sourcePlayerId, source));
+      if (units.length === 0) return [];
+      const maxPower = Math.max(...units.map((u) => u.currentPower));
+      return units.filter((u) => u.currentPower === maxPower).slice(0, 1);
+    }
+
     case "ALLY_RANDOM": {
       const units = activeOnly(getCardsFrom(state, sourcePlayerId, source));
       return pickRandom(units, selector.count, context.random);

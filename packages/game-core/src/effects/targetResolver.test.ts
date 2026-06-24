@@ -142,6 +142,14 @@ describe("targetResolver", () => {
     expect(targets[0].instanceId).toBe("p3"); // Power 3 is lowest on player board
   });
 
+  it("resolves ALLY_HIGHEST selector", () => {
+    const state = createMockGameState();
+    const selector: TargetSelector = { type: "ALLY_HIGHEST" };
+    const targets = resolveTargets(state, mockContext, selector);
+    expect(targets).toHaveLength(1);
+    expect(targets[0].instanceId).toBe("p2"); // Power 10 is highest on player board
+  });
+
   it("resolves ALLY_ROW selector", () => {
     const state = createMockGameState();
     const selector: TargetSelector = { type: "ALLY_ROW", row: "melee" };

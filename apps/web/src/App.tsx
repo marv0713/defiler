@@ -6,7 +6,7 @@ import { HandView } from "./components/HandView";
 import { LevelSelectScreen } from "./components/LevelSelectScreen";
 import { DeckBuilderScreen } from "./components/DeckBuilderScreen";
 import { useI18n } from "./i18n/I18nProvider";
-import type { Faction } from "@warring-states/game-core";
+import type { Faction, GameActionLogEntry, GameState } from "@warring-states/game-core";
 
 const FACTIONS: { value: Faction; icon: string; fallback: string }[] = [
   { value: "qin", icon: "🔴", fallback: "Qin" },
@@ -17,6 +17,71 @@ const FACTIONS: { value: Faction; icon: string; fallback: string }[] = [
 
 function RoundDot({ filled }: { filled: boolean }) {
   return <span className={`round-dot${filled ? " round-dot--filled" : ""}`} />;
+}
+
+function getActorLabel(
+  entry: GameActionLogEntry,
+  t: (id: string, params?: Record<string, string | number>) => string,
+) {
+  if (entry.playerId === "player") return t("history.player");
+  if (entry.playerId === "opponent") return t("history.opponent");
+  return "";
+}
+
+function getHistoryText(
+  entry: GameActionLogEntry,
+  gameState: GameState,
+  t: (id: string, params?: Record<string, string | number>) => string,
+) {
+  const actor = getActorLabel(entry, t);
+
+  if (entry.message === "PLAY_CARD") {
+    const cardName = entry.cardId
+      ? t(gameState.cardDefinitions[entry.cardId]?.nameTextId ?? `card.${entry.cardId}.name`)
+      : "";
+    return t("history.play", { actor, card: cardName || "?" });
+  }
+
+  if (entry.message === "PASS") {
+    return t("history.pass", { actor });
+  }
+
+  if (entry.message === "START_NEXT_ROUND") {
+    return t("history.nextRound");
+  }
+
+  return entry.message;
+}
+
+function ActionHistoryPanel({
+  gameState,
+  t,
+}: {
+  gameState: GameState;
+  t: (id: string, params?: Record<string, string | number>) => string;
+}) {
+  const entries = [...gameState.actionLog].reverse();
+
+  return (
+    <aside className="action-history">
+      <div className="action-history__title">{t("history.title")}</div>
+      <div className="action-history__list">
+        {entries.length === 0 && (
+          <div className="action-history__empty">{t("history.empty")}</div>
+        )}
+        {entries.map((entry) => (
+          <div key={entry.id} className="action-history__entry">
+            <span className="action-history__round">
+              {t("history.round", { round: entry.round })}
+            </span>
+            <span className="action-history__text">
+              {getHistoryText(entry, gameState, t)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
 }
 
 // ──────────────────────────────────────────
@@ -180,7 +245,7 @@ function GameScreen() {
           label={`🔵 ${t("player.opponent")}`}
           isActive={gameState.currentPlayerId === "opponent" && isPlaying}
           score={s?.opponent ?? 0}
-          rowOrder={["melee", "ranged", "siege"]}
+          rowOrder={["siege", "ranged", "melee"]}
           cardDefinitions={gameState.cardDefinitions}
           t={t}
         />
@@ -233,7 +298,7 @@ function GameScreen() {
           label={`🔴 ${t("player.you")}`}
           isActive={isPlayerTurn}
           score={s?.player ?? 0}
-          rowOrder={["siege", "ranged", "melee"]}
+          rowOrder={["melee", "ranged", "siege"]}
           cardDefinitions={gameState.cardDefinitions}
           t={t}
         />
@@ -279,6 +344,8 @@ function GameScreen() {
           </div>
         )}
       </div>
+
+      <ActionHistoryPanel gameState={gameState} t={t} />
 
       {/* ── Round result overlay ── */}
       <RoundResultBanner />

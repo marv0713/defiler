@@ -90,6 +90,7 @@ export type ManualTargetRule =
 export type TargetSelector =
   | { type: "SELF" }
   | { type: "ALLY_LOWEST" }
+  | { type: "ALLY_HIGHEST" }
   | { type: "ALLY_RANDOM"; count: number }
   | { type: "ALLY_ROW"; row: Row }
   | { type: "ENEMY_LOWEST" }

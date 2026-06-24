@@ -252,6 +252,32 @@ const zhCardMessages: MessageDictionary = {
   // zhao-ambush
   "card.zhao-ambush.name": "赵国埋伏",
   "card.zhao-ambush.description": "对随机敌方单位造成 2 点伤害，再封锁敌方最强单位。",
+
+  // ── NEUTRAL ───────────────────────────────────────────────────────────────
+
+  // scouts-report
+  "card.scouts-report.name": "侦察报告",
+  "card.scouts-report.description": "从你的牌组中摸 1 张牌。",
+
+  // supply-wagon
+  "card.supply-wagon.name": "补给货车",
+  "card.supply-wagon.description": "4战力的攻城单位，使所有己方攻城单位增加 1 点战力。",
+
+  // forced-march
+  "card.forced-march.name": "强行军",
+  "card.forced-march.description": "使最弱的己方单位增加 3 点战力。",
+
+  // feigned-retreat
+  "card.feigned-retreat.name": "佯败撤退",
+  "card.feigned-retreat.description": "对最强的敌方单位造成 3 点伤害。",
+
+  // wandering-swordsman
+  "card.wandering-swordsman.name": "游侠",
+  "card.wandering-swordsman.description": "7战力的近战英雄，出牌时自身增加 2 点战力——实际战力为 9。",
+
+  // sun-tzu-art-of-war
+  "card.sun-tzu-art-of-war.name": "兵法",
+  "card.sun-tzu-art-of-war.description": "摸 1 张牌，再使最强的己方单位增加 4 点战力。终极战术秘籍。",
 };
 
 export const zhMessages: MessageDictionary = {
@@ -307,12 +333,18 @@ export const zhMessages: MessageDictionary = {
   "faction.chu.name": "楚",
   "faction.qi.name": "齐",
   "faction.zhao.name": "赵",
+  "faction.qin.trait": "高战力、直接伤害、干净斩杀。秦靠持续压迫取胜，逼对手用更差的交换应对。",
+  "faction.chu.trait": "铺场、召唤、整排增益。楚靠填满战场，把小单位堆成一波浪潮。",
+  "faction.qi.trait": "过牌、手牌优势、精准打击。齐靠更多选择和关键威胁控制取胜。",
+  "faction.zhao.trait": "落后反打、锁定、骑兵爆发。赵靠保存资源，在关键时刻逆转场面。",
 
   // ── Level Select Screen ───────────────────────────────────────────────────
   "levelselect.back": "返回",
   "levelselect.title": "战役",
-  "levelselect.subtitle": "构建 25 张牌组，攻克六场挑战。",
+  "levelselect.subtitle": "构建一套 25 张战役牌组，并用它攻克六场挑战。",
   "levelselect.vs": "对阵",
+  "levelselect.campaignFaction": "战役阵营",
+  "levelselect.chooseFactionFirst": "先选择战役阵营。选定后，本轮战役将锁定该阵营并使用同一套牌组。",
 
   // ── Game Log Messages ───────────────────────────────────────────────────
   "game.roundStarted": "⚔️ 新一轮开始——轮到你了！",
@@ -322,15 +354,26 @@ export const zhMessages: MessageDictionary = {
   "game.opponentPlay": "🔵 对手打出了 {name}",
   "game.opponentPlayWithFx": "🔵 对手打出了 {name}【{fx}】",
   "game.opponentPass": "🔵 对手放弃出牌",
+  "history.title": "历史",
+  "history.empty": "还没有行动。",
+  "history.round": "第{round}轮",
+  "history.player": "你",
+  "history.opponent": "对手",
+  "history.play": "{actor} 打出 {card}",
+  "history.pass": "{actor} 放弃",
+  "history.nextRound": "新一轮开始",
 
   // ── Deck Builder Screen ───────────────────────────────────────────────────
   "deckbuilder.backToLevels": "返回关卡",
   "deckbuilder.chooseFaction": "选择阵营",
+  "deckbuilder.lockedFaction": "锁定阵营",
+  "deckbuilder.lockedFactionHint": "牌组只能使用该阵营和中立牌。",
   "deckbuilder.cardPool": "卡牌库",
   "deckbuilder.yourDeck": "当前牌组",
   "deckbuilder.emptyHint": "点击卡牌加入牌组。",
   "deckbuilder.removeCard": "移除",
   "deckbuilder.startBattle": "开始战斗",
+  "deckbuilder.autoFill": "自动补满",
   "deckbuilder.cards": "张牌",
   "deckbuilder.tooltipPower": "战力",
   "deckbuilder.noDuplicates": "不允许重复",
@@ -342,14 +385,13 @@ export const zhMessages: MessageDictionary = {
   "level.level-1-iron-wall.subtitle": "面对秦军铁血战机——没有技巧，只有累累战力。",
   "level.level-1-iron-wall.hint": "争先手：尽早打出高战力牌，在对手之前先行放弃。",
   "level.level-2-swarm.subtitle": "楚军小兵铺天盖地——带上高战力单体打破局面。",
-  "level.level-2-swarm.hint": "必须含至少 3 张秦牌。高战力单体才能抑制弱小兵牌的浪潮。",
-  "level.level-3-scholar.subtitle": "齐国求穷手牌优势——你的牌组不允许重复任一张牌。",
-  "level.level-3-scholar.hint": "不允许重复——从全部牌组中精心筛选 25 张不重复的牌。",
+  "level.level-2-swarm.hint": "用本阵营最强的解场手段和中立战术，突破小兵浪潮。",
+  "level.level-3-scholar.subtitle": "齐国擅长手牌优势——谨慎分配有限的卡牌复制数。",
+  "level.level-3-scholar.hint": "搭配本阵营牌和中立战术。高稀有度卡牌有更严格的复制上限。",
   "level.level-4-comeback.subtitle": "赵军将爆发力留到第 2、3 轮——你必须赢下第 2 轮。",
   "level.level-4-comeback.hint": "对手会主动放弃第 1 轮。把最强的牌留到第 2 轮——你必须赢。",
   "level.level-5-coalition.subtitle": "四国精英联手出阵——无单一弱点可突破。",
-  "level.level-5-coalition.hint": "牌组必须覆盖至少 2 个阵营。只有混合优势才能对抗联军。",
+  "level.level-5-coalition.hint": "对手威胁很多样。开战前用中立牌微调你的单阵营牌组。",
   "level.level-6-apex.subtitle": "秦军全阵出动，极致效能——没有限制，没有怀柔。",
   "level.level-6-apex.hint": "无任何限制。总结前几局的经验，构建你最信赖的牌组。",
 };
-
