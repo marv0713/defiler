@@ -193,9 +193,18 @@ export function evaluateStateForPlayer(
     deckAdvantage * weights.deckAdvantage +
     boardUnitAdvantage * weights.boardUnitAdvantage;
 
-  // Kill Shot penalty/bonus (graveyard isDestroyed cards).
-  const playerDestroyed = player.graveyard.filter((c) => c.isDestroyed).length;
-  const opponentDestroyed = opponent.graveyard.filter((c) => c.isDestroyed).length;
+  // Kill Shot penalty/bonus (graveyard isDestroyed cards + board units with 0 or less power).
+  const countDeadOrDestroyed = (pState: typeof player) => {
+    const graveyardCount = pState.graveyard.filter((c) => c.isDestroyed).length;
+    const boardCount = [
+      ...pState.board.melee,
+      ...pState.board.ranged,
+      ...pState.board.siege,
+    ].filter((c) => c.currentPower <= 0).length;
+    return graveyardCount + boardCount;
+  };
+  const playerDestroyed = countDeadOrDestroyed(player);
+  const opponentDestroyed = countDeadOrDestroyed(opponent);
   score += (opponentDestroyed - playerDestroyed) * (weights.killShotBonus ?? 0);
 
   // Row-buff hand synergy bonus.

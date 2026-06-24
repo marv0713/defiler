@@ -100,6 +100,89 @@ describe("chooseNormalAIAction", () => {
 
     expect(chooseNormalAIAction(state, "opponent").type).toBe("PLAY_CARD");
   });
+
+  test("chooseNormalAIAction chooses kill-shot action over non-killing play", () => {
+    // We create a custom test state where opponent has two cards in hand.
+    // Card A is "o-kill": deals 3 damage to ENEMY_LOWEST (kills a 3-power unit).
+    // Card B is "o-normal": is just a white unit with 7 power.
+    // We compare which card the AI chooses to play.
+    const state = makeTestState(
+      makeTestPlayer("player", [], [makeTestCard("p-target", 3, "player")]),
+      makeTestPlayer("opponent", [
+        makeTestCard("o-kill", 4),
+        makeTestCard("o-normal", 7),
+      ]),
+      1,
+    );
+    state.cardDefinitions["o-kill"] = {
+      id: "o-kill",
+      name: "Dmg unit",
+      type: "unit",
+      row: "melee",
+      power: 3,
+      rarity: "common",
+      effects: [{ type: "DAMAGE", target: { type: "ENEMY_LOWEST" }, amount: 3 }],
+    };
+    state.cardDefinitions["o-normal"] = {
+      id: "o-normal",
+      name: "Vanilla unit",
+      type: "unit",
+      row: "melee",
+      power: 7,
+      rarity: "common",
+      effects: [],
+    };
+
+    // Card B (7 power vanilla) gives 7 net points on board.
+    // Card A (3 power + 3 damage kill) gives 3 + 3 = 6 net points on board, but gets the Kill Shot bonus (+4 points).
+    // Total value of A: 6 + 4 = 10 points.
+    // So the AI should choose "o-kill"!
+    const action = chooseNormalAIAction(state, "opponent", NORMAL_AI_WEIGHTS);
+    expect(action.type).toBe("PLAY_CARD");
+    if (action.type === "PLAY_CARD") {
+      expect(action.cardInstanceId).toBe("o-kill");
+    }
+  });
+
+  test("chooseNormalAIAction prefers playing units before applying row-buffs", () => {
+    // Opponent has a row buff card ("o-buff": buff melee row by 2) and a vanilla unit ("o-unit": power 5).
+    // Melee row is currently empty.
+    const state = makeTestState(
+      makeTestPlayer("player"),
+      makeTestPlayer("opponent", [
+        makeTestCard("o-buff", 2),
+        makeTestCard("o-unit", 5),
+      ]),
+      1,
+    );
+    state.cardDefinitions["o-buff"] = {
+      id: "o-buff",
+      name: "Melee Buff",
+      type: "unit",
+      row: "melee",
+      power: 2,
+      rarity: "elite",
+      effects: [{ type: "BUFF", target: { type: "ALLY_ROW", row: "melee" }, amount: 2 }],
+    };
+    state.cardDefinitions["o-unit"] = {
+      id: "o-unit",
+      name: "Melee Unit",
+      type: "unit",
+      row: "melee",
+      power: 5,
+      rarity: "common",
+      effects: [],
+    };
+
+    // If AI plays o-buff first, it gets 2 power, and buff does nothing. Total power = 2.
+    // If AI plays o-unit first, it gets 5 power, AND because o-buff is in hand, it gets synergy bonus (1 unit * 2 buff * 0.5 = +1). Total power evaluation = 6.
+    // So the AI should choose o-unit!
+    const action = chooseNormalAIAction(state, "opponent", NORMAL_AI_WEIGHTS);
+    expect(action.type).toBe("PLAY_CARD");
+    if (action.type === "PLAY_CARD") {
+      expect(action.cardInstanceId).toBe("o-unit");
+    }
+  });
 });
 
 describe("scoreNormalAIAction", () => {
