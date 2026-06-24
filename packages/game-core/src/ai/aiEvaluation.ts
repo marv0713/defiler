@@ -17,6 +17,8 @@ export interface UtilityAIWeights {
   hopelessChasePenalty: number;
   opponentPassedLeadBonus: number;
   finalRoundUrgency: number;
+  synergyBonusScale: number;
+  killShotBonus: number;
 }
 
 export interface CatchupPlan {
@@ -43,6 +45,8 @@ export const NORMAL_AI_WEIGHTS: UtilityAIWeights = {
   hopelessChasePenalty: 18,
   opponentPassedLeadBonus: 30,
   finalRoundUrgency: 12,
+  synergyBonusScale: 0.5,
+  killShotBonus: 4,
 };
 
 export const EASY_AI_WEIGHTS: UtilityAIWeights = {
@@ -56,6 +60,8 @@ export const EASY_AI_WEIGHTS: UtilityAIWeights = {
   hopelessChasePenalty: 8,
   opponentPassedLeadBonus: 15,
   finalRoundUrgency: 6,
+  synergyBonusScale: 0.0,
+  killShotBonus: 0,
 };
 
 export const HARD_AI_WEIGHTS: UtilityAIWeights = {
@@ -64,11 +70,13 @@ export const HARD_AI_WEIGHTS: UtilityAIWeights = {
   handAdvantage: 8,
   deckAdvantage: 1.5,
   boardUnitAdvantage: 1.5,
-  cardResourceCost: 0.5,
+  cardResourceCost: 0.55,
   overBudgetPenalty: 12,
   hopelessChasePenalty: 24,
   opponentPassedLeadBonus: 45,
   finalRoundUrgency: 20,
+  synergyBonusScale: 1.0,
+  killShotBonus: 6,
 };
 
 export function getAIWeightsForDifficulty(difficulty: number): UtilityAIWeights {
