@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `packages/game-core/src/ai/aiEvaluation.ts`
 
-- [ ] **Step 1: Update UtilityAIWeights interface**
+- [x] **Step 1: Update UtilityAIWeights interface**
   Add `synergyBonusScale` and `killShotBonus` properties to `UtilityAIWeights`.
 
 ```typescript
@@ -35,7 +35,7 @@ export interface UtilityAIWeights {
 }
 ```
 
-- [ ] **Step 2: Update EASY_AI_WEIGHTS, NORMAL_AI_WEIGHTS, and HARD_AI_WEIGHTS**
+- [x] **Step 2: Update EASY_AI_WEIGHTS, NORMAL_AI_WEIGHTS, and HARD_AI_WEIGHTS**
   Update the weight definitions to include the new values.
 
 ```typescript
@@ -85,11 +85,11 @@ export const HARD_AI_WEIGHTS: UtilityAIWeights = {
 };
 ```
 
-- [ ] **Step 3: Run the test suite to verify no compile errors**
+- [x] **Step 3: Run the test suite to verify no compile errors**
   Run: `pnpm test`
   Expected: All existing tests pass, but we might have typecheck warnings if other tests use raw objects that mock `UtilityAIWeights`. (Let's make sure typescript is clean).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
   ```bash
   git add packages/game-core/src/ai/aiEvaluation.ts
   git commit -m "feat(ai): add synergy and kill-shot properties to AI weights"
@@ -102,7 +102,7 @@ export const HARD_AI_WEIGHTS: UtilityAIWeights = {
 **Files:**
 - Modify: `packages/game-core/src/ai/aiEvaluation.ts`
 
-- [ ] **Step 1: Update evaluateStateForPlayer**
+- [x] **Step 1: Update evaluateStateForPlayer**
   Add graveyard destroyed unit counts and hand row-buff calculations.
 
 ```typescript
@@ -154,11 +154,11 @@ export function evaluateStateForPlayer(
 }
 ```
 
-- [ ] **Step 2: Run the test suite**
+- [x] **Step 2: Run the test suite**
   Run: `pnpm test`
   Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
   ```bash
   git add packages/game-core/src/ai/aiEvaluation.ts
   git commit -m "feat(ai): implement row-buff and kill-shot heuristics in state evaluation"
@@ -171,7 +171,7 @@ export function evaluateStateForPlayer(
 **Files:**
 - Modify: `packages/game-core/src/ai/normalAI.test.ts`
 
-- [ ] **Step 1: Write Kill-Shot Preference test**
+- [x] **Step 1: Write Kill-Shot Preference test**
   Add a test to verify that the AI chooses to kill an enemy unit when given a choice.
 
 ```typescript
@@ -298,11 +298,11 @@ export function evaluateStateForPlayer(
   });
 ```
 
-- [ ] **Step 2: Run the tests to make sure they pass**
+- [x] **Step 2: Run the tests to make sure they pass**
   Run: `pnpm --filter @warring-states/game-core test -- normalAI.test.ts`
   Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
   ```bash
   git add packages/game-core/src/ai/normalAI.test.ts
   git commit -m "test(ai): add row-buff and kill-shot synergy decision tests"
@@ -315,7 +315,7 @@ export function evaluateStateForPlayer(
 **Files:**
 - Create: `packages/game-core/src/ai/aiBenchmark.test.ts`
 
-- [ ] **Step 1: Write the simulation benchmark test**
+- [x] **Step 1: Write the simulation benchmark test**
   Create a test file to run 100 Qin vs Qin matches: Player (Hard AI) vs Opponent (Normal AI), and assert Player wins >= 60%.
 
 ```typescript
@@ -368,11 +368,11 @@ describe("AI Benchmark - Hard AI vs Normal AI", () => {
 });
 ```
 
-- [ ] **Step 2: Run the benchmark test**
+- [x] **Step 2: Run the benchmark test**
   Run: `pnpm --filter @warring-states/game-core test -- src/ai/aiBenchmark.test.ts`
   Expected: PASS. (It should print the win rate and succeed).
 
-- [ ] **Step 3: Commit the benchmark test**
+- [x] **Step 3: Commit the benchmark test**
   ```bash
   git add packages/game-core/src/ai/aiBenchmark.test.ts
   git commit -m "test(ai): add 100-match win-rate benchmark for Hard vs Normal AI"
@@ -382,6 +382,6 @@ describe("AI Benchmark - Hard AI vs Normal AI", () => {
 
 ### Task 5: Final Validation
 
-- [ ] **Step 1: Run full test suite and clean build**
+- [x] **Step 1: Run full test suite and clean build**
   Run: `pnpm test && pnpm build`
   Expected: All 154+ tests pass and builds succeed.
