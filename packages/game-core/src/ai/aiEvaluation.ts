@@ -67,16 +67,16 @@ export const EASY_AI_WEIGHTS: UtilityAIWeights = {
 export const HARD_AI_WEIGHTS: UtilityAIWeights = {
   scoreDiff: 1.2,
   roundWinsDiff: 30,
-  handAdvantage: 8,
-  deckAdvantage: 1.5,
-  boardUnitAdvantage: 1.5,
-  cardResourceCost: 0.55,
-  overBudgetPenalty: 12,
-  hopelessChasePenalty: 24,
-  opponentPassedLeadBonus: 45,
+  handAdvantage: 8.0,
+  deckAdvantage: 1.2,
+  boardUnitAdvantage: 1.2,
+  cardResourceCost: 0.60,
+  overBudgetPenalty: 10,
+  hopelessChasePenalty: 20,
+  opponentPassedLeadBonus: 40,
   finalRoundUrgency: 20,
   synergyBonusScale: 1.0,
-  killShotBonus: 6,
+  killShotBonus: 6.0,
 };
 
 export function getAIWeightsForDifficulty(difficulty: number): UtilityAIWeights {
