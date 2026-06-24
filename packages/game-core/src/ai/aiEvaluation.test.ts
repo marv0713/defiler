@@ -95,4 +95,55 @@ describe("AI evaluation helpers", () => {
       estimateCardResourceCost(state, lowCard),
     );
   });
+
+  test("evaluates kill shot bonus correctly based on destroyed units in graveyard", () => {
+    const player = makeTestPlayer("player");
+    const opponent = makeTestPlayer("opponent");
+
+    const pCard = makeTestCard("p-dead", 3, "player");
+    pCard.isDestroyed = true;
+    player.graveyard.push(pCard);
+
+    const oCard1 = makeTestCard("o-dead1", 3, "opponent");
+    oCard1.isDestroyed = true;
+    const oCard2 = makeTestCard("o-dead2", 3, "opponent");
+    oCard2.isDestroyed = true;
+    opponent.graveyard.push(oCard1, oCard2);
+
+    const state = makeTestState(player, opponent);
+    // base score is 0. 1 net destroyed card for opponent * killShotBonus (4) = 4.
+    expect(evaluateStateForPlayer(state, "player")).toBe(4);
+  });
+
+  test("evaluates row-buff synergy bonus from hand cards", () => {
+    const handCard = makeTestCard("buff-card", 2, "player");
+    const boardCard = makeTestCard("board-card", 3, "player", "melee");
+    const player = makeTestPlayer("player", [handCard], [boardCard]);
+    const opponent = makeTestPlayer("opponent");
+    const state = makeTestState(player, opponent);
+    
+    state.cardDefinitions["buff-card"].effects = [
+      {
+        type: "BUFF",
+        target: { type: "ALLY_ROW", row: "melee" },
+        amount: 2,
+      },
+    ];
+
+    // base score:
+    // scoreDiff = 3 - 0 = 3
+    // handAdvantage = 1 - 0 = 1
+    // boardUnitAdvantage = 1 - 0 = 1
+    // NORMAL_AI_WEIGHTS: scoreDiff (1), handAdvantage (5), boardUnitAdvantage (1)
+    // base score = 3 * 1 + 1 * 5 + 1 * 1 = 9
+    //
+    // Synergy bonus:
+    // rowCount on melee = 1 active unit ("board-card")
+    // buff amount = 2
+    // synergyBonusScale = 0.5
+    // bonus = 1 * 2 * 0.5 = 1
+    //
+    // Total score: 9 + 1 = 10
+    expect(evaluateStateForPlayer(state, "player")).toBe(10);
+  });
 });

@@ -186,13 +186,34 @@ export function evaluateStateForPlayer(
   const boardUnitAdvantage =
     countBoardUnits(state, playerId) - countBoardUnits(state, opponentId);
 
-  return (
+  let score =
     scoreDiff * weights.scoreDiff +
     roundWinsDiff * weights.roundWinsDiff +
     handAdvantage * weights.handAdvantage +
     deckAdvantage * weights.deckAdvantage +
-    boardUnitAdvantage * weights.boardUnitAdvantage
-  );
+    boardUnitAdvantage * weights.boardUnitAdvantage;
+
+  // Kill Shot penalty/bonus (graveyard isDestroyed cards).
+  const playerDestroyed = player.graveyard.filter((c) => c.isDestroyed).length;
+  const opponentDestroyed = opponent.graveyard.filter((c) => c.isDestroyed).length;
+  score += (opponentDestroyed - playerDestroyed) * (weights.killShotBonus ?? 0);
+
+  // Row-buff hand synergy bonus.
+  if (weights.synergyBonusScale && weights.synergyBonusScale > 0) {
+    for (const handCard of player.hand) {
+      const def = state.cardDefinitions[handCard.cardId];
+      if (!def) continue;
+      for (const effect of def.effects) {
+        if (effect.type === "BUFF" && effect.target.type === "ALLY_ROW") {
+          const row = effect.target.row;
+          const rowCount = player.board[row].filter((c) => !c.isDestroyed).length;
+          score += rowCount * effect.amount * weights.synergyBonusScale;
+        }
+      }
+    }
+  }
+
+  return score;
 }
 
 export function estimateCatchupPlan(
