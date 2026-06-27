@@ -78,6 +78,7 @@ Current focus: polish the home screen and battle screen using
 | Fix / 2026-06-27 | **Complete** | Upgraded campaign Hard AI (difficulty 4-5) to a Strategic 3-Ply Lookahead AI (`lookahead-3ply`), implementing survival round overrides (no early concession) and hand quality card preservation. |
 | Phase 9 / Task 9.1 | **Implemented / Playtest** | Home screen and battle interface polish based on `docs/battle interface/`: stronger start menu, fixed battle board, central status bar, dynamic right panel, clearer PASS wording, and policy-slot UI placeholder. |
 | Fix / 2026-06-27 (2) | **Complete** | Fixed battle hand card display bugs: resolved focus outline rendering/stretching bug under transform by adding outline resets, and increased cards container padding/min-height to prevent clipping of selected cards. |
+| Fix / 2026-06-27 (3) | **Complete** | Fixed sidebar card details preview badges styling (mismatched classes) and action logs missing translation key `game.recentActions`. |
 
 ---
 

@@ -257,6 +257,7 @@ export const enMessages: MessageDictionary = {
   "game.usePolicy": "Use Policy: {policy}",
   "game.policyDisabled": "Policy skills are reserved for a later task.",
   "game.enemyMechanic": "Enemy Mechanic",
+  "game.recentActions": "Recent Actions",
   "game.quickBattleIntel": "In Quick Battle, read the opponent faction style and manage cards across three small rounds.",
   "round.title": "Small Round {round} Over",
   "round.playerWon": "You won this small round!",

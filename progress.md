@@ -1305,3 +1305,14 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed across 30 files (all tests green).
   - `npm run build`: clean.
 
+### Fix: Sidebar Card Preview Badge Styling & Translation Bug (2026-06-27)
+
+- **Issue**: Sidebar card details preview badges (e.g. `[赵] [攻城] [普通] [单位牌]`) appeared large and unstyled because their markup class names (`sidebar-badge`, `sidebar-card-metadata`, etc.) did not match the defined classes in `global.css` (`preview-badge`, `preview-frame-metadata`, etc.). Also, the action logs section header was displaying the raw translation key `game.recentActions`.
+- **Fix**:
+  1. Updated class names in `App.tsx` to align with the CSS layout system. Badges are now correctly styled as compact, color-coded tags matching the design mockups.
+  2. Added `"game.recentActions"` translation keys ("最近行动" in zh, "Recent Actions" in en) to messages dictionary files.
+- **Verification**:
+  - `pnpm test`: 182 tests passed across 30 files.
+  - `npm run build`: clean.
+
+

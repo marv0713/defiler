@@ -649,3 +649,13 @@ App.tsx
   - **Fix**:
     1. Added `outline: none !important;` to `.hand-card` and `.hand-card--selected` to completely suppress the browser's focus outlines.
     2. Increased the `.hand-view__cards` container height to `122px` and set padding to `20px 0 10px 0`, aligning cards to the bottom using `align-items: flex-end`. This provides enough space for selected cards to scale and translate upwards without getting clipped by the scroll container.
+- **Card Preview Badge Styling and Translation Bugs (Fixed 2026-06-27)**:
+  - **Issue 1**: The card detail preview badges in the right sidebar (e.g., `[赵] [攻城] [普通] [单位牌]`) appeared large, squished, and unstyled, instead of matching the mockup designs.
+  - **Issue 2**: The right sidebar's action history header was displaying the raw translation key `game.recentActions` in Chinese.
+  - **Root Cause**:
+    1. A class name mismatch: `App.tsx` rendered the badges and their layout container using classes `sidebar-badge`, `sidebar-card-metadata`, `sidebar-card-body`, and `sidebar-card-desc`. However, `global.css` defined these styles under `.preview-badge`, `.preview-frame-metadata`, `.preview-frame-body`, and `.preview-frame-desc`. Consequently, none of the padding, size, colors, or spacing styles were applied.
+    2. The translation key `"game.recentActions"` was missing from both `messages.zh.ts` and `messages.en.ts` dictionaries.
+  - **Fix**:
+    1. Updated `App.tsx` class names to align with `global.css` definitions (`sidebar-card-metadata` -> `preview-frame-metadata`, `sidebar-badge` -> `preview-badge`, etc.).
+    2. Added the `"game.recentActions"` keys to `messages.zh.ts` ("最近行动") and `messages.en.ts` ("Recent Actions").
+

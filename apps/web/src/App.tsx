@@ -590,24 +590,24 @@ function GameScreen() {
               <span className="sidebar-card-power">{hoveredCard.power}</span>
               <span className="sidebar-card-name">{getCardName(t, hoveredCard, hoveredCard.id)}</span>
             </div>
-            <div className="sidebar-card-metadata">
-              <span className={`sidebar-badge badge-faction badge-faction--${hoveredCard.faction}`}>
+            <div className="preview-frame-metadata">
+              <span className={`preview-badge badge-faction badge-faction--${hoveredCard.faction}`}>
                 {t(`faction.${hoveredCard.faction}.name`)}
               </span>
               {hoveredCard.row && (
-                <span className="sidebar-badge badge-row">
+                <span className="preview-badge badge-row">
                   {t(`row.${hoveredCard.row}`)}
                 </span>
               )}
-              <span className={`sidebar-badge badge-rarity badge-rarity--${hoveredCard.rarity}`}>
+              <span className={`preview-badge badge-rarity badge-rarity--${hoveredCard.rarity}`}>
                 {t(`rarity.${hoveredCard.rarity}`)}
               </span>
-              <span className={`sidebar-badge badge-type badge-type--${hoveredCard.type}`}>
+              <span className={`preview-badge badge-type badge-type--${hoveredCard.type}`}>
                 {t(`cardtype.${hoveredCard.type}`)}
               </span>
             </div>
-            <div className="sidebar-card-body">
-              <p className="sidebar-card-desc">{getCardDescription(t, hoveredCard)}</p>
+            <div className="preview-frame-body">
+              <p className="preview-frame-desc">{getCardDescription(t, hoveredCard)}</p>
             </div>
             {/* Contextual glossary for card skills */}
             {getCardKeywordsGlossary(hoveredCard)}

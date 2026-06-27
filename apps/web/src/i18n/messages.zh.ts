@@ -323,6 +323,7 @@ export const zhMessages: MessageDictionary = {
   "game.usePolicy": "使用国策：{policy}",
   "game.policyDisabled": "国策系统暂未开放。",
   "game.enemyMechanic": "敌人机制",
+  "game.recentActions": "最近行动",
   "game.quickBattleIntel": "快速战斗中，观察对手阵营风格并管理三小局手牌资源。",
   "round.title": "第 {round} 小局结束",
   "round.playerWon": "你赢下了本小局！",
