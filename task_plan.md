@@ -13,7 +13,7 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 8: PvE AI Strategy — **Complete**.
+Phase 9: UI Polish / Battle Interface Overhaul — **In Progress**.
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
 Full English/Chinese i18n pass is complete.
 Deck Builder fixes complete: faction-locked campaign pool, in-page tooltip, copy limits.
@@ -21,6 +21,8 @@ Campaign sequential unlocking and AI difficulty profiles complete.
 Pluggable AI strategy architecture is implemented: Utility V1 baseline, Round
 Strategy AI, Lookahead 1-Ply AI, deterministic comparison benchmark, and campaign
 AI id mapping.
+Current focus: polish the home screen and battle screen using
+`docs/battle interface/` as visual and interaction reference.
 
 ## Task Status
 
@@ -74,14 +76,28 @@ AI id mapping.
 | Phase 7 / Task 7.4 | **Complete** | Sequential campaign level unlocking: level `i` is unlocked if Level 1, previous level is complete, or the campaign is cleared (last level complete). Enforced in `gameStore.ts` and shown via padlocks `🔒` in `LevelSelectScreen.tsx`. Added tests. |
 | Phase 8 / Task 8.1 | **Complete** | Pluggable AI strategy architecture: Utility V1 baseline, Round Strategy AI, Lookahead 1-Ply AI, deterministic AI comparison benchmark, and campaign AI id mapping. |
 | Fix / 2026-06-27 | **Complete** | Upgraded campaign Hard AI (difficulty 4-5) to a Strategic 3-Ply Lookahead AI (`lookahead-3ply`), implementing survival round overrides (no early concession) and hand quality card preservation. |
+| Phase 9 / Task 9.1 | **Implemented / Playtest** | Home screen and battle interface polish based on `docs/battle interface/`: stronger start menu, fixed battle board, central status bar, dynamic right panel, clearer PASS wording, and policy-slot UI placeholder. |
+| Fix / 2026-06-27 (2) | **Complete** | Fixed battle hand card display bugs: resolved focus outline rendering/stretching bug under transform by adding outline resets, and increased cards container padding/min-height to prevent clipping of selected cards. |
 
 ---
 
-## Phase 8 Work Queue
+## Phase 9 Work Queue
 
 Approved / likely next areas:
 
-- None. Task 8.1 implementation is complete.
+- **Task 9.1: Home + Battle UI polish** — implemented, awaiting playtest feedback.
+  - Home screen: align with the reference image's Warring States entry menu,
+    while preserving language switch, campaign entry, quick battle entry, and
+    profile management.
+  - Battle screen: use a fixed one-screen battlefield layout, emphasize current
+    small-round state, active side, score, hand/deck counts, and PASS meaning.
+  - Right panel: default to enemy mechanic + recent actions; card hover/selection
+    shows card details.
+  - Terminology: prefer "small round" / "小局" and "放弃本小局 / PASS" over
+    ambiguous "round/pass round" wording.
+  - Reserve a policy/leader-skill UI slot without adding actual policy rules.
+  - Keep all gameplay rules in `packages/game-core`; UI work should stay in
+    React/i18n/CSS unless tests reveal a store-level display bug.
 
 Potential later polish:
 

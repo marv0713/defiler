@@ -8,8 +8,8 @@ describe("translate", () => {
   });
 
   test("interpolates variables", () => {
-    expect(translate("en", "game.round", { round: 2 })).toBe("Round 2 / 3");
-    expect(translate("zh", "game.round", { round: 2 })).toBe("第 2 / 3 回合");
+    expect(translate("en", "game.round", { round: 2 })).toBe("Small Round 2 / 3");
+    expect(translate("zh", "game.round", { round: 2 })).toBe("第 2 / 3 小局");
   });
 
   test("falls back to English when language entry is missing", () => {

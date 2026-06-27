@@ -16,6 +16,7 @@ interface SaveState {
 interface SaveActions {
   setCurrentProfile: (id: string) => void;
   createProfile: (name: string) => string;
+  createProfileWithId: (id: string, name: string) => void;
   deleteProfile: (id: string) => void;
   markComplete: (levelId: string) => void;
   isComplete: (levelId: string) => boolean;
@@ -49,6 +50,22 @@ export const useSaveStore = create<SaveStore>()(
           },
         }));
         return id;
+      },
+
+      createProfileWithId: (id, name) => {
+        set((s) => {
+          if (s.profiles.some((p) => p.id === id)) return {};
+          return {
+            profiles: [...s.profiles, { id, name }],
+            progress: {
+              ...s.progress,
+              [id]: [],
+            },
+            decks: {
+              ...s.decks,
+            },
+          };
+        });
       },
 
       deleteProfile: (id) => {

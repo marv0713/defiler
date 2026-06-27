@@ -1162,6 +1162,61 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
 
 ## 2026-06-27
 
+### Phase 9 / Task 9.1 Planning: Home and Battle UI Polish
+
+- Read `task_plan.md`, `progress.md`, `findings.md`, and
+  `docs/battle interface/battle_interface_optimization_zh.md`.
+- Reviewed the two battle interface reference images in
+  `docs/battle interface/`.
+- Confirmed current app state:
+  - Phase 8 AI strategy work is complete.
+  - The game is playable, but the current home and battle screens still read
+    closer to an MVP/debug interface than the intended themed card-battle UI.
+  - The battle screen already has the right foundation: fixed viewport,
+    Gwent-style row ordering, and right-side history.
+- Task 9.1 implementation scope:
+  - polish the home screen into a stronger themed entry menu;
+  - restructure the battle screen around a central status bar and clearer
+    "small round" terminology;
+  - convert the right sidebar into enemy mechanism + recent action support,
+    while preserving card hover details;
+  - reserve policy/leader-skill UI slots without adding gameplay rules;
+  - keep changes in Web UI/i18n/CSS and avoid touching `packages/game-core`.
+- Verification target:
+  - `npm test`
+  - `npm run build`
+  - browser smoke check at `http://localhost:5173/` for start and battle screens.
+
+### Phase 9 / Task 9.1 Implementation: Home and Battle UI Polish
+
+- Updated the home screen:
+  - added two large main-menu entries for Campaign and Quick Battle;
+  - kept language switching, profile management, and quick-battle faction
+    selectors as secondary controls;
+  - restyled the start card toward the dark/gold Warring States reference.
+- Updated the battle screen:
+  - added opponent/player identity bars with faction seal, hand count, deck
+    count, and disabled policy-slot placeholder;
+  - changed the center HUD to show small-round state, active side, large
+    opponent/player scoreline, action hint, and latest action;
+  - renamed ambiguous round/pass copy toward "small round" / "放弃本小局 / PASS";
+  - changed the right sidebar default from glossary to enemy mechanism and
+    strategy hint, while preserving card hover details;
+  - limited sidebar history to recent actions so the right panel reads as a
+    battle aid rather than a full debug log.
+- Updated i18n dictionaries and interpolation tests for the new copy.
+- Verification:
+  - `pnpm typecheck`: clean.
+  - `pnpm --filter @warring-states/web test src/i18n/messages.test.ts src/i18n/i18n.test.ts src/store/gameStore.test.ts`: 31 tests passed.
+  - `npm test`: 182 tests passed across 30 files.
+  - `npm run build`: clean.
+- Local dev server:
+  - restarted at `http://localhost:5173/` for user playtest.
+- Note:
+  - automated screenshot verification could not run because the in-app browser
+    bridge was unavailable and the local runtime did not include Playwright.
+    Manual playtest is the next validation step.
+
 ### Phase 8 / Task 8.1 Planning: Pluggable AI Strategy
 
 - Read current `task_plan.md`, `progress.md`, `findings.md`, and existing AI
@@ -1236,3 +1291,17 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
     because the workspace package exports TypeScript source for Vite/Vitest and
     is not installed as a built Node package. The deterministic comparison path
     is covered by `aiComparison.test.ts`.
+
+### Fix: Hand Card Selected Display Bug (2026-06-27)
+
+- **Issue**: Selecting a card in the battle hand view caused the card's gold border to stretch all the way down to the unshifted bottom of the container, leaving empty space below the card. Also, the top of the card was clipped.
+- **Root Cause**:
+  1. Browsers have a focus outline rendering bug on transformed buttons where the native focus outline stretches from the transformed top to the untransformed layout bottom.
+  2. The `.hand-view__cards` container had a height of `96px` and padding of `6px 0`, which was smaller than the selected card's scaled and translated visual height (`92px * 1.1 = 101.2px` plus a `-12px` translation). Since the parent container `.battle-hand-container` had `overflow-x: auto`, it clipped the top vertical overflow.
+- **Fix**:
+  1. Added `outline: none !important;` to `.hand-card` and `.hand-card--selected` in `global.css` to completely suppress the browser's focus outlines.
+  2. Increased the `.hand-view__cards` container height to `122px` and set padding to `20px 0 10px 0`, aligning cards to the bottom using `align-items: flex-end`. This provides enough space for selected cards to scale and translate upwards without getting clipped by the scroll container.
+- **Verification**:
+  - `pnpm test`: 182 tests passed across 30 files (all tests green).
+  - `npm run build`: clean.
+

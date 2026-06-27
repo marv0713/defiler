@@ -2273,8 +2273,9 @@ body {
 .hand-view__cards {
   display: flex;
   gap: 10px;
-  min-height: 96px;
-  padding: 6px 0;
+  align-items: flex-end;
+  min-height: 122px;
+  padding: 20px 0 10px 0;
 }
 
 .hand-card {
@@ -2293,6 +2294,7 @@ body {
   padding: 6px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, box-shadow 0.2s;
+  outline: none !important;
 }
 
 .hand-card__power {
@@ -2333,7 +2335,7 @@ body {
   transform: translateY(-12px) scale(1.1) !important;
   border-color: var(--gold) !important;
   box-shadow: 0 12px 24px rgba(201, 168, 76, 0.45);
-  outline: none;
+  outline: none !important;
 }
 
 /* Hand Action stacked buttons */

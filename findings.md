@@ -590,3 +590,62 @@ App.tsx
   draws, completed games, max-turn stops, average turns, and average rounds.
   Richer PvE diagnostics such as empty-hand losses and hand size by round are a
   good next tuning step.
+
+## UI Polish Direction (Phase 9 / Task 9.1)
+
+- `docs/battle interface/` defines the next UI direction: the app should feel
+  less like a debug board and more like a focused Warring States card-battle
+  table.
+- Home screen target:
+  - large game identity and two primary entries: Campaign and Quick Battle;
+  - keep language switching and profile management, but reduce their visual
+    weight compared with the main play entries;
+  - use the reference image's dark/gold Warring States mood without adding
+    animation or unrelated routing.
+- Battle screen target:
+  - fixed one-screen layout remains mandatory;
+  - row order remains Gwent-like: opponent siege/ranged/melee, then player
+    melee/ranged/siege;
+  - central status should answer "which small round, whose turn, what is the
+    score, what should I do now";
+  - PASS wording must be explicit: "放弃本小局 / PASS" rather than ambiguous
+    "放弃本轮";
+  - right panel should prioritize enemy mechanism and recent actions; card
+    hover/selection details temporarily replace the helper content;
+  - policy/leader-skill slots can be displayed as disabled UI placeholders, but
+    no policy gameplay rules are added in this task.
+- Implementation constraint:
+  - keep game rules out of React components;
+  - do not touch `packages/game-core` unless a display bug reveals a missing
+    data field that must be tested separately.
+
+## UI Polish Implementation Notes (Phase 9 / Task 9.1)
+
+- Home screen now prioritizes the two real player choices: Campaign and Quick
+  Battle. Profile and faction selectors remain available, but visually sit below
+  the primary game entry cards.
+- Battle screen now has faction identity bars for both sides. These are display
+  only and include a disabled policy-slot placeholder so future policy/leader
+  skills have a natural home without adding rules now.
+- Center battle status now favors player decisions:
+  - small round / best-of-three label;
+  - large scoreline;
+  - active side;
+  - current action hint;
+  - latest resolved log message.
+- Right sidebar now defaults to enemy mechanism:
+  - campaign battles use the current level title, subtitle, and hint;
+  - quick battles use the opponent faction trait;
+  - card hover still temporarily shows card details.
+- The full chronological action log remains in `GameState.actionLog`, but the
+  sidebar view shows recent entries first so it works as battle context instead
+  of a debug console.
+- No `packages/game-core` rule logic changed in this UI pass.
+- **Hand Card Selected Display Bug (Fixed 2026-06-27)**:
+  - **Issue**: Selecting a card in the battle hand view caused the card's gold border to stretch all the way down to the unshifted bottom of the container, leaving empty space below the card. Also, the top of the card was clipped.
+  - **Root Cause**: 
+    1. Browsers have a focus outline rendering bug on transformed buttons where the native focus outline stretches from the transformed top to the untransformed layout bottom.
+    2. The `.hand-view__cards` container had a height of `96px` and padding of `6px 0`, which was smaller than the selected card's scaled and translated visual height (`92px * 1.1 = 101.2px` plus a `-12px` translation). Since the parent container `.battle-hand-container` had `overflow-x: auto`, it clipped the top vertical overflow.
+  - **Fix**:
+    1. Added `outline: none !important;` to `.hand-card` and `.hand-card--selected` to completely suppress the browser's focus outlines.
+    2. Increased the `.hand-view__cards` container height to `122px` and set padding to `20px 0 10px 0`, aligning cards to the bottom using `align-items: flex-end`. This provides enough space for selected cards to scale and translate upwards without getting clipped by the scroll container.
