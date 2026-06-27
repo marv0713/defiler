@@ -1315,4 +1315,15 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed across 30 files.
   - `npm run build`: clean.
 
+### Fix: Sidebar Static Layout & Faction Neutral Translation Bug (2026-06-27)
+
+- **Issue**: Hovering/selecting cards caused the entire sidebar layout to dynamically swap/flicker between details preview and default panel (来回切), and the details frame size expanded/shrank depending on keyword presence. Also, neutral cards showed the raw `FACTION.NEUTRAL.NAME` key.
+- **Fix**:
+  1. Restructured `game-sidebar` in `App.tsx` to display Card details preview slot (fixed `280px` height with scrollable body), Enemy passive card, and Recent actions log panel simultaneously. Shows a clean placeholder frame in the card slot when no card is active. This completely stabilizes the sidebar layout.
+  2. Added `"faction.neutral.name"` translation keys ("中立" in zh, "Neutral" in en).
+- **Verification**:
+  - `pnpm test`: 182 tests passed.
+  - `npm run build`: clean.
+
+
 

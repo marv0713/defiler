@@ -277,6 +277,7 @@ export const enMessages: MessageDictionary = {
   "faction.chu.name": "Chu",
   "faction.qi.name": "Qi",
   "faction.zhao.name": "Zhao",
+  "faction.neutral.name": "Neutral",
   "faction.qin.trait": "High power, direct damage, and clean removal. Qin wins by applying pressure and forcing inefficient answers.",
   "faction.chu.trait": "Board swarm, summons, and row-wide buffs. Chu wins by filling the field and turning many small units into a wave.",
   "faction.qi.trait": "Card flow, hand advantage, and precision damage. Qi wins by finding more options and controlling key threats.",

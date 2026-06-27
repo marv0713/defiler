@@ -383,6 +383,7 @@ function GameScreen() {
   const highlightedRow = selectedDef
     ? (selectedDef.type === "special" ? "all" : selectedDef.row)
     : null;
+  const displayCard = hoveredCard || selectedDef;
 
   // Handle hand card click
   const handleHandCardClick = (cardInstanceId: string) => {
@@ -581,85 +582,93 @@ function GameScreen() {
 
       </div>
 
-      {/* RIGHT DYNAMIC SIDEBAR PANEL */}
-      <aside className="game-sidebar">
-        {hoveredCard ? (
-          /* Card Details Preview */
-          <div className={`sidebar-card-frame sidebar-card-frame--${hoveredCard.rarity} sidebar-card-frame--${hoveredCard.faction}`}>
+      {/* RIGHT STATIC SIDEBAR PANEL */}
+      <aside className="game-sidebar" style={{ display: "flex", flexDirection: "column", gap: "12px", height: "100%", boxSizing: "border-box" }}>
+        
+        {/* 1. Card Details Preview (Fixed slot at the top) */}
+        {displayCard ? (
+          <div className={`sidebar-card-frame sidebar-card-frame--${displayCard.rarity} sidebar-card-frame--${displayCard.faction}`} style={{ height: "280px", display: "flex", flexDirection: "column", minHeight: "280px", boxSizing: "border-box" }}>
             <div className="sidebar-card-header">
-              <span className="sidebar-card-power">{hoveredCard.power}</span>
-              <span className="sidebar-card-name">{getCardName(t, hoveredCard, hoveredCard.id)}</span>
+              <span className="sidebar-card-power">{displayCard.power}</span>
+              <span className="sidebar-card-name">{getCardName(t, displayCard, displayCard.id)}</span>
             </div>
             <div className="preview-frame-metadata">
-              <span className={`preview-badge badge-faction badge-faction--${hoveredCard.faction}`}>
-                {t(`faction.${hoveredCard.faction}.name`)}
+              <span className={`preview-badge badge-faction badge-faction--${displayCard.faction}`}>
+                {t(`faction.${displayCard.faction}.name`)}
               </span>
-              {hoveredCard.row && (
+              {displayCard.row && (
                 <span className="preview-badge badge-row">
-                  {t(`row.${hoveredCard.row}`)}
+                  {t(`row.${displayCard.row}`)}
                 </span>
               )}
-              <span className={`preview-badge badge-rarity badge-rarity--${hoveredCard.rarity}`}>
-                {t(`rarity.${hoveredCard.rarity}`)}
+              <span className={`preview-badge badge-rarity badge-rarity--${displayCard.rarity}`}>
+                {t(`rarity.${displayCard.rarity}`)}
               </span>
-              <span className={`preview-badge badge-type badge-type--${hoveredCard.type}`}>
-                {t(`cardtype.${hoveredCard.type}`)}
+              <span className={`preview-badge badge-type badge-type--${displayCard.type}`}>
+                {t(`cardtype.${displayCard.type}`)}
               </span>
             </div>
-            <div className="preview-frame-body">
-              <p className="preview-frame-desc">{getCardDescription(t, hoveredCard)}</p>
+            <div className="preview-frame-body" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <p className="preview-frame-desc" style={{ margin: 0 }}>{getCardDescription(t, displayCard)}</p>
+              {/* Contextual glossary for card skills */}
+              {getCardKeywordsGlossary(displayCard)}
             </div>
-            {/* Contextual glossary for card skills */}
-            {getCardKeywordsGlossary(hoveredCard)}
           </div>
         ) : (
-          /* Default Panel: Enemy Passive Mechanic + Recent Actions Log */
-          <div className="sidebar-default-panel" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
-            
-            {/* Enemy Mechanic Card */}
-            <div className="sidebar-card-frame sidebar-intel-card">
-              <h2 className="glossary-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.1rem" }}>⚙️</span> {t("game.enemyMechanic")}
-              </h2>
-              <div className="intel-body" style={{ padding: "8px 0" }}>
-                <div className="intel-style" style={{ fontSize: "0.85rem", fontWeight: "bold", color: "var(--gold)", marginBottom: "4px" }}>
-                  {opponentIntelTitle}
-                </div>
-                <div className="intel-desc" style={{ fontSize: "0.76rem", color: "var(--text-dim)", lineHeight: "1.4" }}>
-                  {opponentIntelBody}
-                </div>
-                <div className="intel-hint" style={{ fontSize: "0.7rem", color: "#8c7a5c", marginTop: "8px", fontStyle: "italic", borderTop: "1px dashed rgba(201,168,76,0.15)", paddingTop: "6px" }}>
-                  {opponentIntelHint}
-                </div>
-              </div>
+          /* Placeholder when no card is hovered/selected */
+          <div className="sidebar-card-frame sidebar-card-frame--placeholder" style={{ height: "280px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "280px", border: "1px dashed rgba(201,168,76,0.3)", background: "rgba(0,0,0,0.15)", boxSizing: "border-box", padding: "16px", textAlign: "center" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "8px", opacity: 0.5 }}>🎴</div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: "bold" }}>
+              {language === "zh" ? "卡牌详情" : "Card Details"}
             </div>
-
-            {/* Recent Action Logs Card */}
-            <div className="sidebar-card-frame sidebar-logs-card" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <h2 className="glossary-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.1rem" }}>📜</span> {t("game.recentActions")}
-              </h2>
-              <div className="recent-logs-list" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", padding: "8px 0" }}>
-                {gameState.actionLog.slice(-5).reverse().map((entry, index) => {
-                  const icon = entry.playerId === "player" ? "⚔️" : "🎌";
-                  const isPlayer = entry.playerId === "player";
-                  return (
-                    <div key={index} className={`recent-log-item recent-log-item--${isPlayer ? "player" : "opponent"}`} style={{ display: "flex", gap: "8px", fontSize: "0.72rem", padding: "6px 8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "4px" }}>
-                      <span className="log-icon">{icon}</span>
-                      <span className="log-text" style={{ color: isPlayer ? "#ffb6b6" : "#b6d8ff" }}>{resolveLog(entry)}</span>
-                    </div>
-                  );
-                })}
-                {gameState.actionLog.length === 0 && (
-                  <div className="recent-log-empty" style={{ fontSize: "0.72rem", color: "var(--text-dim)", fontStyle: "italic" }}>
-                    {language === "zh" ? "暂无行动记录" : "No actions yet"}
-                  </div>
-                )}
-              </div>
+            <div style={{ fontSize: "0.7rem", color: "#8c7a5c", marginTop: "4px", lineHeight: "1.3" }}>
+              {language === "zh" ? "鼠标悬停或点击卡牌查看其描述和技能" : "Hover or click a card to view its description and skills."}
             </div>
-
           </div>
         )}
+
+        {/* 2. Enemy Passive Mechanic */}
+        <div className="sidebar-card-frame sidebar-intel-card" style={{ flexShrink: 0 }}>
+          <h2 className="glossary-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "1.1rem" }}>⚙️</span> {t("game.enemyMechanic")}
+          </h2>
+          <div className="intel-body" style={{ padding: "8px 0" }}>
+            <div className="intel-style" style={{ fontSize: "0.85rem", fontWeight: "bold", color: "var(--gold)", marginBottom: "4px" }}>
+              {opponentIntelTitle}
+            </div>
+            <div className="intel-desc" style={{ fontSize: "0.76rem", color: "var(--text-dim)", lineHeight: "1.4" }}>
+              {opponentIntelBody}
+            </div>
+            <div className="intel-hint" style={{ fontSize: "0.7rem", color: "#8c7a5c", marginTop: "8px", fontStyle: "italic", borderTop: "1px dashed rgba(201,168,76,0.15)", paddingTop: "6px" }}>
+              {opponentIntelHint}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Recent Action Logs */}
+        <div className="sidebar-card-frame sidebar-logs-card" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <h2 className="glossary-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "1.1rem" }}>📜</span> {t("game.recentActions")}
+          </h2>
+          <div className="recent-logs-list" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", padding: "8px 0" }}>
+            {gameState.actionLog.slice(-5).reverse().map((entry, index) => {
+              const icon = entry.playerId === "player" ? "⚔️" : "🎌";
+              const isPlayer = entry.playerId === "player";
+              return (
+                <div key={index} className={`recent-log-item recent-log-item--${isPlayer ? "player" : "opponent"}`} style={{ display: "flex", gap: "8px", fontSize: "0.72rem", padding: "6px 8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "4px" }}>
+                  <span className="log-icon">{icon}</span>
+                  <span className="log-text" style={{ color: isPlayer ? "#ffb6b6" : "#b6d8ff" }}>{resolveLog(entry)}</span>
+                </div>
+              );
+            })}
+            {gameState.actionLog.length === 0 && (
+              <div className="recent-log-empty" style={{ fontSize: "0.72rem", color: "var(--text-dim)", fontStyle: "italic" }}>
+                {language === "zh" ? "暂无行动记录" : "No actions yet"}
+              </div>
+            )}
+          </div>
+        </div>
+
       </aside>
 
       {/* PASS ROUND CONFIRMATION MODAL */}

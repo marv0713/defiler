@@ -658,4 +658,14 @@ App.tsx
   - **Fix**:
     1. Updated `App.tsx` class names to align with `global.css` definitions (`sidebar-card-metadata` -> `preview-frame-metadata`, `sidebar-badge` -> `preview-badge`, etc.).
     2. Added the `"game.recentActions"` keys to `messages.zh.ts` ("最近行动") and `messages.en.ts` ("Recent Actions").
+- **Static Sidebar Layout and Faction Neutral Translation Fix (Fixed 2026-06-27)**:
+  - **Issue 1**: The right sidebar layout was "jumping" and switching panels back and forth (来回切) between the card detail preview and the enemy passive/logs panel when cards were hovered or clicked, and the preview card frame height changed depending on description length and keyword presence.
+  - **Issue 2**: The neutral faction tag on the preview card displayed the untranslated key `FACTION.NEUTRAL.NAME`.
+  - **Root Cause**:
+    1. The dynamic sidebar rendered either the details panel or the default panel, swapping them completely. When a card was hovered, the details panel filled the space dynamically, but without a fixed height constraint, causing layout shifting.
+    2. The translation key `"faction.neutral.name"` was missing from both zh/en dictionary files.
+  - **Fix**:
+    1. Restructured the `game-sidebar` layout to be completely static, showing the Card Details Preview slot (at a fixed height of `280px` with `overflow-y: auto`), the Enemy Passive Mechanic card (fixed height), and the Recent Action Logs card (filling remaining space with `flex: 1` and scrollable) simultaneously. When no card is hovered/selected, a clean placeholder card frame is shown in the card slot.
+    2. Added `"faction.neutral.name"` translation keys ("中立" in zh, "Neutral" in en).
+
 

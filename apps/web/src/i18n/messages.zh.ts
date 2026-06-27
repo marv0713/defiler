@@ -343,6 +343,7 @@ export const zhMessages: MessageDictionary = {
   "faction.chu.name": "楚",
   "faction.qi.name": "齐",
   "faction.zhao.name": "赵",
+  "faction.neutral.name": "中立",
   "faction.qin.trait": "高战力、直接伤害、干净斩杀。秦靠持续压迫取胜，逼对手用更差的交换应对。",
   "faction.chu.trait": "铺场、召唤、整排增益。楚靠填满战场，把小单位堆成一波浪潮。",
   "faction.qi.trait": "过牌、手牌优势、精准打击。齐靠更多选择和关键威胁控制取胜。",
