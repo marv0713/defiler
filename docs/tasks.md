@@ -1512,3 +1512,21 @@ Continue with Task 5.1 through Task 5.4 from docs/tasks.md.
 
 Implement a minimal React UI that can start a game, display the board, display the hand, and let the player click a card to play it. Do not add drag-and-drop or animations. Keep game rules in game-core.
 ```
+
+---
+
+# Post-MVP Bug Fixes & UI Enhancements (2026-06-27)
+
+## UI Enhancements: Sidebar Card Preview & Glossary
+- **Goal**: Improve card preview usability in battle screen and explain card keywords/mechanics.
+- **Changes**:
+  - Replaced native browser `title` tooltips with a real-time sidebar panel (`.game-sidebar`).
+  - Added hover and focus triggers on Hand cards (`HandView.tsx`) and Board cards (`CardView.tsx`) to set `hoveredCard` state in `useGameStore`.
+  - Displayed a detailed card preview frame (showing power, name, faction, row, rarity, type, description) in the sidebar.
+  - Added a "Game Terms Glossary" explaining keywords (Lock 封锁, Revive 复活, Special 计策, Summon 召唤, Conditional Boost 条件强化, Power 战力) when no card is hovered.
+  - Updated localization files `messages.en.ts` and `messages.zh.ts` with glossary translations.
+
+## Bug Fix: Summon Effect Token Definition Mapping
+- **Issue**: Cards with the `SUMMON` effect (e.g. `chu-shaman` summoning `chu-token`) failed to spawn units on the board because token card definitions were missing from `state.cardDefinitions`.
+- **Fix**: Modified `createInitialGameState` in `packages/game-core/src/rules/gameInit.ts` to pre-populate `cardDefinitions` with all master card definitions from `INITIAL_CARDS` (including tokens), ensuring the effect resolver can always look up summon targets.
+
