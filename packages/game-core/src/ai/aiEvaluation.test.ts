@@ -5,6 +5,7 @@ import {
   estimateCatchupPlan,
   evaluateStateForPlayer,
   getRoundBudget,
+  isSurvivalRound,
 } from "./aiEvaluation";
 import {
   makeTestCard,
@@ -145,5 +146,114 @@ describe("AI evaluation helpers", () => {
     //
     // Total score: 9 + 1 = 10
     expect(evaluateStateForPlayer(state, "player")).toBe(10);
+  });
+
+  describe("isSurvivalRound", () => {
+    test("is true when player has 0 wins and opponent has 1 win", () => {
+      const state = makeTestState(
+        makeTestPlayer("player", [], [], false, 0),
+        makeTestPlayer("opponent", [], [], false, 1),
+      );
+      expect(isSurvivalRound(state, "player")).toBe(true);
+      expect(isSurvivalRound(state, "opponent")).toBe(false);
+    });
+
+    test("is false when wins are tied or player is ahead", () => {
+      const state1 = makeTestState(
+        makeTestPlayer("player", [], [], false, 0),
+        makeTestPlayer("opponent", [], [], false, 0),
+      );
+      expect(isSurvivalRound(state1, "player")).toBe(false);
+
+      const state2 = makeTestState(
+        makeTestPlayer("player", [], [], false, 1),
+        makeTestPlayer("opponent", [], [], false, 0),
+      );
+      expect(isSurvivalRound(state2, "player")).toBe(false);
+
+      const state3 = makeTestState(
+        makeTestPlayer("player", [], [], false, 1),
+        makeTestPlayer("opponent", [], [], false, 1),
+      );
+      expect(isSurvivalRound(state3, "player")).toBe(false);
+    });
+  });
+
+  describe("hand quality premium", () => {
+    test("applies premium to hand cards in early rounds when not in survival", () => {
+      const pCard = makeTestCard("p-hero", 3, "player");
+      const oCard = makeTestCard("o-legend", 3, "opponent");
+      
+      const player = makeTestPlayer("player", [pCard]);
+      const opponent = makeTestPlayer("opponent", [oCard]);
+      const state = makeTestState(player, opponent, 1); // Round 1
+
+      // Set rarity definitions
+      state.cardDefinitions["p-hero"].rarity = "hero";
+      state.cardDefinitions["o-legend"].rarity = "legend";
+
+      // NORMAL_AI_WEIGHTS.handAdvantage is 5
+      // Base score evaluation for 'player':
+      // scoreDiff = 0
+      // roundWinsDiff = 0
+      // handAdvantage = 1 (p) - 1 (o) = 0
+      // deckAdvantage = 0
+      // boardUnitAdvantage = 0
+      // Base score = 0
+      //
+      // Hand premium:
+      // Player: hero card -> premium = 3.0. Score += 3.0 * (weights.handAdvantage * 0.4) = 3.0 * (5 * 0.4) = 3.0 * 2.0 = 6.0
+      // Opponent: legend card -> premium = 6.0. Score -= 6.0 * (weights.handAdvantage * 0.4) = 6.0 * (5 * 0.4) = 6.0 * 2.0 = 12.0
+      // Total expected score for 'player' = 0 + 6 - 12 = -6.0
+      expect(evaluateStateForPlayer(state, "player")).toBe(-6.0);
+    });
+
+    test("does not apply hand quality premium in round 3 or later", () => {
+      const pCard = makeTestCard("p-hero", 3, "player");
+      const player = makeTestPlayer("player", [pCard]);
+      const opponent = makeTestPlayer("opponent");
+      const state = makeTestState(player, opponent, 3); // Round 3
+
+      state.cardDefinitions["p-hero"].rarity = "hero";
+
+      // Base score evaluation for 'player':
+      // handAdvantage = 1 - 0 = 1. weights.handAdvantage = 5.
+      // Expected score = 5 (no premium applied)
+      expect(evaluateStateForPlayer(state, "player")).toBe(5);
+    });
+
+    test("does not apply hand quality premium during survival rounds", () => {
+      const pCard = makeTestCard("p-hero", 3, "player");
+      const player = makeTestPlayer("player", [pCard], [], false, 0);
+      const opponent = makeTestPlayer("opponent", [], [], false, 1);
+      const state = makeTestState(player, opponent, 2); // Round 2 (Survival Round)
+
+      state.cardDefinitions["p-hero"].rarity = "hero";
+
+      // Base score evaluation for 'player':
+      // roundWinsDiff = 0 - 1 = -1. weights.roundWinsDiff = 25. -> -25
+      // handAdvantage = 1 - 0 = 1. weights.handAdvantage = 5. -> 5
+      // Expected score = -20 (no premium applied)
+      expect(evaluateStateForPlayer(state, "player")).toBe(-20);
+    });
+  });
+
+  describe("survival round budget", () => {
+    test("allows spending all cards in hand during a survival round", () => {
+      const player = makeTestPlayer("player", [makeTestCard("p1", 3), makeTestCard("p2", 3)], [], false, 0);
+      const opponent = makeTestPlayer("opponent", [], [], false, 1);
+      const state = makeTestState(player, opponent, 2);
+      
+      state.actionLog = [
+        { id: "1", message: "PLAY_CARD", playerId: "player", round: 2 },
+      ];
+
+      const budget = getRoundBudget(state, "player");
+      // cardsPlayedThisRound = 1
+      // hand.length = 2
+      // maxCardsThisRound = 1 + 2 = 3
+      expect(budget.maxCardsThisRound).toBe(3);
+      expect(budget.isOverBudget).toBe(false);
+    });
   });
 });

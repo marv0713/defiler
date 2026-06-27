@@ -94,6 +94,14 @@ export function getOpponentId(playerId: PlayerId): PlayerId {
   return playerId === "player" ? "opponent" : "player";
 }
 
+export function isSurvivalRound(state: GameState, playerId: PlayerId): boolean {
+  const opponentId = getOpponentId(playerId);
+  return (
+    state.players[opponentId].roundWins === 1 &&
+    state.players[playerId].roundWins === 0
+  );
+}
+
 export function countBoardUnits(state: GameState, playerId: PlayerId): number {
   const board = state.players[playerId].board;
   return board.melee.length + board.ranged.length + board.siege.length;
@@ -192,6 +200,30 @@ export function evaluateStateForPlayer(
     handAdvantage * weights.handAdvantage +
     deckAdvantage * weights.deckAdvantage +
     boardUnitAdvantage * weights.boardUnitAdvantage;
+
+  // Hand quality premium (encourage keeping elite/hero/legend cards in early rounds)
+  if (state.currentRound < 3 && !isSurvivalRound(state, playerId)) {
+    // Player hand quality
+    for (const handCard of player.hand) {
+      const def = state.cardDefinitions[handCard.cardId];
+      if (!def) continue;
+      let premium = 0;
+      if (def.rarity === "elite") premium = 1.0;
+      else if (def.rarity === "hero") premium = 3.0;
+      else if (def.rarity === "legend") premium = 6.0;
+      score += premium * (weights.handAdvantage * 0.4);
+    }
+    // Opponent hand quality (minimize opponent's quality, so subtract it)
+    for (const handCard of opponent.hand) {
+      const def = state.cardDefinitions[handCard.cardId];
+      if (!def) continue;
+      let premium = 0;
+      if (def.rarity === "elite") premium = 1.0;
+      else if (def.rarity === "hero") premium = 3.0;
+      else if (def.rarity === "legend") premium = 6.0;
+      score -= premium * (weights.handAdvantage * 0.4);
+    }
+  }
 
   // Kill Shot penalty/bonus (graveyard isDestroyed cards + board units with 0 or less power).
   const countDeadOrDestroyed = (pState: typeof player) => {
@@ -297,7 +329,8 @@ export function getRoundBudget(
   } else if (state.currentRound === 2 && playerWins > opponentWins) {
     maxCardsThisRound = 3;
   } else if (state.currentRound === 2 && playerWins < opponentWins) {
-    maxCardsThisRound = 6;
+    // Survival round: spend freely to survive
+    maxCardsThisRound = cardsPlayedThisRound + state.players[playerId].hand.length;
   }
 
   return {
