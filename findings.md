@@ -534,3 +534,59 @@ App.tsx
     - `HARD_AI_WEIGHTS`: High card resource cost and hopeless chase penalties; extremely high value on hand advantage and passing once a safe lead is secured. AI conserves cards carefully in rounds 1-2, and fights with maximum urgency in round 3.
   - Mapped difficulty ratings (1-5) to weights: difficulty 1-2 uses Easy weights, 3 uses Normal weights, and 4-5 uses Hard weights.
 - **Verification**: Unit tests in `normalAI.test.ts` verify that passing different weights to `chooseNormalAIAction` under the exact same game state results in divergent decisions (e.g. Easy AI chooses to play a card while Normal AI chooses to pass to conserve resources).
+
+## Pluggable AI Strategy Direction (Phase 8 / Task 8.1)
+
+- User feedback after playable campaign testing: PvE works, but AI still feels
+  too weak. Continuing to tune only `UtilityAIWeights` is likely brittle.
+- **Decision**: Phase 8 should make AI implementations pluggable and compare
+  multiple approaches under identical simulator conditions before changing the
+  campaign default again.
+- **Planned AI ids**:
+  - `utility-v1`: current Utility AI wrapped as a baseline strategy.
+  - `round-strategy`: adds a named three-round resource plan before tactical
+    action scoring.
+  - `lookahead-1ply`: evaluates each action plus one predicted opponent
+    response.
+- **Architecture note**: React and Zustand may select an AI id, but all action
+  choice logic remains in `packages/game-core`.
+- **Card-role rule**: strategy code may classify cards from generic config
+  fields/effects (`DAMAGE`, `BUFF`, `DRAW_DISCARD`, rarity, power), but must
+  not branch on individual card ids.
+- **Benchmark rule**: AI strength should be compared through deterministic
+  simulator reports, not only isolated unit tests or manual feel.
+- Spec: `docs/superpowers/specs/2026-06-27-pluggable-ai-strategy-design.md`.
+- Plan: `docs/superpowers/plans/2026-06-27-pluggable-ai-strategy.md`.
+
+## Pluggable AI Strategy Implementation (Phase 8 / Task 8.1)
+
+- `packages/game-core/src/ai/aiStrategy.ts` now owns the public strategy
+  interface: `AIId`, `AIContext`, `AIStrategy`, `getAIStrategy`, and
+  `chooseAIAction`.
+- Implemented AI ids:
+  - `utility-v1`: baseline wrapper around the old Utility AI behavior.
+  - `round-strategy`: adds named three-round plans (`concede_round`,
+    `cheap_catchup`, `contest_round`, `bleed_opponent`, `must_win`,
+    `final_all_in`) before tactical action scoring.
+  - `lookahead-1ply`: evaluates each legal action plus one predicted Utility V1
+    opponent response.
+- `chooseNormalAIAction` remains as a compatibility wrapper, but the baseline
+  implementation is now named `chooseUtilityV1AIAction`.
+- The previous Hard-weight-only benchmark assumption was removed. One-ply
+  response search is now an explicit strategy instead of hidden inside Hard
+  weights.
+- `packages/game-core/src/ai/cardRoles.ts` classifies cards by generic
+  definitions/effects, not card ids. Roles include `filler`, `tempo`,
+  `removal`, `row_buff`, `setup`, `finisher`, and `resource`.
+- `packages/game-core/src/ai/aiComparison.ts` provides deterministic
+  AI-vs-AI comparison reports for strategy ids.
+- Campaign AI selection now routes through `chooseAIAction` in
+  `apps/web/src/store/gameStore.ts`:
+  - difficulty 1-2: `utility-v1`,
+  - difficulty 3: `round-strategy`,
+  - difficulty 4-5: `lookahead-1ply`,
+  - Quick Battle fallback: `round-strategy`.
+- Current benchmark metrics are intentionally simple: win counts, win rates,
+  draws, completed games, max-turn stops, average turns, and average rounds.
+  Richer PvE diagnostics such as empty-hand losses and hand size by round are a
+  good next tuning step.

@@ -1159,3 +1159,80 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 151 tests passed across 25 files (all tests green).
   - `pnpm typecheck`: clean.
   - `pnpm build`: clean, compiles successfully.
+
+## 2026-06-27
+
+### Phase 8 / Task 8.1 Planning: Pluggable AI Strategy
+
+- Read current `task_plan.md`, `progress.md`, `findings.md`, and existing AI
+  design docs.
+- Confirmed current playable state:
+  - Phase 7 campaign polish is complete.
+  - AI difficulty profiles exist, but they are primarily weight profiles over
+    the current Utility AI.
+  - User feedback is that PvE still feels too weak.
+- Design direction agreed before implementation:
+  - do not keep relying mainly on weight tuning;
+  - make AI implementations pluggable and easy to replace;
+  - implement three AI approaches and compare them:
+    - `utility-v1` baseline,
+    - `round-strategy`,
+    - `lookahead-1ply`;
+  - benchmark strategies against each other with deterministic simulator
+    reports before deciding campaign defaults.
+- Added spec:
+  - `docs/superpowers/specs/2026-06-27-pluggable-ai-strategy-design.md`
+- Added implementation plan:
+  - `docs/superpowers/plans/2026-06-27-pluggable-ai-strategy.md`
+- Updated working memory files before code implementation:
+  - `task_plan.md`: Phase 8 / Task 8.1 marked Planned.
+  - `findings.md`: recorded pluggable AI strategy direction and constraints.
+  - `progress.md`: recorded this planning step.
+- No AI implementation code has been changed in this step.
+
+### Phase 8 / Task 8.1 Implementation: Pluggable AI Strategy
+
+- Implemented AI strategy interface and registry:
+  - `packages/game-core/src/ai/aiStrategy.ts`
+  - `AIId = "utility-v1" | "round-strategy" | "lookahead-1ply"`
+  - `chooseAIAction({ aiId, state, playerId, weights })`
+- Split the old Utility AI baseline:
+  - `chooseUtilityV1AIAction` is the baseline implementation.
+  - `chooseNormalAIAction` remains as a compatibility wrapper.
+- Added generic card role classification:
+  - `packages/game-core/src/ai/cardRoles.ts`
+  - roles derived from generic card definition/effect data, not card ids.
+- Added Round Strategy AI:
+  - `packages/game-core/src/ai/roundStrategyAI.ts`
+  - explicit plans for conceding, cheap catch-up, contesting, bleeding, must-win,
+    and final all-in situations.
+- Added Lookahead 1-Ply AI:
+  - `packages/game-core/src/ai/lookaheadAI.ts`
+  - evaluates each legal action plus one predicted Utility V1 opponent response.
+- Added deterministic AI comparison benchmark:
+  - `packages/game-core/src/ai/aiComparison.ts`
+  - updated old `aiBenchmark.test.ts` to compare strategy ids rather than assume
+    Hard weights alone must reach a fixed win-rate threshold.
+- Routed web campaign AI through strategy ids in `apps/web/src/store/gameStore.ts`:
+  - difficulty 1-2 => `utility-v1`;
+  - difficulty 3 => `round-strategy`;
+  - difficulty 4-5 => `lookahead-1ply`;
+  - Quick Battle fallback => `round-strategy`.
+- Added/updated tests:
+  - `aiStrategy.test.ts`
+  - `cardRoles.test.ts`
+  - `roundStrategyAI.test.ts`
+  - `aiComparison.test.ts`
+  - `aiBenchmark.test.ts`
+  - `gameStore.test.ts`
+- Verification:
+  - `pnpm --filter @warring-states/web test src/store/gameStore.test.ts`: 31 tests passed.
+  - `pnpm --filter @warring-states/game-core test src/ai`: 46 tests passed across 9 files.
+  - `npm test`: 169 tests passed across 29 files.
+  - `pnpm typecheck`: clean.
+  - `npm run build`: clean (300.41 kB JS, 26.05 kB CSS).
+- Note:
+  - A direct `node -e import('@warring-states/game-core')` sample could not run
+    because the workspace package exports TypeScript source for Vite/Vitest and
+    is not installed as a built Node package. The deterministic comparison path
+    is covered by `aiComparison.test.ts`.
