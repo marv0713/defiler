@@ -1530,3 +1530,13 @@ Implement a minimal React UI that can start a game, display the board, display t
 - **Issue**: Cards with the `SUMMON` effect (e.g. `chu-shaman` summoning `chu-token`) failed to spawn units on the board because token card definitions were missing from `state.cardDefinitions`.
 - **Fix**: Modified `createInitialGameState` in `packages/game-core/src/rules/gameInit.ts` to pre-populate `cardDefinitions` with all master card definitions from `INITIAL_CARDS` (including tokens), ensuring the effect resolver can always look up summon targets.
 
+## UI & Save Enhancements: Local Profile Switcher (Save Slots)
+- **Goal**: Support multiple offline player profiles on the same device so that players do not overwrite each other's campaign progress and custom decks.
+- **Changes**:
+  - Upgraded `useSaveStore` in `saveStore.ts` to maintain a list of custom local profiles, mapping custom decks and completed levels to each profile.
+  - Added seamless data migration so existing players' single-profile progress is automatically migrated to the "Default Player" profile on launch.
+  - Rendered a compact profile switcher select dropdown on the `StartScreen`, complete with a deletion button (🗑) for custom profiles and a text input form to create new profiles.
+  - Subscribed `LevelSelectScreen.tsx` reactively to `currentProfileId` and `progress` state changes.
+  - Connected `gameStore.ts` deck builder actions (`toggleCardInDeck`, `removeCardFromDeck`, `autoFillDeck`, `selectLevel`) to read and write custom decks from the active profile in `useSaveStore` in real time.
+
+
