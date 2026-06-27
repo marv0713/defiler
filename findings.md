@@ -679,6 +679,14 @@ App.tsx
     1. Removed the pass confirmation modal state and render code block. The PASS button now calls `pass()` directly.
     2. Added `hasPassed` parameter to `BattleIdentityBar` to render a red `已放弃 / PASSED` badge next to the player's/opponent's name immediately when they pass.
     3. Added `resolveActionLogEntry` helper that translates actions (e.g., `PASS` to "{Player} passed", `PLAY_CARD` to "{Player} played [Card] (Power: X), dealing Y damage / gaining Z boost"). Also added `game.opponentPassed` and `game.logPass` translation keys.
-
-
+- **AI Turn 1 Pass Logic Fix (Fixed 2026-06-27)**:
+  - **Issue**: The opponent (AI) would frequently PASS immediately on Turn 1 if the player played a card of power 7 or more (e.g. Zhao She 7, Rogue 9).
+  - **Root Cause**:
+    1. The AI's `isHopelessChase` detection assessed whether the AI could *overtake* the player's score.
+    2. If the player went first and played a card of power 7+, the AI needed at least 2 cards to overtake the score.
+    3. The estimated cost for a 2-card catchup (typically ~7.5 to 9.5) often exceeded the Easy AI's `hopelessChasePenalty` weight of `8`.
+    4. As a result, the AI incorrectly evaluated a normal, active turn-by-turn round as a "hopeless chase" on Turn 1 and immediately passed.
+  - **Fix**:
+    1. Updated `isHopelessChase` in `packages/game-core/src/ai/normalAI.ts` so that it returns `false` on Turn 1 (when `budget.cardsPlayedThisRound === 0`).
+    2. Also added a safety threshold: if the opponent has not passed yet, the chase is never hopeless if the score difference is less than 15 points and at most 2 cards are needed to overtake.
 

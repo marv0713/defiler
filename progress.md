@@ -1336,6 +1336,17 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed.
   - `npm run build`: clean.
 
+### Fix: AI Turn 1 Pass Logic Fix (2026-06-27)
+
+- **Issue**: The opponent (AI) would immediately pass on Turn 1 if the player played a card of power 7 or more (e.g. Zhao She 7, Rogue 9).
+- **Fix**:
+  1. Updated `isHopelessChase` in `packages/game-core/src/ai/normalAI.ts` so that it returns `false` if the AI has played 0 cards this round (ensuring it never passes on Turn 1).
+  2. Added a threshold where if the opponent has not passed yet, the chase is never hopeless if the score gap is within 15 points and at most 2 cards are needed to catch up.
+- **Verification**:
+  - `pnpm test`: 182 tests passed (including all 151 game-core tests).
+  - `npm run build`: clean.
+
+
 
 
 

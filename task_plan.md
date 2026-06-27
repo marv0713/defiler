@@ -81,6 +81,7 @@ Current focus: polish the home screen and battle screen using
 | Fix / 2026-06-27 (3) | **Complete** | Fixed sidebar card details preview badges styling (mismatched classes) and action logs missing translation key `game.recentActions`. |
 | Fix / 2026-06-27 (4) | **Complete** | Stabilized right sidebar layout by showing Card details preview slot (fixed height), Enemy passive, and Recent actions simultaneously, preventing layout shifting/switching. Fixed missing `faction.neutral.name` translation. |
 | Fix / 2026-06-27 (5) | **Complete** | Removed pass confirmation modal; implemented prominent player/opponent pass state badges in BattleIdentityBar; enhanced action log to translate raw system entries into descriptive sentences including card name, base power, and triggered damage/boost/summon/lock/revive effects. |
+| Fix / 2026-06-27 (6) | **Complete** | Fixed AI turn 1 pass bug: adjusted isHopelessChase logic to return false when cardsPlayedThisRound is 0, preventing premature passing on turn 1. |
 
 ---
 

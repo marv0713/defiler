@@ -81,6 +81,16 @@ function isHopelessChase(
     budget.maxCardsThisRound - budget.cardsPlayedThisRound,
   );
 
+  // If opponent has not passed, we shouldn't pass on turn 1 or when slightly behind
+  if (budget.cardsPlayedThisRound === 0) {
+    return false;
+  }
+  const scores = calculateScores(state);
+  const scoreDiff = scores[opponentId] - scores[playerId];
+  if (scoreDiff < 15 && catchup.cardsNeeded <= 2) {
+    return false;
+  }
+
   return (
     catchup.cardsNeeded > Math.max(1, remainingBudget) ||
     catchup.totalEstimatedCost >= weights.hopelessChasePenalty
