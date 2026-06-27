@@ -4,7 +4,6 @@ import { applyAction } from "../rules/reducer";
 import { calculateScores } from "../rules/scoring";
 import type { GameState, PlayerId } from "../types";
 import {
-  HARD_AI_WEIGHTS,
   NORMAL_AI_WEIGHTS,
   countBoardUnits,
   estimateCardResourceCost,
@@ -12,6 +11,7 @@ import {
   evaluateStateForPlayer,
   getOpponentId,
   getRoundBudget,
+  isSurvivalRound,
   type UtilityAIWeights,
 } from "./aiEvaluation";
 
@@ -55,6 +55,7 @@ function isHopelessChase(
   weights: UtilityAIWeights,
 ): boolean {
   if (state.currentRound >= 3) return false;
+  if (isSurvivalRound(state, playerId)) return false;
 
   const catchup = estimateCatchupPlan(state, playerId);
   if (catchup.pointsNeeded === 0) return false;
@@ -98,6 +99,20 @@ function scorePassAction(
   const opponentPassed = state.players[opponentId].hasPassed;
   const catchup = estimateCatchupPlan(state, playerId);
   const budget = getRoundBudget(state, playerId);
+
+  // Survival round check: never pass when losing if we still have cards in hand!
+  if (isSurvivalRound(state, playerId) && lead <= 0 && state.players[playerId].hand.length > 0) {
+    return {
+      action,
+      total: Number.NEGATIVE_INFINITY,
+      stateDelta: 0,
+      resourceDelta: 0,
+      passValue: Number.NEGATIVE_INFINITY,
+      cardCost: 0,
+      budgetPenalty: 0,
+      chasePenalty: 0,
+    };
+  }
 
   let passValue = 0;
 
@@ -237,54 +252,13 @@ function isBetterScore(
   return getTieBreakCost(state, candidate.action) < getTieBreakCost(state, current.action);
 }
 
-export function chooseNormalAIAction(
+export function chooseUtilityV1AIAction(
   state: GameState,
   playerId: PlayerId,
   weights: UtilityAIWeights = NORMAL_AI_WEIGHTS,
 ): GameAction {
   const legalActions = getLegalActions(state, playerId);
   if (legalActions.length === 0) return { type: "PASS", playerId };
-
-  if (weights === HARD_AI_WEIGHTS && state.status === "playing") {
-    let bestAction = legalActions[0];
-    let bestScore = Number.NEGATIVE_INFINITY;
-    const opponentId = getOpponentId(playerId);
-
-    for (const action of legalActions) {
-      let score = Number.NEGATIVE_INFINITY;
-      try {
-        const breakdown = scoreNormalAIAction(state, action, playerId, weights);
-        if (breakdown.total === Number.NEGATIVE_INFINITY) {
-          score = Number.NEGATIVE_INFINITY;
-        } else if (action.type === "PASS") {
-          score = breakdown.total;
-        } else {
-          const nextState = applyAction(state, action);
-          if (
-            nextState.status === "game_finished" ||
-            nextState.status === "round_finished" ||
-            nextState.players[opponentId].hasPassed
-          ) {
-            score = breakdown.total;
-          } else {
-            const opponentAction = chooseNormalAIAction(nextState, opponentId, NORMAL_AI_WEIGHTS);
-            const futureState = applyAction(nextState, opponentAction);
-            const before = evaluateStateForPlayer(state, playerId, weights);
-            const afterFuture = evaluateStateForPlayer(futureState, playerId, weights);
-            score = (afterFuture - before) + breakdown.resourceDelta;
-          }
-        }
-      } catch {
-        score = Number.NEGATIVE_INFINITY;
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestAction = action;
-      }
-    }
-    return bestAction;
-  }
 
   let best = scoreNormalAIAction(state, legalActions[0], playerId, weights);
   for (const action of legalActions.slice(1)) {
@@ -295,4 +269,12 @@ export function chooseNormalAIAction(
   }
 
   return best.action;
+}
+
+export function chooseNormalAIAction(
+  state: GameState,
+  playerId: PlayerId,
+  weights: UtilityAIWeights = NORMAL_AI_WEIGHTS,
+): GameAction {
+  return chooseUtilityV1AIAction(state, playerId, weights);
 }

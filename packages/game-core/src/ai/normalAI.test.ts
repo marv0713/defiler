@@ -237,4 +237,36 @@ describe("scoreNormalAIAction", () => {
     // the penalty is low, so the AI should choose to PLAY_CARD.
     expect(chooseNormalAIAction(state, "opponent", EASY_AI_WEIGHTS).type).toBe("PLAY_CARD");
   });
+
+  test("does not treat chase as hopeless in a survival round", () => {
+    const state = makeTestState(
+      makeTestPlayer("player", [], [makeTestCard("p-board", 14, "player")], true, 0),
+      makeTestPlayer("opponent", [
+        makeTestCard("o-h1", 5),
+        makeTestCard("o-h2", 4),
+        makeTestCard("o-h3", 4),
+      ], [], false, 0),
+      2,
+    );
+    // Non-survival round: AI passes
+    expect(chooseNormalAIAction(state, "opponent").type).toBe("PASS");
+
+    // Survival round: player has 1 win, opponent has 0 wins. Should play card.
+    state.players["player"].roundWins = 1;
+    state.players["opponent"].roundWins = 0;
+    expect(chooseNormalAIAction(state, "opponent").type).toBe("PLAY_CARD");
+  });
+
+  test("returns negative infinity for PASS action when losing in a survival round with cards in hand", () => {
+    const state = makeTestState(
+      makeTestPlayer("player", [], [makeTestCard("p-board", 5, "player")], false, 1),
+      makeTestPlayer("opponent", [makeTestCard("o-h1", 5)], [], false, 0),
+      2,
+    );
+    const passAction = { type: "PASS" as const, playerId: "opponent" as const };
+    const score = scoreNormalAIAction(state, passAction, "opponent");
+    expect(score.total).toBe(Number.NEGATIVE_INFINITY);
+    expect(score.passValue).toBe(Number.NEGATIVE_INFINITY);
+  });
 });
+
