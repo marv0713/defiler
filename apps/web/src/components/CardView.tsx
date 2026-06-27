@@ -1,5 +1,6 @@
 import type { CardDefinition, CardInstance } from "@warring-states/game-core";
-import { getCardDescription, getCardName } from "../i18n/i18n";
+import { getCardName } from "../i18n/i18n";
+import { useGameStore } from "../store/gameStore";
 
 interface CardViewProps {
   card: CardInstance;
@@ -30,6 +31,7 @@ function getEffectBadge(def: CardDefinition | undefined): string | null {
 
 export function CardView({ card, definition, ghost = false, t }: CardViewProps) {
   const factionColor = getFactionColor(card);
+  const setHoveredCard = useGameStore((s) => s.setHoveredCard);
   const cls = [
     "card",
     `card--${factionColor}`,
@@ -49,11 +51,16 @@ export function CardView({ card, definition, ghost = false, t }: CardViewProps) 
         .replace(/-/g, " ");
 
   const effectBadge = getEffectBadge(definition);
-  const description = t ? getCardDescription(t, definition) : (definition?.description ?? "");
-  const tooltip = description ? `${displayName}\n${description}` : displayName;
 
   return (
-    <div className={cls} title={tooltip}>
+    <div
+      className={cls}
+      onMouseEnter={() => definition && setHoveredCard(definition)}
+      onMouseLeave={() => setHoveredCard(null)}
+      onFocus={() => definition && setHoveredCard(definition)}
+      onBlur={() => setHoveredCard(null)}
+      tabIndex={0}
+    >
       <span className="card__power">{card.currentPower}</span>
       <span className="card__name">{displayName}</span>
       {effectBadge && (

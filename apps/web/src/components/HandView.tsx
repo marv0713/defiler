@@ -1,5 +1,6 @@
 import type { CardDefinition, CardInstance } from "@warring-states/game-core";
-import { getCardDescription, getCardName } from "../i18n/i18n";
+import { getCardName } from "../i18n/i18n";
+import { useGameStore } from "../store/gameStore";
 
 const ROW_BADGE: Record<string, string> = {
   melee: "M",
@@ -29,13 +30,14 @@ export function HandView({
   onPlay,
   t,
 }: HandViewProps) {
+  const setHoveredCard = useGameStore((s) => s.setHoveredCard);
+
   return (
     <div className="hand-view">
       <div className="hand-view__cards">
         {cards.map((card) => {
           const def = cardDefinitions[card.cardId];
           const displayName = getCardName(t, def, card.cardId);
-          const description = getCardDescription(t, def);
           const rowText = card.row
             ? t("hand.rowText", { row: t(`row.${card.row}`) })
             : "";
@@ -44,9 +46,10 @@ export function HandView({
               key={card.instanceId}
               className={`hand-card${canPlay ? " hand-card--playable" : ""}`}
               onClick={() => canPlay && onPlay(card.instanceId)}
-              title={
-                description ? `${displayName}\n${description}` : displayName
-              }
+              onMouseEnter={() => setHoveredCard(def)}
+              onMouseLeave={() => setHoveredCard(null)}
+              onFocus={() => setHoveredCard(def)}
+              onBlur={() => setHoveredCard(null)}
               aria-label={t("hand.playCardLabel", {
                 card: displayName,
                 power: card.currentPower,

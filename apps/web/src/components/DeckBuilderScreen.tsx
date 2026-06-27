@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useGameStore, getMaxCardCopies } from "../store/gameStore";
 import { useI18n } from "../i18n/I18nProvider";
-import { INITIAL_CARDS } from "@warring-states/game-core";
+import { INITIAL_CARDS, type CardDefinition } from "@warring-states/game-core";
 import { getCardName, getCardDescription } from "../i18n/i18n";
 
 const FACTION_COLOR: Record<string, string> = {
@@ -20,13 +20,6 @@ const ALL_CARDS = INITIAL_CARDS.filter(
     c.id !== "chu-token",
 );
 
-interface TooltipCard {
-  name: string;
-  description: string;
-  power: number;
-  row?: string;
-}
-
 export function DeckBuilderScreen() {
   const { t } = useI18n();
 
@@ -41,8 +34,8 @@ export function DeckBuilderScreen() {
   const startLevelGame  = useGameStore((s) => s.startLevelGame);
   const goToLevelSelect = useGameStore((s) => s.goToLevelSelect);
 
-  // Tooltip state — show card detail on hover.
-  const [tooltip, setTooltip] = useState<TooltipCard | null>(null);
+  // Preview state — show card detail in right panel.
+  const [previewCard, setPreviewCard] = useState<CardDefinition | null>(null);
 
   const constraint = selectedLevel?.deckConstraint;
   const deckSize = 25;
@@ -138,24 +131,10 @@ export function DeckBuilderScreen() {
                   className={`pool-card ${inDeck ? "pool-card--selected" : ""} ${atMax ? "pool-card--disabled" : ""}`}
                   onClick={() => toggleCardInDeck(card.id)}
                   disabled={atMax}
-                  onMouseEnter={() =>
-                    setTooltip({
-                      name: cardName,
-                      description: cardDesc,
-                      power: card.power,
-                      row: card.row,
-                    })
-                  }
-                  onMouseLeave={() => setTooltip(null)}
-                  onFocus={() =>
-                    setTooltip({
-                      name: cardName,
-                      description: cardDesc,
-                      power: card.power,
-                      row: card.row,
-                    })
-                  }
-                  onBlur={() => setTooltip(null)}
+                  onMouseEnter={() => setPreviewCard(card)}
+                  onMouseLeave={() => setPreviewCard(null)}
+                  onFocus={() => setPreviewCard(card)}
+                  onBlur={() => setPreviewCard(null)}
                   aria-label={`${cardName}${cardDesc ? ` — ${cardDesc}` : ""}`}
                 >
                   <span className="pool-card-power">{card.power}</span>
@@ -171,21 +150,6 @@ export function DeckBuilderScreen() {
                 </button>
               );
             })}
-          </div>
-
-          {/* Stable hover tooltip panel. Keep it mounted to avoid layout flicker. */}
-          <div className={`pool-card-tooltip ${tooltip ? "" : "pool-card-tooltip--empty"}`}>
-            <div className="pool-card-tooltip__header">
-              <span className="pool-card-tooltip__name">{tooltip?.name ?? ""}</span>
-              {tooltip && tooltip.power > 0 && (
-                <span className="pool-card-tooltip__power">
-                  {tooltip.power} {t("deckbuilder.tooltipPower")}
-                </span>
-              )}
-            </div>
-            {tooltip?.description && (
-              <p className="pool-card-tooltip__desc">{tooltip.description}</p>
-            )}
           </div>
         </div>
 
@@ -224,7 +188,14 @@ export function DeckBuilderScreen() {
 
           <ul className="deck-list">
             {deckEntries.map(({ def, key }) => (
-              <li key={key} className="deck-list-item">
+              <li
+                key={key}
+                className="deck-list-item"
+                onMouseEnter={() => setPreviewCard(def)}
+                onMouseLeave={() => setPreviewCard(null)}
+                onFocus={() => setPreviewCard(def)}
+                onBlur={() => setPreviewCard(null)}
+              >
                 <span className="deck-item-power">{def.power}</span>
                 <span className="deck-item-name">{getCardName(t, def, def.id)}</span>
                 <button
@@ -265,6 +236,62 @@ export function DeckBuilderScreen() {
                 : `${playerDeck.length}/${deckSize} ${t("deckbuilder.cards")}`}
             </button>
           </div>
+        </aside>
+
+        {/* Right: Card Preview */}
+        <aside className="card-preview-panel">
+          <h2 className="preview-heading">{t("deckbuilder.cardPreview")}</h2>
+          {previewCard ? (
+            <div className="card-preview-content">
+              <div className={`card-preview-frame card-preview-frame--${previewCard.rarity} card-preview-frame--${previewCard.faction}`}>
+                {/* Header */}
+                <div className="preview-frame-header">
+                  <span className="preview-frame-power">{previewCard.power}</span>
+                  <span className="preview-frame-name">{getCardName(t, previewCard, previewCard.id)}</span>
+                </div>
+
+                {/* Art Placeholder */}
+                <div className="preview-frame-art">
+                  <div className="preview-frame-art-inner">
+                    <span className="preview-art-icon">
+                      {previewCard.type === "special" ? "📜" : (previewCard.row === "melee" ? "⚔" : previewCard.row === "ranged" ? "🏹" : "☄")}
+                    </span>
+                    <span className="preview-art-text">{t("deckbuilder.artPlaceholder")}</span>
+                  </div>
+                </div>
+
+                {/* Metadata badges */}
+                <div className="preview-frame-metadata">
+                  <span className={`preview-badge badge-faction badge-faction--${previewCard.faction}`}>
+                    {t(`faction.${previewCard.faction}.name`)}
+                  </span>
+                  {previewCard.row && (
+                    <span className="preview-badge badge-row">
+                      {t(`row.${previewCard.row}`)}
+                    </span>
+                  )}
+                  <span className={`preview-badge badge-rarity badge-rarity--${previewCard.rarity}`}>
+                    {t(`rarity.${previewCard.rarity}`)}
+                  </span>
+                  <span className="preview-badge badge-type">
+                    {t(`cardtype.${previewCard.type}`)}
+                  </span>
+                </div>
+
+                {/* Description Body */}
+                <div className="preview-frame-body">
+                  <p className="preview-frame-desc">
+                    {getCardDescription(t, previewCard)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="card-preview-placeholder">
+              <div className="preview-placeholder-icon">🃏</div>
+              <p>{t("deckbuilder.previewPlaceholder")}</p>
+            </div>
+          )}
         </aside>
       </div>
     </div>

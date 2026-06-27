@@ -18,6 +18,7 @@ import type {
   LevelDefinition,
   WinCondition,
   AIId,
+  CardDefinition,
 } from "@warring-states/game-core";
 
 export type AppScreen =
@@ -47,6 +48,7 @@ interface GameStore {
   lastAction: LogMessage | null;
   playerFaction: Faction;
   opponentFaction: Faction;
+  hoveredCard: CardDefinition | null;
 
   // ── Campaign mode ──────────────────────────────────────────────────────────
   /** The level the player selected; null when in Quick Battle mode. */
@@ -65,6 +67,7 @@ interface GameStore {
   startGame: (playerFaction: Faction, opponentFaction: Faction) => void;
   setPlayerFaction: (f: Faction) => void;
   setOpponentFaction: (f: Faction) => void;
+  setHoveredCard: (card: CardDefinition | null) => void;
   /** Play a card from the player's hand. Opponent AI responds automatically. */
   playCard: (cardInstanceId: string) => void;
   /** Player passes. Opponent AI responds automatically. */
@@ -237,6 +240,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   campaignMode: false,
   campaignFactionChosen: false,
   campaignFactionLocked: false,
+  hoveredCard: null,
+
+  setHoveredCard(card) {
+    set({ hoveredCard: card });
+  },
 
   startGame(playerFaction, opponentFaction) {
     const initialState = createInitialGameState({

@@ -236,6 +236,17 @@ describe("useGameStore — campaign deck building", () => {
     })).toBe(true);
   });
 
+  it("starts campaign games through the pluggable AI chooser", () => {
+    useGameStore.getState().goToLevelSelect();
+    useGameStore.getState().setPlayerFaction("qi");
+    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
+    useGameStore.getState().autoFillDeck();
+
+    expect(() => useGameStore.getState().startLevelGame()).not.toThrow();
+    expect(useGameStore.getState().screen).toBe("game");
+    expect(useGameStore.getState().gameState).not.toBeNull();
+  });
+
   it("keeps the built campaign deck when selecting another level", () => {
     useGameStore.getState().goToLevelSelect();
     useGameStore.getState().setPlayerFaction("qin");

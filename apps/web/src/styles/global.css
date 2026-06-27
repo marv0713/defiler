@@ -15,6 +15,11 @@
   --text-dim:   #8a8070;
   --border:     #2e2820;
   --border-gold:#3a2e18;
+  --qin:        #b32d2d;
+  --chu:        #2d6ab3;
+  --qi:         #2db36a;
+  --zhao:       #8a2db3;
+  --neutral:    #8a8070;
   --radius:     6px;
   --radius-lg:  10px;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -526,7 +531,7 @@ body {
   grid-column: 1;
 }
 
-.action-history {
+.game-sidebar {
   grid-column: 2;
   grid-row: 1 / 5;
   display: flex;
@@ -535,6 +540,34 @@ body {
   background: #100d08;
   border-left: 1px solid var(--border-gold);
   overflow: hidden;
+  height: 100vh;
+}
+
+.sidebar-preview-section {
+  flex: 0 0 350px;
+  background: #15110c;
+  border-bottom: 1px solid var(--border-gold);
+  padding: 14px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sidebar-history-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.action-history {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #100d08;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 .action-history__title {
   padding: 10px 12px;
@@ -1302,3 +1335,366 @@ body {
 .campaign-result-banner--pass { background: #0e2e0e; color: #6ac66a; border: 1px solid #2a6a2a; }
 .campaign-result-banner--fail { background: #2e0e0e; color: #c84040; border: 1px solid #6a2a2a; }
 .result-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+
+/* ─── Card Preview Panel (Right Side) ─────────────────────────── */
+.card-preview-panel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.preview-heading {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.card-preview-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.preview-placeholder-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.card-preview-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 10px;
+}
+
+/* Card Visual Frame Representation */
+.card-preview-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1.5;
+  max-width: 240px;
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #14100b;
+  border: 3px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Rarity specific border colors/glows */
+.card-preview-frame--common {
+  border-color: #555555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.card-preview-frame--elite {
+  border-color: #2e6ab3;
+  box-shadow: 0 4px 16px rgba(46, 106, 179, 0.2);
+}
+.card-preview-frame--hero {
+  border-color: #c9a84c;
+  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.25);
+}
+.card-preview-frame--legend {
+  border-color: #d15615;
+  box-shadow: 0 4px 24px rgba(209, 86, 21, 0.4);
+  animation: legend-glow 2s infinite alternate;
+}
+
+@keyframes legend-glow {
+  0% { box-shadow: 0 4px 20px rgba(209, 86, 21, 0.3); }
+  100% { box-shadow: 0 4px 30px rgba(209, 86, 21, 0.6); }
+}
+
+/* Faction theme styling / background hints */
+.card-preview-frame--qin {
+  background: radial-gradient(circle at center, #241414 0%, #100808 100%);
+}
+.card-preview-frame--chu {
+  background: radial-gradient(circle at center, #141a29 0%, #080b12 100%);
+}
+.card-preview-frame--qi {
+  background: radial-gradient(circle at center, #142418 0%, #08100a 100%);
+}
+.card-preview-frame--zhao {
+  background: radial-gradient(circle at center, #201429 0%, #0b0812 100%);
+}
+.card-preview-frame--neutral {
+  background: radial-gradient(circle at center, #1b1714 0%, #0c0a09 100%);
+}
+
+/* Header inside card visual */
+.preview-frame-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+}
+.preview-frame-power {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+}
+.preview-frame-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card Art Area (Placeholder for now) */
+.preview-frame-art {
+  flex: 1.2;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.3);
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-frame-art-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-art-icon {
+  font-size: 2.2rem;
+  opacity: 0.8;
+}
+
+.preview-art-text {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Metadata Row (Badges) */
+.preview-frame-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.preview-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.badge-faction {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+}
+.badge-faction--qin { border-color: var(--qin); color: var(--qin); }
+.badge-faction--chu { border-color: var(--chu); color: var(--chu); }
+.badge-faction--qi { border-color: var(--qi); color: var(--qi); }
+.badge-faction--zhao { border-color: var(--zhao); color: var(--zhao); }
+.badge-faction--neutral { border-color: var(--neutral); color: var(--neutral); }
+
+.badge-row {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--text-dim);
+  color: var(--text);
+}
+
+.badge-rarity {
+  color: #fff;
+}
+.badge-rarity--common { background: #444; }
+.badge-rarity--elite { background: #2d6ab3; }
+.badge-rarity--hero { background: #b0903a; color: #111; }
+.badge-rarity--legend { background: #d15615; }
+
+.badge-type {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--parchment-dim);
+}
+
+/* Body / Description */
+.preview-frame-body {
+  flex: 1.5;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius);
+  padding: 8px;
+  overflow-y: auto;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--parchment-dim);
+}
+.preview-frame-desc {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ─── Sidebar Card Preview ────────────────────────────────────── */
+.sidebar-card-frame {
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  background: #1d1811;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.sidebar-card-frame--legend {
+  border-color: var(--legend);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 0 12px var(--legend-glow);
+}
+
+.sidebar-card-frame--hero {
+  border-color: var(--hero);
+}
+
+.sidebar-card-frame--elite {
+  border-color: var(--elite);
+}
+
+.sidebar-card-frame--qin { background: linear-gradient(135deg, #1d1515 0%, #150f0f 100%); }
+.sidebar-card-frame--chu { background: linear-gradient(135deg, #15181d 0%, #0f1015 100%); }
+.sidebar-card-frame--qi  { background: linear-gradient(135deg, #1d1c15 0%, #15140f 100%); }
+.sidebar-card-frame--zhao { background: linear-gradient(135deg, #151d16 0%, #0f1510 100%); }
+.sidebar-card-frame--neutral { background: linear-gradient(135deg, #1a1714 0%, #100f0e 100%); }
+
+.sidebar-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-card-power {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border-gold);
+  background: #000;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.sidebar-card-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--parchment);
+}
+
+.sidebar-card-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sidebar-badge {
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  color: var(--parchment-dim);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+
+.sidebar-card-body {
+  border-top: 1px solid rgba(201,168,76,0.15);
+  padding-top: 8px;
+}
+
+.sidebar-card-desc {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--parchment-dim);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ─── Sidebar Glossary ────────────────────────────────────────── */
+.sidebar-glossary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.glossary-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.glossary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.glossary-item {
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 4px;
+}
+
+.glossary-item__name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.glossary-item__desc {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--text-dim);
+  margin: 0;
+}
+

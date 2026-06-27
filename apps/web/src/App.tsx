@@ -6,6 +6,7 @@ import { HandView } from "./components/HandView";
 import { LevelSelectScreen } from "./components/LevelSelectScreen";
 import { DeckBuilderScreen } from "./components/DeckBuilderScreen";
 import { useI18n } from "./i18n/I18nProvider";
+import { getCardDescription, getCardName } from "./i18n/i18n";
 import type { Faction, GameActionLogEntry, GameState } from "@warring-states/game-core";
 
 const FACTIONS: { value: Faction; icon: string; fallback: string }[] = [
@@ -210,7 +211,7 @@ function RoundResultBanner() {
 // Game Screen
 // ──────────────────────────────────────────
 function GameScreen() {
-  const { gameState, lastAction, playCard, pass, scores } = useGameStore();
+  const { gameState, lastAction, playCard, pass, scores, hoveredCard } = useGameStore();
   const { t } = useI18n();
 
   /** Resolve a structured LogMessage to a translated string. */
@@ -345,7 +346,63 @@ function GameScreen() {
         )}
       </div>
 
-      <ActionHistoryPanel gameState={gameState} t={t} />
+      <aside className="game-sidebar">
+        {/* Top: Card Preview or Glossary */}
+        <div className="sidebar-preview-section">
+          {hoveredCard ? (
+            <div className={`sidebar-card-frame sidebar-card-frame--${hoveredCard.rarity} sidebar-card-frame--${hoveredCard.faction}`}>
+              <div className="sidebar-card-header">
+                <span className="sidebar-card-power">{hoveredCard.power}</span>
+                <span className="sidebar-card-name">{getCardName(t, hoveredCard, hoveredCard.id)}</span>
+              </div>
+              <div className="sidebar-card-metadata">
+                <span className={`sidebar-badge badge-faction badge-faction--${hoveredCard.faction}`}>
+                  {t(`faction.${hoveredCard.faction}.name`)}
+                </span>
+                {hoveredCard.row && (
+                  <span className="sidebar-badge badge-row">
+                    {t(`row.${hoveredCard.row}`)}
+                  </span>
+                )}
+                <span className={`sidebar-badge badge-rarity badge-rarity--${hoveredCard.rarity}`}>
+                  {t(`rarity.${hoveredCard.rarity}`)}
+                </span>
+                <span className={`sidebar-badge badge-type badge-type--${hoveredCard.type}`}>
+                  {t(`cardtype.${hoveredCard.type}`)}
+                </span>
+              </div>
+              <div className="sidebar-card-body">
+                <p className="sidebar-card-desc">{getCardDescription(t, hoveredCard)}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="sidebar-glossary">
+              <h3 className="glossary-title">{t("glossary.title")}</h3>
+              <div className="glossary-list">
+                {[
+                  { key: "lock", icon: "🔐" },
+                  { key: "revive", icon: "♻" },
+                  { key: "summon", icon: "✨" },
+                  { key: "special", icon: "📜" },
+                  { key: "boost", icon: "⚡" },
+                ].map(({ key, icon }) => (
+                  <div key={key} className="glossary-item">
+                    <span className="glossary-item__name">
+                      {icon} {t(`glossary.${key}.name`)}
+                    </span>
+                    <p className="glossary-item__desc">{t(`glossary.${key}.desc`)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom: Action History */}
+        <div className="sidebar-history-section">
+          <ActionHistoryPanel gameState={gameState} t={t} />
+        </div>
+      </aside>
 
       {/* ── Round result overlay ── */}
       <RoundResultBanner />
