@@ -251,6 +251,7 @@ export const enMessages: MessageDictionary = {
 
   "game.opponentTurn": "Opponent's turn…",
   "game.playerPassed": "You passed this small round — waiting for the opponent.",
+  "game.opponentPassed": "Opponent has passed. You can play cards to catch up.",
   "game.roundOverStatus": "Small round over — see result below",
   "game.passRound": "Pass Small Round / PASS",
   "game.policySlot": "Policy: {policy} 1/1",

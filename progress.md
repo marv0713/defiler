@@ -1325,5 +1325,17 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed.
   - `npm run build`: clean.
 
+### Fix: Pass Confirmation, Pass Status, and Log Readability Fixes (2026-06-27)
+
+- **Issue**: The pass button opened a buggy confirmation modal (showing raw translation keys). When players passed, there was no prominent indicator on the board. The recent actions sidebar log displayed raw keys (e.g. `action-10`) instead of readable sentences.
+- **Fix**:
+  1. Removed the pass confirmation modal entirely. The PASS button now triggers `pass()` directly.
+  2. Modified `BattleIdentityBar` to receive `hasPassed` and display a prominent red `已放弃 / PASSED` badge next to the player/opponent name.
+  3. Added `resolveActionLogEntry` helper that resolves raw system logs into descriptive gameplay sentences, including card names, base power, and triggered effects (e.g. damage, boost, summon, lock, revive). Added keys `game.logPass` and `game.opponentPassed`.
+- **Verification**:
+  - `pnpm test`: 182 tests passed.
+  - `npm run build`: clean.
+
+
 
 

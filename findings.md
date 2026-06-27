@@ -667,5 +667,18 @@ App.tsx
   - **Fix**:
     1. Restructured the `game-sidebar` layout to be completely static, showing the Card Details Preview slot (at a fixed height of `280px` with `overflow-y: auto`), the Enemy Passive Mechanic card (fixed height), and the Recent Action Logs card (filling remaining space with `flex: 1` and scrollable) simultaneously. When no card is hovered/selected, a clean placeholder card frame is shown in the card slot.
     2. Added `"faction.neutral.name"` translation keys ("中立" in zh, "Neutral" in en).
+- **Pass Confirmation Modal Removal, Pass Status, and Log Readability Fixes (Fixed 2026-06-27)**:
+  - **Issue 1**: The PASS button opened a buggy confirmation modal (showing untranslated `game.passConfirmTitle` keys, etc.), which disrupted gameplay flow.
+  - **Issue 2**: When players or the opponent passed, there was no prominent visual indicator of the passed state on the board.
+  - **Issue 3**: The recent action logs list was unreadable, showing raw system keys like `action-10` instead of descriptive gameplay sentences.
+  - **Root Cause**:
+    1. The pass action was routed through a confirmation overlay.
+    2. The board layout hid the player board headers where the `passed-badge` was rendered, leaving no pass indicator.
+    3. The action logs list mapped entries directly through `resolveLog(entry)` using the entry's ID (`action-XX`) rather than parsing its type, card details, or combat effects.
+  - **Fix**:
+    1. Removed the pass confirmation modal state and render code block. The PASS button now calls `pass()` directly.
+    2. Added `hasPassed` parameter to `BattleIdentityBar` to render a red `已放弃 / PASSED` badge next to the player's/opponent's name immediately when they pass.
+    3. Added `resolveActionLogEntry` helper that translates actions (e.g., `PASS` to "{Player} passed", `PLAY_CARD` to "{Player} played [Card] (Power: X), dealing Y damage / gaining Z boost"). Also added `game.opponentPassed` and `game.logPass` translation keys.
+
 
 

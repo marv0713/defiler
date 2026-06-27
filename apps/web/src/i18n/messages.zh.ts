@@ -317,6 +317,7 @@ export const zhMessages: MessageDictionary = {
 
   "game.opponentTurn": "对手行动中…",
   "game.playerPassed": "你已放弃本小局，等待对手继续追分。",
+  "game.opponentPassed": "对手已放弃本小局，你可以继续出牌追分。",
   "game.roundOverStatus": "小局结束，查看结果",
   "game.passRound": "放弃本小局 / PASS",
   "game.policySlot": "国策：{policy} 1/1",

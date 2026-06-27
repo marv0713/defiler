@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useGameStore } from "./store/gameStore";
-import type { LogMessage } from "./store/gameStore";
 import { useSaveStore } from "./store/saveStore";
 import { PlayerBoard } from "./components/PlayerBoard";
 import { HandView } from "./components/HandView";
@@ -8,7 +7,7 @@ import { LevelSelectScreen } from "./components/LevelSelectScreen";
 import { DeckBuilderScreen } from "./components/DeckBuilderScreen";
 import { useI18n } from "./i18n/I18nProvider";
 import { getCardDescription, getCardName } from "./i18n/i18n";
-import type { Faction, CardDefinition } from "@warring-states/game-core";
+import type { Faction, CardDefinition, GameActionLogEntry } from "@warring-states/game-core";
 
 const FACTIONS: { value: Faction; icon: string; fallback: string }[] = [
   { value: "qin", icon: "🔴", fallback: "Qin" },
@@ -251,12 +250,14 @@ function BattleIdentityBar({
   faction,
   handCount,
   deckCount,
+  hasPassed,
   t,
 }: {
   side: "player" | "opponent";
   faction: Faction;
   handCount: number;
   deckCount: number;
+  hasPassed: boolean;
   t: (id: string, params?: Record<string, string | number>) => string;
 }) {
   return (
@@ -268,6 +269,11 @@ function BattleIdentityBar({
       </span>
       <span>{t("board.hand", { count: handCount })}</span>
       <span>{t("board.deck", { count: deckCount })}</span>
+      {hasPassed && (
+        <span className="meta-badge passed-badge" style={{ marginLeft: "8px", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", background: "rgba(139,26,26,0.15)" }}>
+          {t("board.passed")}
+        </span>
+      )}
     </div>
   );
 }
@@ -317,20 +323,65 @@ function GameScreen() {
 
   // State hooks
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [showPassConfirm, setShowPassConfirm] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  /** Resolve a structured LogMessage to a translated string. */
-  function resolveLog(msg: LogMessage): string {
-    const params = msg.params ? { ...msg.params } : {};
-    if (typeof params.nameId === "string" && params.nameId) {
-      params.name = t(params.nameId);
-      delete params.nameId;
-    }
-    return t(msg.id, params as Record<string, string | number>);
-  }
-
   if (!gameState) return null;
+
+  /** Resolve a raw GameActionLogEntry to a readable, descriptive string. */
+  function resolveActionLogEntry(entry: GameActionLogEntry): string {
+    if (!gameState) return "";
+    if (entry.message === "PASS") {
+      const sideName = entry.playerId === "player" ? t("player.you") : t("player.opponent");
+      return t("game.logPass", { player: sideName });
+    }
+    if (entry.message === "START_NEXT_ROUND") {
+      return language === "zh"
+        ? `第 ${entry.round} 小局开始`
+        : `Small Round ${entry.round} Started`;
+    }
+    if (entry.message === "PLAY_CARD") {
+      const sideName = entry.playerId === "player" ? t("player.you") : t("player.opponent");
+      if (entry.cardId) {
+        const cardDef = gameState.cardDefinitions[entry.cardId];
+        const cardName = cardDef ? getCardName(t, cardDef, entry.cardId) : entry.cardId;
+        const basePower = cardDef ? cardDef.power : 0;
+        
+        let effectDetail = "";
+        if (cardDef && cardDef.effects && cardDef.effects.length > 0) {
+          const fx = cardDef.effects[0] as any;
+          if (fx.type === "DAMAGE" && typeof fx.amount === "number") {
+            effectDetail = language === "zh"
+              ? `，造成 ${fx.amount} 点伤害`
+              : `, dealing ${fx.amount} damage`;
+          } else if ((fx.type === "BUFF" || fx.type === "CONDITIONAL_BOOST") && typeof fx.amount === "number") {
+            effectDetail = language === "zh"
+              ? `，获得 +${fx.amount} 增益`
+              : `, gaining +${fx.amount} boost`;
+          } else if (fx.type === "SUMMON") {
+            effectDetail = language === "zh"
+              ? `，召唤友军`
+              : `, summoning allies`;
+          } else if (fx.type === "LOCK") {
+            effectDetail = language === "zh"
+              ? `，锁定敌方`
+              : `, locking an enemy`;
+          } else if (fx.type === "REVIVE") {
+            effectDetail = language === "zh"
+              ? `，复活单位`
+              : `, reviving a unit`;
+          }
+        }
+        
+        return language === "zh"
+          ? `${sideName}使用了【${cardName}】（战力 ${basePower}）${effectDetail}`
+          : `${sideName} played [${cardName}] (Power: ${basePower})${effectDetail}`;
+      }
+      return language === "zh"
+        ? `${sideName}使用了卡牌`
+        : `${sideName} played a card`;
+    }
+    return entry.message;
+  }
 
   const s = scores();
   const { player, opponent } = gameState.players;
@@ -344,7 +395,7 @@ function GameScreen() {
   const actionHint = isRoundOver
     ? t("game.roundOverStatus")
     : isPlayerTurn && !player.hasPassed
-      ? t("game.yourTurn")
+      ? (opponent.hasPassed ? t("game.opponentPassed") : t("game.yourTurn"))
       : player.hasPassed
         ? t("game.playerPassed")
         : t("game.opponentTurn");
@@ -446,13 +497,7 @@ function GameScreen() {
     );
   }
 
-  // Calculate pass advice score diff
-  const lead = (s?.player ?? 0) - (s?.opponent ?? 0);
-  const passAdvice = lead > 0
-    ? t("game.passAdviceLead", { points: lead })
-    : lead < 0
-      ? t("game.passAdviceTrail", { points: Math.abs(lead) })
-      : t("game.passAdviceEqual");
+
 
   return (
     <div className="game-screen">
@@ -467,6 +512,7 @@ function GameScreen() {
             faction={opponent.faction}
             handCount={opponent.hand.length}
             deckCount={opponent.deck.length}
+            hasPassed={opponent.hasPassed}
             t={t}
           />
           <button
@@ -537,6 +583,7 @@ function GameScreen() {
             faction={player.faction}
             handCount={player.hand.length}
             deckCount={player.deck.length}
+            hasPassed={player.hasPassed}
             t={t}
           />
         </div>
@@ -568,7 +615,12 @@ function GameScreen() {
             </button>
             <button
               className="battle-action-btn battle-action-btn--pass"
-              onClick={() => canPlay && setShowPassConfirm(true)}
+              onClick={() => {
+                if (canPlay) {
+                  setSelectedCardId(null);
+                  pass();
+                }
+              }}
               disabled={!canPlay}
               title={t("game.passRound")}
             >
@@ -657,7 +709,7 @@ function GameScreen() {
               return (
                 <div key={index} className={`recent-log-item recent-log-item--${isPlayer ? "player" : "opponent"}`} style={{ display: "flex", gap: "8px", fontSize: "0.72rem", padding: "6px 8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "4px" }}>
                   <span className="log-icon">{icon}</span>
-                  <span className="log-text" style={{ color: isPlayer ? "#ffb6b6" : "#b6d8ff" }}>{resolveLog(entry)}</span>
+                  <span className="log-text" style={{ color: isPlayer ? "#ffb6b6" : "#b6d8ff" }}>{resolveActionLogEntry(entry)}</span>
                 </div>
               );
             })}
@@ -671,40 +723,6 @@ function GameScreen() {
 
       </aside>
 
-      {/* PASS ROUND CONFIRMATION MODAL */}
-      {showPassConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-content settings-modal">
-            <h2 className="modal-title">⚔️ {t("game.passConfirmTitle")}</h2>
-            <div className="settings-options" style={{ padding: "16px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <p style={{ color: "var(--text)", fontSize: "0.92rem", fontWeight: "bold" }}>
-                {t("game.passConfirmBody")}
-              </p>
-              <p style={{ color: "var(--gold-dim)", fontSize: "0.85rem", background: "rgba(201,168,76,0.06)", padding: "10px", border: "1px solid rgba(201,168,76,0.15)", borderRadius: "4px", lineHeight: "1.4" }}>
-                💡 {passAdvice}
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button
-                className="btn btn--outline"
-                onClick={() => setShowPassConfirm(false)}
-              >
-                {t("game.cancel")}
-              </button>
-              <button
-                className="btn btn--primary"
-                onClick={() => {
-                  setShowPassConfirm(false);
-                  setSelectedCardId(null);
-                  pass();
-                }}
-              >
-                {t("game.confirm")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* BATTLE SETTINGS MODAL */}
       {showSettingsModal && (
