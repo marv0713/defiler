@@ -13,11 +13,14 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 7: Campaign PvE Polish — **Complete**.
+Phase 8: PvE AI Strategy — **Complete**.
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
 Full English/Chinese i18n pass is complete.
 Deck Builder fixes complete: faction-locked campaign pool, in-page tooltip, copy limits.
 Campaign sequential unlocking and AI difficulty profiles complete.
+Pluggable AI strategy architecture is implemented: Utility V1 baseline, Round
+Strategy AI, Lookahead 1-Ply AI, deterministic comparison benchmark, and campaign
+AI id mapping.
 
 ## Task Status
 
@@ -69,14 +72,16 @@ Campaign sequential unlocking and AI difficulty profiles complete.
 | Fix / 2026-06-23 (3) | **Complete** | Implemented rarity-based card copy limits (Legend: 1, Hero: 1, Elite: 2, Common: 3) in deck builder store and UI; added visual `count/limit` indicators in pool; updated test suite. |
 | Phase 7 / Task 7.3 | **Complete** | Campaign AI difficulty profiles: defined EASY_AI_WEIGHTS and HARD_AI_WEIGHTS, changed `chooseNormalAIAction` to accept weights, and mapped level difficulty to AI weight sets in `gameStore.ts`. Added tests. |
 | Phase 7 / Task 7.4 | **Complete** | Sequential campaign level unlocking: level `i` is unlocked if Level 1, previous level is complete, or the campaign is cleared (last level complete). Enforced in `gameStore.ts` and shown via padlocks `🔒` in `LevelSelectScreen.tsx`. Added tests. |
+| Phase 8 / Task 8.1 | **Complete** | Pluggable AI strategy architecture: Utility V1 baseline, Round Strategy AI, Lookahead 1-Ply AI, deterministic AI comparison benchmark, and campaign AI id mapping. |
+| Fix / 2026-06-27 | **Complete** | Upgraded campaign Hard AI (difficulty 4-5) to a Strategic 3-Ply Lookahead AI (`lookahead-3ply`), implementing survival round overrides (no early concession) and hand quality card preservation. |
 
 ---
 
-## Phase 7 Work Queue
+## Phase 8 Work Queue
 
 Approved / likely next areas:
 
-- None (all campaign polish items completed).
+- None. Task 8.1 implementation is complete.
 
 Potential later polish:
 
@@ -110,6 +115,11 @@ Potential later polish:
 - **6 level designs** (see `findings.md` Phase 6 section for details).
 - **Save**: completed level IDs persisted to `localStorage` via Zustand persist.
 - **WinCondition evaluation**: done post-game in `ResultScreen`, not in reducer.
+- **AI strategy direction**: weight profiles are no longer the main tuning tool.
+  AI implementations are now pluggable and comparable by id:
+  `utility-v1`, `round-strategy`, and `lookahead-1ply`. Campaign defaults use
+  Utility V1 on difficulty 1-2, Round Strategy on difficulty 3, and Lookahead
+  1-Ply on difficulty 4-5.
 
 ### Files (Phase 5, complete)
 
