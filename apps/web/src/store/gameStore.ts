@@ -4,7 +4,7 @@ import {
   createInitialGameState,
   applyAction,
   getLegalActions,
-  chooseNormalAIAction,
+  chooseAIAction,
   INITIAL_CARDS,
   DECK_SIZE,
   calculateScores,
@@ -17,6 +17,7 @@ import type {
   Faction,
   LevelDefinition,
   WinCondition,
+  AIId,
 } from "@warring-states/game-core";
 
 export type AppScreen =
@@ -135,6 +136,12 @@ function getCampaignDeckPool(playerFaction: Faction) {
   );
 }
 
+function getCampaignAIIdForDifficulty(difficulty: number): AIId {
+  if (difficulty <= 2) return "utility-v1";
+  if (difficulty === 3) return "round-strategy";
+  return "lookahead-3ply";
+}
+
 /**
  * Runs opponent AI turns until it is the player's turn, the round ends,
  * or the game ends. Returns the final state and the last action label.
@@ -152,12 +159,20 @@ function advanceOpponentAI(state: GameState): {
   const weights = (campaignMode && selectedLevel)
     ? getAIWeightsForDifficulty(selectedLevel.difficulty)
     : NORMAL_AI_WEIGHTS;
+  const aiId: AIId = (campaignMode && selectedLevel)
+    ? getCampaignAIIdForDifficulty(selectedLevel.difficulty)
+    : "round-strategy";
 
   while (
     current.status === "playing" &&
     current.currentPlayerId === "opponent"
   ) {
-    const action = chooseNormalAIAction(current, "opponent", weights);
+    const action = chooseAIAction({
+      aiId,
+      state: current,
+      playerId: "opponent",
+      weights,
+    });
 
     // Build a structured log message before the state changes.
     let actionLabel: LogMessage = { id: "game.opponentPass" };
