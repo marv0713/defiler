@@ -1,0 +1,9 @@
+Effect Type,Effect Name (CN),Target Scope (CN),Description (CN),Description (EN)
+"BUFF","战力强化","己方单排/最弱/最强/全体单位","提升指定友军单位的战力点数数值。","Increase the power of targeted ally unit(s) or row."
+"DAMAGE","战力伤害","敌方最强/最弱/全体/随机单体","降低指定敌方单位的战力点数数值。","Decrease the power of targeted enemy unit(s) or random enemies."
+"DESTROY","消灭单位","敌方最强/点数大于20的行最强","消灭指定的单位，直接降低其战力为0并送入墓地（如白起消灭最强敌军，火烧连营消灭高点数排最强）。","Destroy targeted unit(s) (reducing power to 0 or sending directly to graveyard)."
+"SUMMON","召唤随从","指定战场排","自动在指定的战场排上召唤出指定数量的额外衍生卡牌（如楚国小兵、秦国战士），增强场面点数优势。","Spawn a specific token card (e.g. chu-token, qin-token) onto a row."
+"DRAW_DISCARD","过牌洗牌","玩家手牌/牌库","从牌库抽一张牌，并选择手牌中的一张牌弃置入墓地，起到优化手牌构筑的作用。","Draw 1 card from deck and discard 1 card to the graveyard."
+"REVIVE","墓地复活","玩家墓地","从己方墓地中选择并重新打出一张非金色单位牌回到战场，激活其技能。","Play a unit card from the graveyard back onto the battlefield."
+"LOCK","效果封锁","战场单体单位","锁住目标单位，使其拥有的技能和战力调整效果失效，无法再次触发动作技能。","Lock a targeted unit, disabling its active passives and skills."
+"CONDITIONAL_BOOST","条件强化","单位自身","当满足特定战场条件（如我方点数落后、对手已Pass放弃跟牌）时，自身获得额外的点数强化奖励。","Increase own power if a specific condition is met (e.g. when behind in score, or when opponent has passed)."
