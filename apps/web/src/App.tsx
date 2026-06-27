@@ -92,6 +92,7 @@ function StartScreen() {
   const { startGame, playerFaction, opponentFaction, setPlayerFaction, setOpponentFaction, goToLevelSelect } =
     useGameStore();
   const { language, setLanguage, t } = useI18n();
+  const { profiles, currentProfileId, setCurrentProfile, createProfile, deleteProfile } = useSaveStore();
 
   return (
     <div className="start-screen">
@@ -115,6 +116,61 @@ function StartScreen() {
         <p className="subtitle">
           {t("start.subtitle")}
         </p>
+
+        {/* Profile Switcher */}
+        <div className="profile-section">
+          <label htmlFor="profile-select">{t("profile.active")}</label>
+          <div className="profile-controls">
+            <select
+              id="profile-select"
+              value={currentProfileId}
+              onChange={(e) => setCurrentProfile(e.target.value)}
+            >
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} {p.id === "default" ? `(${t("profile.defaultName")})` : ""}
+                </option>
+              ))}
+            </select>
+            
+            {currentProfileId !== "default" && (
+              <button
+                className="btn btn--outline btn--danger"
+                onClick={() => deleteProfile(currentProfileId)}
+                title={t("profile.delete")}
+                style={{ padding: "0 14px" }}
+              >
+                🗑
+              </button>
+            )}
+          </div>
+
+          <form
+            className="profile-create-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const input = form.elements.namedItem("profileName") as HTMLInputElement;
+              const name = input.value.trim();
+              if (name) {
+                const newId = createProfile(name);
+                setCurrentProfile(newId);
+                input.value = "";
+              }
+            }}
+          >
+            <input
+              name="profileName"
+              type="text"
+              placeholder={t("profile.namePlaceholder")}
+              maxLength={20}
+              required
+            />
+            <button type="submit" className="btn btn--primary btn--small">
+              ＋ {t("profile.create")}
+            </button>
+          </form>
+        </div>
 
         <div className="faction-pickers">
           <div className="faction-picker">

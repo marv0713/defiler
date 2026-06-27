@@ -20,7 +20,9 @@ export function LevelSelectScreen() {
   const setPlayerFaction = useGameStore((s) => s.setPlayerFaction);
   const campaignFactionChosen = useGameStore((s) => s.campaignFactionChosen);
   const campaignFactionLocked = useGameStore((s) => s.campaignFactionLocked);
-  const isComplete  = useSaveStore((s) => s.isComplete);
+  const currentProfileId = useSaveStore((s) => s.currentProfileId);
+  const progress         = useSaveStore((s) => s.progress);
+  const isComplete = (levelId: string) => (progress[currentProfileId] ?? []).includes(levelId);
   const { t }       = useI18n();
 
   return (

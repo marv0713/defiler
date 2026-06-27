@@ -357,4 +357,14 @@ export const enMessages: MessageDictionary = {
   "glossary.boost.desc": "Gains extra power if specific conditions (e.g. score behind, opponent passed) are met.",
   "glossary.power.name": "Power (战力)",
   "glossary.power.desc": "The points a card contributes to the row. Highest total score wins.",
+
+  // ── Profile Switcher Text ─────────────────────────────────────────────────
+  "profile.active": "Active Profile:",
+  "profile.switch": "Switch Profile",
+  "profile.create": "Create Profile",
+  "profile.delete": "Delete",
+  "profile.namePlaceholder": "Enter profile name...",
+  "profile.title": "Manage Profiles",
+  "profile.close": "Close",
+  "profile.defaultName": "Default Player",
 };

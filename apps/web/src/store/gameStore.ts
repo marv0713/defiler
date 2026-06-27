@@ -387,7 +387,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   selectLevel(level) {
-    const { campaignFactionChosen, playerDeck, validateDeck, startLevelGame } = get();
+    const { campaignFactionChosen, validateDeck, startLevelGame } = get();
     if (!campaignFactionChosen) return;
 
     // Check if the level is unlocked.
@@ -402,13 +402,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (!isUnlocked) return;
 
+    // Load saved deck for this profile if available
+    const savedDeck = saveStore.getDeck();
+    let currentDeck = get().playerDeck;
+    if (savedDeck && savedDeck.length > 0) {
+      currentDeck = savedDeck;
+      set({ playerDeck: savedDeck });
+    }
+
     set({
       selectedLevel: level,
       deckBuildError: null,
       campaignFactionLocked: true,
     });
 
-    if (playerDeck.length === DECK_SIZE) {
+    if (currentDeck.length === DECK_SIZE) {
       const error = validateDeck();
       if (!error) {
         startLevelGame();
@@ -435,6 +443,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const next = [...playerDeck];
       next.splice(idx, 1);
       set({ playerDeck: next, deckBuildError: null });
+      useSaveStore.getState().saveDeck(next);
       return;
     }
 
@@ -448,7 +457,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     
-    set({ playerDeck: [...playerDeck, cardId], deckBuildError: null });
+    const nextDeck = [...playerDeck, cardId];
+    set({ playerDeck: nextDeck, deckBuildError: null });
+    useSaveStore.getState().saveDeck(nextDeck);
   },
 
   removeCardFromDeck(cardId) {
@@ -458,6 +469,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = [...playerDeck];
     next.splice(idx, 1);
     set({ playerDeck: next, deckBuildError: null });
+    useSaveStore.getState().saveDeck(next);
   },
 
   autoFillDeck() {
@@ -485,7 +497,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       next.push(cardId);
     }
 
-    set({ playerDeck: next.slice(0, DECK_SIZE), deckBuildError: null });
+    const nextSlice = next.slice(0, DECK_SIZE);
+    set({ playerDeck: nextSlice, deckBuildError: null });
+    useSaveStore.getState().saveDeck(nextSlice);
   },
 
   validateDeck() {

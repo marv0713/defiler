@@ -422,4 +422,14 @@ export const zhMessages: MessageDictionary = {
   "glossary.boost.desc": "满足特定条件时（如点数落后、对手已Pass）触发额外攻击力提升。",
   "glossary.power.name": "战力",
   "glossary.power.desc": "卡牌的点数强度。单回合结束时，总点数高的一方获胜。",
+
+  // ── Profile Switcher Text ─────────────────────────────────────────────────
+  "profile.active": "当前存档玩家:",
+  "profile.switch": "切换玩家/存档",
+  "profile.create": "创建新存档",
+  "profile.delete": "删除",
+  "profile.namePlaceholder": "请输入玩家名称...",
+  "profile.title": "管理玩家存档",
+  "profile.close": "关闭",
+  "profile.defaultName": "默认玩家",
 };
