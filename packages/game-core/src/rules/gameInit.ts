@@ -9,6 +9,7 @@ import type {
   PlayerState,
 } from "../types";
 import { shuffleWithSeed } from "../utils/random";
+import { INITIAL_CARDS } from "../cards/cardData";
 
 export interface CreateGameConfig {
   seed: string;
@@ -67,10 +68,15 @@ function createPlayerState(
 
 export function createInitialGameState(config: CreateGameConfig): GameState {
   const cardDefinitions: Record<string, CardDefinition> = {};
+  
+  // First load all master game cards (including token cards)
+  for (const card of INITIAL_CARDS) {
+    cardDefinitions[card.id] = card;
+  }
+  
+  // Then ensure any custom/override definitions in player decks are mapped
   for (const card of [...config.playerDeck, ...config.opponentDeck]) {
-    if (!cardDefinitions[card.id]) {
-      cardDefinitions[card.id] = card;
-    }
+    cardDefinitions[card.id] = card;
   }
 
   return {
