@@ -1539,4 +1539,14 @@ Implement a minimal React UI that can start a game, display the board, display t
   - Subscribed `LevelSelectScreen.tsx` reactively to `currentProfileId` and `progress` state changes.
   - Connected `gameStore.ts` deck builder actions (`toggleCardInDeck`, `removeCardFromDeck`, `autoFillDeck`, `selectLevel`) to read and write custom decks from the active profile in `useSaveStore` in real time.
 
-
+## UI Overhaul: Redesigned Start Screen & Battle Screen (P9 Polish)
+- **Goal**: Polish the look and feel of the game to match the visual mockups and layout requirements.
+- **Changes**:
+  - **Start Screen (Homepage)**: Overhauled layout to include a golden calligraphy-style title divider with diamond ornaments, SVG menu cards for Campaign (city gate) and Quick Battle (crossed flags), top-right settings cog, and bottom symmetrical stamp ornament with wings and letter "策". Removed manual profile select components in favor of auto-session IDs.
+  - **Auto Session Save-Slot**: Automatically generated a background session profile ID on mount using `sessionStorage` and `useSaveStore.createProfileWithId` to keep different tabs/sessions isolated.
+  - **Quick Battle Modal**: Replaced raw start pickers with a clean faction selector overlay modal for choosing player and opponent factions.
+  - **Battle Screen Layout**: Restructured layout to match Gwent mockup proportions. Separated left battlefield flex column from right sidebar (75%/25%). Added full-width identity strips for opponent (top) and player (bottom), and a central HUD status bar displaying round wins, big score differentials, and current turn action hints.
+  - **Row Highlights**: Implemented selection-based highlights. When a hand card is clicked, its preferred board row highlights with a golden border and pulsing shadow, while non-targetable rows are dimmed. Clicking the highlighted row plays the card.
+  - **Dynamic Contextual Sidebar**: Split the right sidebar so it shows the opponent's style passive mechanics and recent action logs by default. When a card is hovered/focused, it swaps to card detail preview and automatically displays glossary explanations for keywords present on that card.
+  - **Double-Check Pass Confirmation**: Tapping pass shows a confirmation dialog advising the player based on their point lead/loss.
+  - **Battle Settings Cog**: Tapping settings allows restarting the active combat or returning to the start menu.

@@ -21,6 +21,7 @@ interface HandViewProps {
   canPlay: boolean;
   onPlay: (cardInstanceId: string) => void;
   t: (id: string, params?: Record<string, string | number>) => string;
+  selectedCardId?: string | null;
 }
 
 export function HandView({
@@ -29,6 +30,7 @@ export function HandView({
   canPlay,
   onPlay,
   t,
+  selectedCardId,
 }: HandViewProps) {
   const setHoveredCard = useGameStore((s) => s.setHoveredCard);
 
@@ -41,10 +43,11 @@ export function HandView({
           const rowText = card.row
             ? t("hand.rowText", { row: t(`row.${card.row}`) })
             : "";
+          const isSelected = selectedCardId === card.instanceId;
           return (
             <button
               key={card.instanceId}
-              className={`hand-card${canPlay ? " hand-card--playable" : ""}`}
+              className={`hand-card${canPlay ? " hand-card--playable" : ""}${isSelected ? " hand-card--selected" : ""}`}
               onClick={() => canPlay && onPlay(card.instanceId)}
               onMouseEnter={() => setHoveredCard(def)}
               onMouseLeave={() => setHoveredCard(null)}
