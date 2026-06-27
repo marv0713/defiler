@@ -14,7 +14,22 @@ export { calculatePlayerScore, calculateRowScore, calculateScores } from "./rule
 export { createSeededRandom, shuffleWithSeed } from "./utils/random";
 export { chooseSimpleAIAction } from "./ai/simpleAI";
 export { chooseHeuristicAIAction } from "./ai/heuristicAI";
-export { chooseNormalAIAction, scoreNormalAIAction } from "./ai/normalAI";
+export {
+  chooseNormalAIAction,
+  chooseUtilityV1AIAction,
+  scoreNormalAIAction,
+} from "./ai/normalAI";
+export {
+  chooseAIAction,
+  getAIStrategy,
+} from "./ai/aiStrategy";
+export { classifyCardRoles } from "./ai/cardRoles";
+export {
+  chooseRoundStrategyAIAction,
+  getRoundPlan,
+} from "./ai/roundStrategyAI";
+export { chooseLookahead1PlyAIAction, chooseLookahead3PlyAIAction } from "./ai/lookaheadAI";
+export { compareAIStrategies } from "./ai/aiComparison";
 export { NORMAL_AI_WEIGHTS, EASY_AI_WEIGHTS, HARD_AI_WEIGHTS, getAIWeightsForDifficulty } from "./ai/aiEvaluation";
 export { simulateGame } from "./simulator/simulateGame";
 export { formatSimulationReport } from "./simulator/report";
@@ -69,6 +84,21 @@ export type { CreateGameConfig } from "./rules/gameInit";
 export type {
   ActionScoreBreakdown,
 } from "./ai/normalAI";
+export type {
+  AIContext,
+  AIId,
+  AIStrategy,
+} from "./ai/aiStrategy";
+export type { CardRole } from "./ai/cardRoles";
+export type {
+  RoundPlan,
+  RoundPlanResult,
+} from "./ai/roundStrategyAI";
+export type {
+  AIComparisonConfig,
+  AIComparisonReport,
+  AIComparisonSide,
+} from "./ai/aiComparison";
 export type {
   CatchupPlan,
   RoundBudget,
