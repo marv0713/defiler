@@ -428,7 +428,10 @@ describe("resolveEffects", () => {
             deck: [],
             hand: [],
             board: {
-              melee: [createCard("source-card", "player", 9, "melee")],
+              melee: [
+                createCard("source-card", "player", 9, "melee"),
+                createCard("other-card", "player", 5, "melee"),
+              ],
               ranged: [],
               siege: [],
             },

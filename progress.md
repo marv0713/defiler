@@ -1346,6 +1346,17 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed (including all 151 game-core tests).
   - `npm run build`: clean.
 
+### Fix: Lin Xiangru / CONDITIONAL_BOOST Condition Matches Fix (2026-06-27)
+
+- **Issue**: Lin Xiangru (蔺相如) did not trigger his +4 power boost when played behind on points, even though the action log said he did.
+- **Fix**:
+  1. Updated `conditionMatches` in `packages/game-core/src/effects/effectResolver.ts` to accept `sourceCardInstanceId` and subtract the played card's own power from the player's score before evaluating `SCORE_AHEAD` and `SCORE_BEHIND` conditions.
+  2. Fixed the test `does nothing when the score condition is not met` by adding `other-card` (power 5) to the player's board.
+- **Verification**:
+  - `pnpm test`: 182 tests passed.
+  - `npm run build`: clean.
+
+
 
 
 

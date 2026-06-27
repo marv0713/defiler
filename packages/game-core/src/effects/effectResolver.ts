@@ -380,7 +380,7 @@ function applyConditionalBoost(
   effectIndex: number,
   sourceCardInstanceId?: string,
 ): GameState {
-  if (!sourceCardInstanceId || !conditionMatches(state, context, effect.condition)) {
+  if (!sourceCardInstanceId || !conditionMatches(state, context, effect.condition, sourceCardInstanceId)) {
     return state;
   }
 
@@ -401,10 +401,22 @@ function conditionMatches(
   state: GameState,
   context: EffectContext,
   condition: ConditionalBoostEffect["condition"],
+  sourceCardInstanceId?: string,
 ): boolean {
   const scores = calculateScores(state);
-  const sourceScore = scores[context.sourcePlayerId];
+  let sourceScore = scores[context.sourcePlayerId];
   const opponentScore = scores[context.opponentPlayerId];
+
+  // If we are checking scores, subtract the source card's power to get the score before it was played
+  if (sourceCardInstanceId) {
+    const board = state.players[context.sourcePlayerId].board;
+    const card = [...board.melee, ...board.ranged, ...board.siege].find(
+      (c) => c.instanceId === sourceCardInstanceId,
+    );
+    if (card) {
+      sourceScore -= card.currentPower;
+    }
+  }
 
   switch (condition.type) {
     case "SCORE_AHEAD":

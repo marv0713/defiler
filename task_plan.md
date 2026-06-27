@@ -82,6 +82,7 @@ Current focus: polish the home screen and battle screen using
 | Fix / 2026-06-27 (4) | **Complete** | Stabilized right sidebar layout by showing Card details preview slot (fixed height), Enemy passive, and Recent actions simultaneously, preventing layout shifting/switching. Fixed missing `faction.neutral.name` translation. |
 | Fix / 2026-06-27 (5) | **Complete** | Removed pass confirmation modal; implemented prominent player/opponent pass state badges in BattleIdentityBar; enhanced action log to translate raw system entries into descriptive sentences including card name, base power, and triggered damage/boost/summon/lock/revive effects. |
 | Fix / 2026-06-27 (6) | **Complete** | Fixed AI turn 1 pass bug: adjusted isHopelessChase logic to return false when cardsPlayedThisRound is 0, preventing premature passing on turn 1. |
+| Fix / 2026-06-27 (7) | **Complete** | Fixed Lin Xiangru / CONDITIONAL_BOOST bug: updated conditionMatches to subtract the played card's own power from the score before checking SCORE_BEHIND / SCORE_AHEAD. |
 
 ---
 

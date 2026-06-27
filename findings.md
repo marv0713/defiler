@@ -689,4 +689,15 @@ App.tsx
   - **Fix**:
     1. Updated `isHopelessChase` in `packages/game-core/src/ai/normalAI.ts` so that it returns `false` on Turn 1 (when `budget.cardsPlayedThisRound === 0`).
     2. Also added a safety threshold: if the opponent has not passed yet, the chase is never hopeless if the score difference is less than 15 points and at most 2 cards are needed to overtake.
+- **Lin Xiangru / CONDITIONAL_BOOST Condition Matches Fix (Fixed 2026-06-27)**:
+  - **Issue**: Playing Lin Xiangru (蔺相如) when behind on points did not trigger his +4 power boost, despite the action log indicating "蔺相如 played, gained +4 boost".
+  - **Root Cause**:
+    1. During `applyPlayCard`, the unit card is first added to the player's board, and *then* its deploy effects are resolved.
+    2. Therefore, when `conditionMatches` evaluated `SCORE_BEHIND` (`sourceScore < opponentScore`), the card's own base power (6) was already included in the player's score.
+    3. If the score gap before playing the card was less than 6 points, the player was no longer considered behind after the card was placed on the board, causing the boost condition to fail.
+  - **Fix**:
+    1. Updated `conditionMatches` in `packages/game-core/src/effects/effectResolver.ts` to accept `sourceCardInstanceId`.
+    2. If `sourceCardInstanceId` is provided, the card's power is subtracted from the player's score before evaluating `SCORE_AHEAD` and `SCORE_BEHIND`, reflecting the state of the score *before* the card was played.
+    3. Fixed the related unit test `does nothing when the score condition is not met` to have another card on the board so the player remains ahead even when excluding the played card's power.
+
 
