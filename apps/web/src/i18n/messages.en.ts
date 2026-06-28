@@ -349,8 +349,6 @@ export const enMessages: MessageDictionary = {
   "deckbuilder.cards": "cards",
   "deckbuilder.tooltipPower": "power",
   "deckbuilder.noDuplicates": "No duplicates",
-  "deckbuilder.needsFaction": "Needs ≥1 {faction}",
-  "deckbuilder.minFactions": "≥{count} factions",
   "deckbuilder.mustWinRound2": "Must win Round 2",
   "deckbuilder.cardPreview": "Card Details",
   "deckbuilder.previewPlaceholder": "Hover over a card in the pool or your deck to view details.",

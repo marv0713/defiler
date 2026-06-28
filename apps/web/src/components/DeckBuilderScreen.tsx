@@ -169,16 +169,6 @@ export function DeckBuilderScreen() {
                 ⚠ {t("deckbuilder.noDuplicates")}
               </div>
             )}
-            {constraint?.requiredFactions?.map((f) => (
-              <div key={f} className="constraint-tag">
-                {t("deckbuilder.needsFaction", { faction: t(`faction.${f}.name`) })}
-              </div>
-            ))}
-            {constraint?.minFactions && (
-              <div className="constraint-tag">
-                {t("deckbuilder.minFactions", { count: constraint.minFactions })}
-              </div>
-            )}
             {selectedLevel.winCondition.type === "must_win_round2" && (
               <div className="constraint-tag constraint-tag--special">
                 {t("deckbuilder.mustWinRound2")}

@@ -118,20 +118,6 @@ export function LevelSelectScreen() {
                     {t("deckbuilder.noDuplicates")}
                   </div>
                 )}
-                {level.deckConstraint.requiredFactions && (
-                  <div className="level-constraint-badge">
-                    {t("deckbuilder.needsFaction", {
-                      faction: level.deckConstraint.requiredFactions
-                        .map((f) => t(`faction.${f}.name`))
-                        .join(", "),
-                    })}
-                  </div>
-                )}
-                {level.deckConstraint.minFactions && (
-                  <div className="level-constraint-badge">
-                    {t("deckbuilder.minFactions", { count: level.deckConstraint.minFactions })}
-                  </div>
-                )}
                 {level.winCondition.type === "must_win_round2" && (
                   <div className="level-constraint-badge level-constraint-badge--special">
                     {t("deckbuilder.mustWinRound2")}

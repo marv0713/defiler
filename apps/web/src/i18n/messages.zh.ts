@@ -414,8 +414,6 @@ export const zhMessages: MessageDictionary = {
   "deckbuilder.cards": "张牌",
   "deckbuilder.tooltipPower": "战力",
   "deckbuilder.noDuplicates": "不允许重复",
-  "deckbuilder.needsFaction": "需含 {faction} 牌",
-  "deckbuilder.minFactions": "≥{count} 个阵营",
   "deckbuilder.mustWinRound2": "必须赢得第 2 轮",
   "deckbuilder.cardPreview": "卡牌详情",
   "deckbuilder.previewPlaceholder": "将鼠标悬浮在卡牌库或你的牌组上以查看详情。",

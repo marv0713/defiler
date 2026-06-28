@@ -522,28 +522,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     ) {
       return "Deck can only contain cards from your campaign faction.";
     }
-    if (constraint.requiredFactions && constraint.requiredFactions.length > 0) {
-      for (const faction of constraint.requiredFactions) {
-        const hasIt = playerDeck.some((id) => {
-          const def = findCardDefinition(id);
-          return def?.faction === faction;
-        });
-        if (!hasIt) {
-          return `Your deck must include at least one ${faction} card.`;
-        }
-      }
-    }
-    if (constraint.minFactions) {
-      const factions = new Set(
-        playerDeck
-          .map((id) => findCardDefinition(id)?.faction)
-          .filter(Boolean),
-      );
-      if (factions.size < constraint.minFactions) {
-        return `Your deck must include cards from at least ${constraint.minFactions} factions.`;
-      }
-    }
-
     // Check card copy limits based on rarity
     const counts: Record<string, number> = {};
     for (const id of playerDeck) {

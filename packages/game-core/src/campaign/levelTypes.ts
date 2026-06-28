@@ -4,10 +4,6 @@ import type { Faction } from "../types";
 export interface DeckConstraint {
   /** Whether the same card ID may appear more than once. Default: true. */
   allowDuplicates: boolean;
-  /** If set, the player's deck must include at least one card from each listed faction. */
-  requiredFactions?: Faction[];
-  /** If set, the player's deck must draw cards from at least this many distinct factions. */
-  minFactions?: number;
 }
 
 /**
