@@ -54,15 +54,41 @@ export const useSaveStore = create<SaveStore>()(
 
       createProfileWithId: (id, name) => {
         set((s) => {
-          if (s.profiles.some((p) => p.id === id)) return {};
+          // Clean up old temporary session profiles to prevent storage bloat
+          const cleanProfiles = s.profiles.filter(
+            (p) => !p.id.startsWith("session-") || p.id === id
+          );
+
+          const cleanProgress = { ...s.progress };
+          Object.keys(s.progress).forEach((key) => {
+            if (key.startsWith("session-") && key !== id) {
+              delete cleanProgress[key];
+            }
+          });
+
+          const cleanDecks = { ...s.decks };
+          Object.keys(s.decks).forEach((key) => {
+            if (key.startsWith("session-") && key !== id) {
+              delete cleanDecks[key];
+            }
+          });
+
+          if (cleanProfiles.some((p) => p.id === id)) {
+            return {
+              profiles: cleanProfiles,
+              progress: cleanProgress,
+              decks: cleanDecks,
+            };
+          }
+
           return {
-            profiles: [...s.profiles, { id, name }],
+            profiles: [...cleanProfiles, { id, name }],
             progress: {
-              ...s.progress,
+              ...cleanProgress,
               [id]: [],
             },
             decks: {
-              ...s.decks,
+              ...cleanDecks,
             },
           };
         });
@@ -130,6 +156,11 @@ export const useSaveStore = create<SaveStore>()(
     {
       name: "warring-states-save",
       version: 1,
+      partialize: (state) => ({
+        profiles: state.profiles,
+        progress: state.progress,
+        decks: state.decks,
+      }),
       migrate: (persistedState: any, version: number) => {
         if (version === 0 && persistedState) {
           const completed = Array.isArray(persistedState.completedLevelIds)

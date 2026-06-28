@@ -13,14 +13,14 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 9: UI Polish / Battle Interface Overhaul — **In Progress**.
+Phase 9: UI Polish / Battle Interface Overhaul — **Implemented / Playtest**.
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
 Full English/Chinese i18n pass is complete.
 Deck Builder fixes complete: faction-locked campaign pool, in-page tooltip, copy limits.
 Campaign sequential unlocking and AI difficulty profiles complete.
 Pluggable AI strategy architecture is implemented: Utility V1 baseline, Round
-Strategy AI, Lookahead 1-Ply AI, deterministic comparison benchmark, and campaign
-AI id mapping.
+Strategy AI, Lookahead 1-Ply AI, Strategic 3-Ply Lookahead AI, deterministic
+comparison benchmark, and campaign AI id mapping.
 Current focus: polish the home screen and battle screen using
 `docs/battle interface/` as visual and interaction reference.
 
@@ -138,9 +138,9 @@ Potential later polish:
 - **WinCondition evaluation**: done post-game in `ResultScreen`, not in reducer.
 - **AI strategy direction**: weight profiles are no longer the main tuning tool.
   AI implementations are now pluggable and comparable by id:
-  `utility-v1`, `round-strategy`, and `lookahead-1ply`. Campaign defaults use
-  Utility V1 on difficulty 1-2, Round Strategy on difficulty 3, and Lookahead
-  1-Ply on difficulty 4-5.
+  `utility-v1`, `round-strategy`, `lookahead-1ply`, and `lookahead-3ply`.
+  Campaign defaults use Utility V1 on difficulty 1-2, Round Strategy on
+  difficulty 3, and Strategic 3-Ply Lookahead on difficulty 4-5.
 
 ### Files (Phase 5, complete)
 

@@ -7,7 +7,7 @@ import { LevelSelectScreen } from "./components/LevelSelectScreen";
 import { DeckBuilderScreen } from "./components/DeckBuilderScreen";
 import { useI18n } from "./i18n/I18nProvider";
 import { getCardDescription, getCardName } from "./i18n/i18n";
-import type { Faction, CardDefinition, GameActionLogEntry } from "@warring-states/game-core";
+import type { Faction, CardDefinition, EffectDefinition, GameActionLogEntry } from "@warring-states/game-core";
 
 const FACTIONS: { value: Faction; icon: string; fallback: string }[] = [
   { value: "qin", icon: "🔴", fallback: "Qin" },
@@ -34,7 +34,6 @@ function StartScreen() {
     useGameStore();
   const { language, setLanguage, t } = useI18n();
   const [showQuickBattleModal, setShowQuickBattleModal] = useState(false);
-  const [showHomeSettingsModal, setShowHomeSettingsModal] = useState(false);
 
   return (
     <div className="start-screen">
@@ -42,7 +41,7 @@ function StartScreen() {
         {/* Settings button in the top right corner */}
         <button
           className="home-settings-btn"
-          onClick={() => setShowHomeSettingsModal(true)}
+          disabled
           aria-label="Settings"
           title={t("profile.title")}
         >
@@ -78,9 +77,7 @@ function StartScreen() {
           </div>
 
           <p className="subtitle">
-            {language === "zh"
-              ? "运筹帷幄，智取天下。通过卡牌与策略书写你的战国传奇。"
-              : "Plan and conquer. Write your Warring States legend through cards and tactics."}
+            {t("start.heroSubtitle")}
           </p>
         </div>
 
@@ -104,7 +101,7 @@ function StartScreen() {
             <span className="start-menu-card__body">
               <span className="start-menu-card__title">{t("start.campaign")}</span>
               <span className="start-menu-card__desc">
-                {language === "zh" ? "进入战役章节与关卡选择" : "Enter campaign chapters and level selection"}
+                {t("start.campaignDesc")}
               </span>
             </span>
             <span className="start-menu-card__arrow">›</span>
@@ -127,7 +124,7 @@ function StartScreen() {
             <span className="start-menu-card__body">
               <span className="start-menu-card__title">{t("start.quickBattle")}</span>
               <span className="start-menu-card__desc">
-                {language === "zh" ? "进入快速对战，随后选择阵营" : "Enter quick battle, then select faction"}
+                {t("start.quickBattleDesc")}
               </span>
             </span>
             <span className="start-menu-card__arrow">›</span>
@@ -205,42 +202,6 @@ function StartScreen() {
         </div>
       )}
 
-      {/* Home Settings Modal */}
-      {showHomeSettingsModal && (
-        <div className="modal-overlay">
-          <div className="modal-content settings-modal">
-            <h2 className="modal-title">⚙️ {t("profile.title")}</h2>
-            <div className="settings-options" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px 0" }}>
-              <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>
-                {language === "zh" 
-                  ? "当前是本地会话模式，游戏数据会自动保存在本浏览器的本地缓存中。" 
-                  : "You are currently playing in a local browser session. Game saves are stored in your localStorage."}
-              </p>
-              <button
-                className="btn btn--danger"
-                style={{ padding: "12px", fontSize: "0.95rem" }}
-                onClick={() => {
-                  if (confirm(language === "zh" ? "确定要清空所有通关记录和自定义卡组并重启吗？" : "Are you sure you want to reset all progress and decks?")) {
-                    useSaveStore.getState().reset();
-                    setShowHomeSettingsModal(false);
-                    alert(language === "zh" ? "所有进度已清空。" : "All progress has been reset.");
-                  }
-                }}
-              >
-                🗑 {language === "zh" ? "重置所有通关进度" : "Reset All Progress"}
-              </button>
-            </div>
-            <div className="modal-actions">
-              <button
-                className="btn btn--primary"
-                onClick={() => setShowHomeSettingsModal(false)}
-              >
-                {t("profile.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -319,13 +280,38 @@ function RoundResultBanner() {
 // ──────────────────────────────────────────
 function GameScreen() {
   const { gameState, playCard, pass, scores, hoveredCard, selectedLevel, campaignMode, restart, startLevelGame, startGame, playerFaction, opponentFaction } = useGameStore();
-  const { language, t } = useI18n();
+  const { t } = useI18n();
 
   // State hooks
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   if (!gameState) return null;
+
+  function getEffectLogDetail(effect: EffectDefinition): string {
+    switch (effect.type) {
+      case "DAMAGE":
+        return t("game.logEffectDamage", { amount: effect.amount });
+      case "BUFF":
+      case "CONDITIONAL_BOOST":
+        return t("game.logEffectBoost", { amount: effect.amount });
+      case "SUMMON":
+        return t("game.logEffectSummon");
+      case "LOCK":
+        return t("game.logEffectLock");
+      case "REVIVE":
+        return t("game.logEffectRevive");
+      case "DRAW_DISCARD":
+        return t("game.logEffectDrawDiscard", {
+          draw: effect.draw,
+          discard: effect.discard,
+        });
+      case "DESTROY":
+        return t("game.logEffectDestroy");
+      case "CLEAR_WEATHER":
+        return t("game.logEffectClearWeather");
+    }
+  }
 
   /** Resolve a raw GameActionLogEntry to a readable, descriptive string. */
   function resolveActionLogEntry(entry: GameActionLogEntry): string {
@@ -335,9 +321,7 @@ function GameScreen() {
       return t("game.logPass", { player: sideName });
     }
     if (entry.message === "START_NEXT_ROUND") {
-      return language === "zh"
-        ? `第 ${entry.round} 小局开始`
-        : `Small Round ${entry.round} Started`;
+      return t("game.logRoundStarted", { round: entry.round });
     }
     if (entry.message === "PLAY_CARD") {
       const sideName = entry.playerId === "player" ? t("player.you") : t("player.opponent");
@@ -348,37 +332,17 @@ function GameScreen() {
         
         let effectDetail = "";
         if (cardDef && cardDef.effects && cardDef.effects.length > 0) {
-          const fx = cardDef.effects[0] as any;
-          if (fx.type === "DAMAGE" && typeof fx.amount === "number") {
-            effectDetail = language === "zh"
-              ? `，造成 ${fx.amount} 点伤害`
-              : `, dealing ${fx.amount} damage`;
-          } else if ((fx.type === "BUFF" || fx.type === "CONDITIONAL_BOOST") && typeof fx.amount === "number") {
-            effectDetail = language === "zh"
-              ? `，获得 +${fx.amount} 增益`
-              : `, gaining +${fx.amount} boost`;
-          } else if (fx.type === "SUMMON") {
-            effectDetail = language === "zh"
-              ? `，召唤友军`
-              : `, summoning allies`;
-          } else if (fx.type === "LOCK") {
-            effectDetail = language === "zh"
-              ? `，锁定敌方`
-              : `, locking an enemy`;
-          } else if (fx.type === "REVIVE") {
-            effectDetail = language === "zh"
-              ? `，复活单位`
-              : `, reviving a unit`;
-          }
+          effectDetail = getEffectLogDetail(cardDef.effects[0]);
         }
         
-        return language === "zh"
-          ? `${sideName}使用了【${cardName}】（战力 ${basePower}）${effectDetail}`
-          : `${sideName} played [${cardName}] (Power: ${basePower})${effectDetail}`;
+        return t("game.logPlayCard", {
+          player: sideName,
+          card: cardName,
+          power: basePower,
+          effect: effectDetail,
+        });
       }
-      return language === "zh"
-        ? `${sideName}使用了卡牌`
-        : `${sideName} played a card`;
+      return t("game.logPlayUnknown", { player: sideName });
     }
     return entry.message;
   }
@@ -405,24 +369,7 @@ function GameScreen() {
     ? selectedLevel.title
     : t(`faction.${opponent.faction}.name`);
 
-  let opponentIntelBody = "";
-  if (opponent.faction === "qin") {
-    opponentIntelBody = language === "zh" 
-      ? "风格：铁血强兵 | 特性：战力压制。长于正面大军正面强攻。" 
-      : "Style: Direct Power | Trait: Domination. Exerts high front-line point pressure.";
-  } else if (opponent.faction === "chu") {
-    opponentIntelBody = language === "zh" 
-      ? "风格：召唤铺场 | 特性：泽国召令。传令官和巫师源源不断召唤小兵。" 
-      : "Style: Token Summoning | Trait: Swarm. Prolifically spawns token units onto rows.";
-  } else if (opponent.faction === "qi") {
-    opponentIntelBody = language === "zh" 
-      ? "风格：百家争鸣 | 特性：手牌调度。学者和兵法卡牌擅长抽牌和增幅手牌。" 
-      : "Style: Card Advantage | Trait: Tactician. Excels at card draws and row hand buffers.";
-  } else if (opponent.faction === "zhao") {
-    opponentIntelBody = language === "zh" 
-      ? "风格：绝地反击 | 特性：慷慨悲歌。当点数落后或第二/三轮爆发力极高。" 
-      : "Style: Comeback | Trait: Resurgence. Bursts massive points when trailing or in later rounds.";
-  }
+  const opponentIntelBody = t(`faction.${opponent.faction}.battleStyle`);
 
   const opponentIntelHint = campaignMode && selectedLevel
     ? t(selectedLevel.hintTextId)
@@ -474,11 +421,11 @@ function GameScreen() {
 
   // Dynamically build glossary for hovered card
   function getCardKeywordsGlossary(card: CardDefinition) {
-    const types = card.effects.map((e: any) => e.type);
+    const types = card.effects.map((effect) => effect.type);
     const keywords: { name: string; desc: string }[] = [];
     if (types.includes("LOCK")) keywords.push({ name: t("glossary.lock.name"), desc: t("glossary.lock.desc") });
     if (types.includes("REVIVE")) keywords.push({ name: t("glossary.revive.name"), desc: t("glossary.revive.desc") });
-    if (types.includes("SPECIAL") || card.type === "special") keywords.push({ name: t("glossary.special.name"), desc: t("glossary.special.desc") });
+    if (card.type === "special") keywords.push({ name: t("glossary.special.name"), desc: t("glossary.special.desc") });
     if (types.includes("SUMMON")) keywords.push({ name: t("glossary.summon.name"), desc: t("glossary.summon.desc") });
     if (types.includes("CONDITIONAL_BOOST")) keywords.push({ name: t("glossary.boost.name"), desc: t("glossary.boost.desc") });
     
@@ -486,7 +433,7 @@ function GameScreen() {
     
     return (
       <div className="card-keywords-glossary">
-        <h3 className="keywords-glossary-title">{language === "zh" ? "技能词条释义" : "Keyword Explanations"}</h3>
+        <h3 className="keywords-glossary-title">{t("glossary.keywordTitle")}</h3>
         {keywords.map((kw, i) => (
           <div key={i} className="glossary-item">
             <span className="glossary-item__name">{kw.name}</span>
@@ -671,10 +618,10 @@ function GameScreen() {
           <div className="sidebar-card-frame sidebar-card-frame--placeholder" style={{ height: "280px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "280px", border: "1px dashed rgba(201,168,76,0.3)", background: "rgba(0,0,0,0.15)", boxSizing: "border-box", padding: "16px", textAlign: "center" }}>
             <div style={{ fontSize: "2rem", marginBottom: "8px", opacity: 0.5 }}>🎴</div>
             <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: "bold" }}>
-              {language === "zh" ? "卡牌详情" : "Card Details"}
+              {t("game.cardDetails")}
             </div>
             <div style={{ fontSize: "0.7rem", color: "#8c7a5c", marginTop: "4px", lineHeight: "1.3" }}>
-              {language === "zh" ? "鼠标悬停或点击卡牌查看其描述和技能" : "Hover or click a card to view its description and skills."}
+              {t("game.cardDetailsHint")}
             </div>
           </div>
         )}
@@ -715,7 +662,7 @@ function GameScreen() {
             })}
             {gameState.actionLog.length === 0 && (
               <div className="recent-log-empty" style={{ fontSize: "0.72rem", color: "var(--text-dim)", fontStyle: "italic" }}>
-                {language === "zh" ? "暂无行动记录" : "No actions yet"}
+                {t("history.empty")}
               </div>
             )}
           </div>
@@ -735,7 +682,7 @@ function GameScreen() {
                 style={{ padding: "12px", fontSize: "0.95rem" }}
                 onClick={handleRestartMatch}
               >
-                ↩️ {language === "zh" ? "重新开始本局" : "Restart Match"}
+                ↩️ {t("game.restartMatch")}
               </button>
               <button
                 className="btn btn--danger"
@@ -746,7 +693,7 @@ function GameScreen() {
                   restart();
                 }}
               >
-                🚪 {language === "zh" ? "返回主菜单" : "Exit to Main Menu"}
+                🚪 {t("game.exitToMainMenu")}
               </button>
             </div>
             <div className="modal-actions">
@@ -775,6 +722,13 @@ function ResultScreen() {
   const markComplete = useSaveStore((s) => s.markComplete);
   const goToLevelSelect = useGameStore((s) => s.goToLevelSelect);
   const { t } = useI18n();
+  const passed = campaignMode ? levelPassed() : null;
+
+  useEffect(() => {
+    if (campaignMode && passed && selectedLevel) {
+      markComplete(selectedLevel.id);
+    }
+  }, [campaignMode, markComplete, passed, selectedLevel]);
 
   if (!gameState) return null;
 
@@ -784,13 +738,6 @@ function ResultScreen() {
     winner === "player"
       ? `🔴 ${t("result.winner", { faction: t(`faction.${player.faction}.name`) })}`
       : `🔵 ${t("result.winner", { faction: t(`faction.${opponent.faction}.name`) })}`;
-
-  const passed = campaignMode ? levelPassed() : null;
-
-  // Mark complete when entering result screen if campaign level is passed.
-  if (campaignMode && passed && selectedLevel) {
-    markComplete(selectedLevel.id);
-  }
 
   return (
     <div className="result-screen">
@@ -868,11 +815,7 @@ export default function App() {
   const screen = useGameStore((s) => s.screen);
 
   useEffect(() => {
-    let sessionProfileId = sessionStorage.getItem("ws-session-profile-id");
-    if (!sessionProfileId) {
-      sessionProfileId = `session-${Date.now()}`;
-      sessionStorage.setItem("ws-session-profile-id", sessionProfileId);
-    }
+    const sessionProfileId = `session-${Date.now()}`;
     const saveStore = useSaveStore.getState();
     saveStore.createProfileWithId(sessionProfileId, `Player ${sessionProfileId.slice(-4)}`);
     saveStore.setCurrentProfile(sessionProfileId);

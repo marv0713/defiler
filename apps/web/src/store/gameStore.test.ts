@@ -431,3 +431,25 @@ describe("useGameStore — campaign deck building", () => {
     expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[4].id);
   });
 });
+
+describe("useSaveStore — profile GC and session isolation", () => {
+  it("garbage collects other session profiles but preserves the default profile", () => {
+    const saveStore = useSaveStore.getState();
+    saveStore.reset();
+
+    // Create an old session profile
+    saveStore.createProfileWithId("session-old", "Old Player");
+    saveStore.setCurrentProfile("session-old");
+    saveStore.saveDeck(["qin-infantry"]);
+
+    // Create a new session profile - this should trigger cleanup of session-old
+    saveStore.createProfileWithId("session-new", "New Player");
+
+    const state = useSaveStore.getState();
+    expect(state.profiles.some((p) => p.id === "session-new")).toBe(true);
+    expect(state.profiles.some((p) => p.id === "session-old")).toBe(false);
+    expect(state.profiles.some((p) => p.id === "default")).toBe(true);
+    expect(state.decks["session-old"]).toBeUndefined();
+  });
+});
+

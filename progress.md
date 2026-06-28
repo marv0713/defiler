@@ -1160,6 +1160,29 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm typecheck`: clean.
   - `pnpm build`: clean, compiles successfully.
 
+## 2026-06-28
+
+### Phase 9 Review Fixes: Home, i18n, Types, Render Effects, Docs
+
+- Fixed the five review items raised after the Phase 9 UI pass:
+  1. Home screen no longer exposes manual save/profile management. The home
+     settings entry is now a disabled visual placeholder, matching the reference
+     menu direction while anonymous session handling remains internal.
+  2. Removed player-visible hardcoded bilingual strings from `App.tsx`. New text
+     ids were added to `messages.zh.ts` and `messages.en.ts` for home copy,
+     battle logs, enemy style text, card-detail placeholders, and battle settings
+     actions.
+  3. Removed `as any` in battle log/effect rendering. `EffectDefinition` union
+     narrowing now drives effect log descriptions.
+  4. Moved campaign completion persistence out of `ResultScreen` render and into
+     `useEffect`, avoiding store writes during render.
+  5. Synced docs so current Phase 9 status and difficulty 4-5 AI default reflect
+     the actual implementation: `lookahead-3ply`.
+- Verification:
+  - `pnpm typecheck`: clean.
+  - `npm test`: 182 tests passed across 30 files.
+  - `npm run build`: clean.
+
 ## 2026-06-27
 
 ### Phase 9 / Task 9.1 Planning: Home and Battle UI Polish
@@ -1271,7 +1294,7 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
 - Routed web campaign AI through strategy ids in `apps/web/src/store/gameStore.ts`:
   - difficulty 1-2 => `utility-v1`;
   - difficulty 3 => `round-strategy`;
-  - difficulty 4-5 => `lookahead-1ply`;
+  - difficulty 4-5 => `lookahead-3ply`;
   - Quick Battle fallback => `round-strategy`.
 - Added/updated tests:
   - `aiStrategy.test.ts`
@@ -1356,7 +1379,16 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test`: 182 tests passed.
   - `npm run build`: clean.
 
+### Fix: Hydration Race Condition & Profile GC on Page Refresh (2026-06-28)
 
+- **Issue**: Refreshing the page kept restoring the previous selected faction, deck, and level progress because Zustand's `persist` rehydration asynchronously overwrote the newly generated session profile ID.
+- **Fix**:
+  1. Configured Zustand's `persist` in `saveStore.ts` to `partialize` state, excluding `currentProfileId` from localStorage persistence entirely.
+  2. Implemented profile garbage collection inside `createProfileWithId` to automatically delete all other temporary session profiles starting with `session-` (and their decks and progress) whenever a new session profile is initialized.
+  3. Added a new unit test in `gameStore.test.ts` verifying GC of old session profiles.
+- **Verification**:
+  - `pnpm test` passed successfully (32 tests in apps/web, 151 in game-core, total 183 tests).
+  - `npm run build` clean.
 
 
 

@@ -469,6 +469,26 @@ App.tsx
 - **Visual feedback**: In the card pool, each card displays its count in the current deck along with its limit (e.g. `0/1`, `1/3`). Cards at their limit are visually disabled (`opacity: 0.35; cursor: default;`) and unclickable.
 - **Store-level enforcement**: Both `toggleCardInDeck`, `autoFillDeck`, and `validateDeck` enforce these limits to prevent invalid decks from starting games.
 
+## Phase 9 Review Fixes (2026-06-28)
+
+- **Home session model**: The home page should not expose profile creation or
+  save-slot management. Anonymous/session identity remains an internal save-store
+  concern; the player-facing home should stay close to the reference mockup:
+  language switch, title, Campaign, Quick Battle, and a visual settings affordance.
+- **i18n rule**: `App.tsx` should not contain player-visible
+  `language === "zh" ? ... : ...` strings. Those strings now have stable ids in
+  `messages.zh.ts` and `messages.en.ts`. Language comparisons remain acceptable
+  only for UI state such as choosing the active language-switcher class.
+- **Effect log typing**: Battle log effect descriptions now use
+  `EffectDefinition` union narrowing instead of `as any`, so future effect-shape
+  changes will be caught by TypeScript.
+- **Render side effects**: Campaign completion marking is now performed in a
+  `useEffect` inside `ResultScreen`, not during render.
+- **Current AI default**: Campaign difficulty 4-5 currently maps to
+  `lookahead-3ply`, not `lookahead-1ply`. Older planning text may still mention
+  `lookahead-1ply` as the initial Phase 8 strategy, but current status/design
+  summaries should name `lookahead-3ply` for hard levels.
+
 ## Campaign UX / Battle Readability (2026-06-24)
 
 ### One Campaign Deck
@@ -584,7 +604,7 @@ App.tsx
   `apps/web/src/store/gameStore.ts`:
   - difficulty 1-2: `utility-v1`,
   - difficulty 3: `round-strategy`,
-  - difficulty 4-5: `lookahead-1ply`,
+  - difficulty 4-5: `lookahead-3ply`,
   - Quick Battle fallback: `round-strategy`.
 - Current benchmark metrics are intentionally simple: win counts, win rates,
   draws, completed games, max-turn stops, average turns, and average rounds.
@@ -699,5 +719,23 @@ App.tsx
     1. Updated `conditionMatches` in `packages/game-core/src/effects/effectResolver.ts` to accept `sourceCardInstanceId`.
     2. If `sourceCardInstanceId` is provided, the card's power is subtracted from the player's score before evaluating `SCORE_AHEAD` and `SCORE_BEHIND`, reflecting the state of the score *before* the card was played.
     3. Fixed the related unit test `does nothing when the score condition is not met` to have another card on the board so the player remains ahead even when excluding the played card's power.
+- **Fresh Session ID on Page Refresh (Fixed 2026-06-27)**:
+  - **Issue**: Refreshing the page kept the previously selected faction, deck, and level progress, instead of resetting to a fresh session.
+  - **Root Cause**:
+    1. The session profile ID was loaded from `sessionStorage` (`sessionStorage.getItem("ws-session-profile-id")`).
+    2. Since `sessionStorage` persists data across page refreshes within the same tab, the same profile ID was reused, keeping the saved progress and deck from the save store.
+  - **Fix**:
+    1. Modified `App.tsx` to generate a brand new `session-${Date.now()}` profile ID on every mount, without saving/reading from `sessionStorage`.
+    2. This ensures a page refresh is treated as a completely new anonymous player session with clean progress and a fresh deck selection slate.
 
+- **Hydration Race Condition on Page Refresh (Fixed 2026-06-28)**:
+  - **Issue**: Despite generating a new `session-${Date.now()}` on mount, refreshing the page still loaded the previous selected faction and deck.
+  - **Root Cause**:
+    1. Zustand's `persist` middleware hydrated the store from `localStorage` asynchronously or after mount, overwriting the `currentProfileId` with the old one saved in `localStorage`.
+    2. Since the profile ID reverted to the old one, the store retrieved the old profile's deck and progress.
+    3. Multiple reloads also caused `localStorage` to bloat with old temporary session profiles.
+  - **Fix**:
+    1. Excluded `currentProfileId` from the persisted state in `saveStore.ts` by adding a `partialize` filter option to Zustand's `persist` configuration.
+    2. Updated `createProfileWithId` to automatically garbage collect all old profiles starting with `session-` (and their decks and progress) whenever a new session profile is initialized.
+    3. Added a new unit test in `gameStore.test.ts` to assert that old session profiles are correctly cleaned up.
 
