@@ -96,4 +96,6 @@ export interface GameState {
   actionLog: GameActionLogEntry[];
   weather?: WeatherState;
   cardDefinitions: Record<string, CardDefinition>;
+  /** When set, the game is waiting for this player to discard N cards from hand. */
+  pendingDiscard?: { playerId: PlayerId; count: number };
 }

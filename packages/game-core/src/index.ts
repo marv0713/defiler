@@ -35,6 +35,8 @@ export { simulateGame } from "./simulator/simulateGame";
 export { formatSimulationReport } from "./simulator/report";
 export { simulateMatchup } from "./simulator/simulateMatchup";
 export { CAMPAIGN_LEVELS } from "./campaign/levelData";
+export { getCampaignCardPool, getFactionDeckStats, isLevelUnlocked } from "./campaign/campaignHelpers";
+export type { FactionDeckStats } from "./campaign/campaignHelpers";
 export type { DeckConstraint, LevelDefinition, WinCondition } from "./campaign/levelTypes";
 
 
@@ -73,6 +75,7 @@ export type {
 } from "./effects/effectTypes";
 export type {
   ActionTarget,
+  DiscardCardAction,
   GameAction,
   PassAction,
   PlayCardAction,

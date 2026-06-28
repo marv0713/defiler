@@ -35,8 +35,15 @@ export interface RestartGameAction {
   type: "RESTART_GAME";
 }
 
+export interface DiscardCardAction {
+  type: "DISCARD_CARD";
+  playerId: PlayerId;
+  cardInstanceId: string;
+}
+
 export type GameAction =
   | PlayCardAction
   | PassAction
   | StartNextRoundAction
-  | RestartGameAction;
+  | RestartGameAction
+  | DiscardCardAction;

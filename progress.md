@@ -1390,6 +1390,125 @@ Prevent players from adding unlimited copies of card rarities (such as selecting
   - `pnpm test` passed successfully (32 tests in apps/web, 151 in game-core, total 183 tests).
   - `npm run build` clean.
 
+## 2026-06-28
+
+### Code Quality Fix Pass
+
+- **i18n bypass**: Replaced ~25 hardcoded `language === "zh" ? "..." : "..."` patterns in `App.tsx` with proper `t()` calls. Added 20+ new i18n keys across both locales. Only remaining `language ===` checks are for CSS class toggling (legitimate).
+- **`as any` assertions**: Replaced with `EffectDefinition` union narrowing. `getEffectLogDetail()` now uses a typed switch. `getCardKeywordsGlossary()` uses `effect.type` directly.
+- **React side effect**: Moved `markComplete()` from render body into `useEffect` in `ResultScreen` with correct dependency array.
+- **DeckConstraint dead code**: Removed `requiredFactions` / `minFactions` from `levelTypes.ts`, `validateDeck()`, `DeckBuilderScreen.tsx`, `LevelSelectScreen.tsx`, test assertions, and i18n dictionaries. No campaign level ever populated these fields after the one-faction lock.
+- **Verification**:
+  - `pnpm test`: 183 tests passed (151 game-core + 32 web).
+  - `pnpm typecheck`: clean.
+  - `pnpm build`: clean (322.61 kB JS).
+  - Commit: `16f4210`.
+
+### Public Playtest Milestone Planning
+
+Defined a two-tier release strategy:
+
+- **Tier A (Public Demo / Playtest)**: external players can open, play, and give feedback.
+- **Tier B (Full Product)**: accounts, cloud save, PvP, multi-platform — deferred until playtest feedback validates core game.
+
+Tier A task inventory (see `findings.md` for full breakdown):
+
+| Round | Scope | Estimate |
+|-------|-------|----------|
+| 1 — Visual baseline + deploy | Card face template, CSS consolidation, Vercel deploy, feedback link | 3-5 days |
+| 2 — Onboarding + analytics | New-player guidance, analytics events, error logging | 2-3 days |
+| 3 — Audio + polish | SFX / BGM, placeholder art pass, cross-browser validation | 2-3 days |
+
+Total estimated: **7-11 working days** to Tier A readiness.
+
+Deferred to Tier B: account system, cloud save, PvP matchmaking, WeChat / iOS / mobile, more cards and levels, faction policies, weather system, card balance tools.
+
+## 2026-06-28 (Continued)
+
+### Phase 10 / Task 10.1: Campaign & DeckBuilder UI Optimization
+
+Per `docs/campaign_deckbuilding/` design documents and reference images.
+
+#### Task 10.1a: game-core helpers
+- Added `packages/game-core/src/campaign/campaignHelpers.ts` with three pure functions:
+  - `getCampaignCardPool(faction)` — returns campaign-legal card definitions.
+  - `getFactionDeckStats(faction)` — returns pool composition stats.
+  - `isLevelUnlocked(levelIndex, completedIds, lastLevelId)` — pure unlock check.
+- Exported from `packages/game-core/src/index.ts`.
+- These helpers are platform-independent (Web / WeChat / iOS reusable).
+
+#### Task 10.1b: Campaign page three-column refactor
+- Rewrote `LevelSelectScreen.tsx` from card-grid to three-column layout:
+  - **Left (260px)**: 4 faction choice cards with seal, style tag, difficulty, card count, policy.
+    Faction detail panel with deck composition stats (units/specials/rows/avgPower).
+  - **Center (flex)**: vertical route timeline with connected nodes, ✓/🔒 icons,
+    difficulty stars, opponent faction badge.
+  - **Right (280px)**: stage detail panel with title, subtitle, difficulty, mechanic,
+    learning goal, and Start Challenge / Locked reason / Done check.
+- Replaced all old `.level-select-*` / `.level-card` CSS with new `.campaign-*` / `.route-*` styles.
+- Responsive: collapses to single-column on <900px.
+
+#### Task 10.1c: DeckBuilder filters, stats, and goal card
+- Added filter bar: All / Units / Specials / Addable with pill buttons.
+- Added sort: Default / Power ↓.
+- Added deck structure stats panel (Units, Specials, Melee, Ranged, Siege, Avg Power).
+- Added stage goal card (Goal, Special Rule, Enemy Mechanic) below header.
+- Added dismissible operation hint banner for new players.
+- Added Clear Deck button.
+- Changed `validateDeck()` return type from `string | null` to `{ key, params } | null`
+  for i18n-friendly error messages.
+- "Start Battle" button now shows: active state, "Need X more cards", or "Deck illegal".
+- CSS: filter pills, deck stats, operation hint, stage goal bar.
+
+#### Task 10.1d: i18n keys
+- Added ~25 keys per locale under `campaign.*`, `faction.*.styleTag`, `faction.*.beginnerTag`,
+  `level.<id>.mechanic`, `level.<id>.goal`, `deckbuilder.filter*`, `deckbuilder.sort*`,
+  `deckbuilder.stats*`, `deckbuilder.stageGoal`, `deckbuilder.clearDeck`,
+  `deckbuilder.operationHint`, `deckbuilder.needMoreCards`, `deckbuilder.deckIllegal`,
+  `deckbuilder.error*`.
+
+#### Cross-platform design
+- `campaignHelpers.ts` pure functions are callable from any platform (React, WXML, SwiftUI).
+- i18n dictionaries are portable JSON-like objects.
+- CSS design tokens (faction colors, spacing, radii) documented for future platform porting.
+
+#### Verification
+- `pnpm typecheck`: clean.
+- `pnpm test`: 183 tests passed (151 game-core + 32 web).
+- `pnpm build`: clean (335.10 kB JS, 44.72 kB CSS).
+
+### Manual Discard Selection for DRAW_DISCARD (2026-06-28)
+
+- **Goal**: Player manually chooses which card to discard instead of auto-discard from end of hand.
+- **game-core**:
+  - `types.ts`: Added `pendingDiscard?: { playerId: PlayerId; count: number }` to `GameState`.
+  - `actions.ts`: Added `DiscardCardAction { type: "DISCARD_CARD"; playerId; cardInstanceId }`.
+  - `effectResolver.ts`: `applyDrawDiscard` draws cards then sets `pendingDiscard` (no auto-discard).
+  - `reducer.ts`: `applyDiscardCard` removes chosen card → graveyard, decrements count,
+    clears pending and switches turn when done. `applyPlayCard` pauses turn switch while pending.
+  - `legalActions.ts`: Returns only `DISCARD_CARD` actions when `pendingDiscard` is active.
+  - `simulateGame.ts`: Auto-resolves pending discards for both sides in simulator.
+- **Web UI**:
+  - `gameStore.ts`: Added `discardCard()` action. AI opponent auto-discards lowest-power card.
+  - `App.tsx`: `DiscardMode` component — dimmed background overlay, hand cards float at center
+    with red glow. Click to toggle selection (red ✕ badge). "确认弃牌" button confirms.
+    Hover triggers card preview in sidebar.
+  - `HandView.tsx`: Unchanged (DiscardMode renders its own cards).
+- **Campaign page refinements**:
+  - Qin pre-selected by default on campaign entry.
+  - Faction selection: horizontal row of 4 large hero cards (seal + name + style + difficulty + count + policy).
+  - Back button: lightweight text link (no border/background).
+  - Three-column body only shows after faction is chosen.
+- **Verification**:
+  - `pnpm typecheck`: clean.
+  - `pnpm test`: 183 passed.
+  - `pnpm build`: clean.
+
+### Campaign & DeckBuilder UI Polish Iterations (2026-06-28)
+- Campaign: default Qin faction pre-selected. Back button simplified. Faction row horizontal hero cards. Three-column layout refined.
+- DeckBuilder: operation hint moved inline with faction lock row. Card filter pills (All/Units/Specials/Addable). Sort (Default/Power). Deck stats panel. Stage goal card. Clear Deck button. validateDeck i18n-friendly errors.
+- Discard picker: two-step selection (select cards → confirm). Red ✕ badge on selected. Dark backing panel behind cards. Banner below cards.
+
 
 
 

@@ -70,6 +70,8 @@ interface GameStore {
   setHoveredCard: (card: CardDefinition | null) => void;
   /** Play a card from the player's hand. Opponent AI responds automatically. */
   playCard: (cardInstanceId: string) => void;
+  /** Discard a card from hand (manual selection for DRAW_DISCARD effects). */
+  discardCard: (cardInstanceId: string) => void;
   /** Player passes. Opponent AI responds automatically. */
   pass: () => void;
   /** Start the next round after round_finished. AI responds if it goes first. */
@@ -87,8 +89,8 @@ interface GameStore {
   /** Fill the current campaign deck to DECK_SIZE with legal faction cards. */
   autoFillDeck: () => void;
   /** Returns an error message if the current playerDeck violates the selected level's
-   * DeckConstraint, or null if it is valid. */
-  validateDeck: () => string | null;
+   * DeckConstraint, or null if it is valid. Callers resolve the key through t(). */
+  validateDeck: () => { key: string; params?: Record<string, string | number> } | null;
   /** Validate the deck then start the campaign game. */
   startLevelGame: () => void;
   /** Whether the player won the current campaign level (evaluated post-game). */
@@ -197,6 +199,22 @@ function advanceOpponentAI(state: GameState): {
 
     current = applyAction(current, action);
     lastAction = actionLabel;
+
+    // AI auto-discard: discard lowest-power card from hand.
+    while (current.pendingDiscard?.playerId === "opponent") {
+      const hand = current.players.opponent.hand;
+      if (hand.length === 0) break;
+      // Pick the lowest-power card (simple heuristic).
+      let lowest = hand[0];
+      for (const c of hand) {
+        if (c.currentPower < lowest.currentPower) lowest = c;
+      }
+      current = applyAction(current, {
+        type: "DISCARD_CARD",
+        playerId: "opponent",
+        cardInstanceId: lowest.instanceId,
+      });
+    }
   }
 
   return { state: current, lastAction };
@@ -320,6 +338,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
     commitAfterPlayer(next, playerLabel, set);
   },
 
+  discardCard(cardInstanceId) {
+    const { gameState } = get();
+    if (!gameState || !gameState.pendingDiscard) return;
+    if (gameState.pendingDiscard.playerId !== "player") return;
+
+    const next = applyAction(gameState, {
+      type: "DISCARD_CARD",
+      playerId: "player",
+      cardInstanceId,
+    });
+
+    // If still waiting for more discards, just update state; don't run AI.
+    if (next.pendingDiscard) {
+      set({ gameState: next, lastAction: { id: "game.youDiscard" } });
+      return;
+    }
+
+    commitAfterPlayer(next, { id: "game.youDiscard" }, set);
+  },
+
   pass() {
     const { gameState } = get();
     if (!gameState || gameState.status !== "playing") return;
@@ -378,7 +416,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       deckBuildError: null,
       ...(isNewCampaign
         ? {
-            campaignFactionChosen: false,
+            campaignFactionChosen: true,
+            playerFaction: "qin",
             campaignFactionLocked: false,
             playerDeck: [],
           }
@@ -422,7 +461,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         startLevelGame();
         return;
       }
-      set({ deckBuildError: error, screen: "deck_builder" });
+      set({ deckBuildError: error.key, screen: "deck_builder" });
       return;
     }
 
@@ -502,25 +541,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     useSaveStore.getState().saveDeck(nextSlice);
   },
 
-  validateDeck() {
+  validateDeck(): { key: string; params?: Record<string, string | number> } | null {
     const { playerDeck, selectedLevel, campaignMode, playerFaction } = get();
-    if (!selectedLevel) return "No level selected.";
+    if (!selectedLevel) return { key: "deckbuilder.errorNoLevel" };
     const constraint = selectedLevel.deckConstraint;
 
     if (playerDeck.length !== DECK_SIZE) {
-      return `Deck must contain exactly ${DECK_SIZE} cards (currently ${playerDeck.length}).`;
+      return { key: "deckbuilder.errorWrongSize", params: { count: String(playerDeck.length) } };
     }
     if (!constraint.allowDuplicates) {
       const unique = new Set(playerDeck);
       if (unique.size !== playerDeck.length) {
-        return "This level requires all 25 cards to be unique — remove duplicates.";
+        return { key: "deckbuilder.errorDuplicates" };
       }
     }
     if (
       campaignMode &&
       playerDeck.some((cardId) => !isAllowedCampaignDeckCard(cardId, playerFaction))
     ) {
-      return "Deck can only contain cards from your campaign faction.";
+      return { key: "deckbuilder.errorWrongFaction" };
     }
     // Check card copy limits based on rarity
     const counts: Record<string, number> = {};
@@ -530,7 +569,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (counts[id] > maxCopies) {
         const def = findCardDefinition(id);
         const name = def ? def.name : id;
-        return `Too many copies of "${name}" (max ${maxCopies} allowed).`;
+        return { key: "deckbuilder.errorTooManyCopies", params: { card: name, max: String(maxCopies) } };
       }
     }
 
@@ -541,7 +580,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { selectedLevel, playerDeck, validateDeck } = get();
     const error = validateDeck();
     if (error) {
-      set({ deckBuildError: error });
+      set({ deckBuildError: error.key });
       return;
     }
     if (!selectedLevel) return;

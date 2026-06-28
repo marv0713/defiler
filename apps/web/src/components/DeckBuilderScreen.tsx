@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useGameStore, getMaxCardCopies } from "../store/gameStore";
 import { useI18n } from "../i18n/I18nProvider";
-import { INITIAL_CARDS, type CardDefinition } from "@warring-states/game-core";
+import { INITIAL_CARDS, getCampaignCardPool, type CardDefinition } from "@warring-states/game-core";
 import { getCardName, getCardDescription } from "../i18n/i18n";
 
 const FACTION_COLOR: Record<string, string> = {
@@ -12,54 +12,102 @@ const FACTION_COLOR: Record<string, string> = {
   neutral: "var(--neutral, #888)",
 };
 
-// All non-token cards grouped by faction.
-const ALL_CARDS = INITIAL_CARDS.filter(
-  (c) =>
-    (c.type === "unit" || c.type === "special") &&
-    c.id !== "qin-token" &&
-    c.id !== "chu-token",
-);
+type FilterId = "all" | "unit" | "special" | "addable";
+type SortId = "default" | "power";
+
+const FILTERS: { id: FilterId; key: string }[] = [
+  { id: "all", key: "deckbuilder.filterAll" },
+  { id: "unit", key: "deckbuilder.filterUnits" },
+  { id: "special", key: "deckbuilder.filterSpecials" },
+  { id: "addable", key: "deckbuilder.filterAddable" },
+];
 
 export function DeckBuilderScreen() {
   const { t } = useI18n();
 
-  const selectedLevel   = useGameStore((s) => s.selectedLevel);
-  const playerFaction   = useGameStore((s) => s.playerFaction);
-  const playerDeck      = useGameStore((s) => s.playerDeck);
-  const deckBuildError  = useGameStore((s) => s.deckBuildError);
+  const selectedLevel = useGameStore((s) => s.selectedLevel);
+  const playerFaction = useGameStore((s) => s.playerFaction);
+  const playerDeck = useGameStore((s) => s.playerDeck);
+  const deckBuildError = useGameStore((s) => s.deckBuildError);
   const toggleCardInDeck = useGameStore((s) => s.toggleCardInDeck);
   const removeCardFromDeck = useGameStore((s) => s.removeCardFromDeck);
   const autoFillDeck = useGameStore((s) => s.autoFillDeck);
-  const validateDeck    = useGameStore((s) => s.validateDeck);
-  const startLevelGame  = useGameStore((s) => s.startLevelGame);
+  const validateDeck = useGameStore((s) => s.validateDeck);
+  const startLevelGame = useGameStore((s) => s.startLevelGame);
   const goToLevelSelect = useGameStore((s) => s.goToLevelSelect);
 
-  // Preview state — show card detail in right panel.
   const [previewCard, setPreviewCard] = useState<CardDefinition | null>(null);
+  const [filter, setFilter] = useState<FilterId>("all");
+  const [sortBy, setSortBy] = useState<SortId>("default");
 
   const constraint = selectedLevel?.deckConstraint;
   const deckSize = 25;
 
-  // Cards in pool: only the selected faction (+ neutral if any exist).
+  // Full campaign pool for the faction.
   const poolCards = useMemo(
-    () =>
-      ALL_CARDS.filter(
-        (c) => c.faction === playerFaction || c.faction === "neutral",
-      ),
+    () => getCampaignCardPool(playerFaction),
     [playerFaction],
   );
 
-  // Count of each card ID in the current deck.
+  // Deck count map.
   const deckCount = useMemo(() => {
     const map: Record<string, number> = {};
     for (const id of playerDeck) map[id] = (map[id] ?? 0) + 1;
     return map;
   }, [playerDeck]);
 
+  // Filtered + sorted pool.
+  const filteredPool = useMemo(() => {
+    let cards = [...poolCards];
+    const allowDuplicates = constraint?.allowDuplicates ?? true;
+
+    if (filter === "unit") cards = cards.filter((c) => c.type === "unit");
+    else if (filter === "special") cards = cards.filter((c) => c.type === "special");
+    else if (filter === "addable") {
+      cards = cards.filter((c) => {
+        const count = deckCount[c.id] ?? 0;
+        const maxCopies = getMaxCardCopies(c.id, allowDuplicates);
+        return count < maxCopies && playerDeck.length < deckSize;
+      });
+    }
+
+    if (sortBy === "power") {
+      cards.sort((a, b) => b.power - a.power);
+    }
+
+    return cards;
+  }, [poolCards, filter, sortBy, deckCount, playerDeck.length, constraint]);
+
+  // Deck structure stats.
+  const deckStats = useMemo(() => {
+    const defs = playerDeck
+      .map((id) => INITIAL_CARDS.find((c) => c.id === id))
+      .filter(Boolean) as CardDefinition[];
+    const units = defs.filter((c) => c.type === "unit");
+    const specials = defs.filter((c) => c.type === "special");
+    const neutrals = defs.filter((c) => c.faction === "neutral");
+    const unitPowers = units.map((c) => c.power);
+    const avgPower =
+      unitPowers.length > 0
+        ? Math.round((unitPowers.reduce((s, p) => s + p, 0) / unitPowers.length) * 10) / 10
+        : 0;
+
+    return {
+      units: units.length,
+      specials: specials.length,
+      neutral: neutrals.length,
+      melee: units.filter((c) => c.row === "melee").length,
+      ranged: units.filter((c) => c.row === "ranged").length,
+      siege: units.filter((c) => c.row === "siege").length,
+      avgPower,
+    };
+  }, [playerDeck]);
+
   const validationError = validateDeck();
   const canStart = validationError === null;
+  const isFull = playerDeck.length >= deckSize;
 
-  // Deck list entries with definitions.
+  // Deck list entries.
   const deckEntries = useMemo(() => {
     const seen: Record<string, number> = {};
     return playerDeck
@@ -71,11 +119,18 @@ export function DeckBuilderScreen() {
       .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [playerDeck]);
 
+  const handleClearDeck = () => {
+    const currentDeck = [...playerDeck];
+    for (const id of currentDeck) {
+      removeCardFromDeck(id);
+    }
+  };
+
   if (!selectedLevel) return null;
 
   return (
     <div className="deck-builder-screen">
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="deck-builder-header">
         <button className="btn-back" onClick={goToLevelSelect}>
           ← {t("deckbuilder.backToLevels")}
@@ -89,13 +144,29 @@ export function DeckBuilderScreen() {
         </div>
       </header>
 
+      {/* ── Stage Goal Card ── */}
+      <div className="deck-stage-goal">
+        <div className="stage-goal-row">
+          <strong>{t("deckbuilder.stageGoal")}:</strong>{" "}
+          {selectedLevel.title}
+        </div>
+        <div className="stage-goal-row">
+          <strong>{t("deckbuilder.specialRule")}:</strong>{" "}
+          {selectedLevel.winCondition.type === "must_win_round2"
+            ? t("deckbuilder.mustWinRound2")
+            : t("levelselect.vs") + " " + t(`faction.${selectedLevel.opponentFaction}.name`)}
+        </div>
+        <div className="stage-goal-row">
+          <strong>{t("campaign.enemyMechanic")}:</strong>{" "}
+          {t(`level.${selectedLevel.id}.mechanic`)}
+        </div>
+      </div>
+
       <div className="deck-builder-body">
-        {/* Left: Card Pool */}
+        {/* ── Left: Card Pool ── */}
         <div className="card-pool">
+          {/* Locked faction badge */}
           <div className="pool-faction-lock">
-            <span className="pool-faction-selector__label">
-              {t("deckbuilder.lockedFaction")}
-            </span>
             <span
               className="pool-faction-badge"
               style={{ borderColor: FACTION_COLOR[playerFaction], color: FACTION_COLOR[playerFaction] }}
@@ -105,22 +176,51 @@ export function DeckBuilderScreen() {
             <span className="pool-faction-lock__hint">
               {t("deckbuilder.lockedFactionHint")}
             </span>
+            <span className="pool-faction-lock__hint pool-faction-lock__hint--dim">
+              {t("deckbuilder.operationHint")}
+            </span>
           </div>
 
-          <h2 className="pool-heading">{t("deckbuilder.cardPool")}</h2>
+          {/* Filter + Sort bar */}
+          <div className="pool-filter-bar">
+            <div className="pool-filters">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  className={`filter-pill${filter === f.id ? " filter-pill--active" : ""}`}
+                  onClick={() => setFilter(f.id)}
+                >
+                  {t(f.key)}
+                </button>
+              ))}
+            </div>
+            <div className="pool-sort">
+              <button
+                className={`filter-pill${sortBy === "default" ? " filter-pill--active" : ""}`}
+                onClick={() => setSortBy("default")}
+              >
+                {t("deckbuilder.sortDefault")}
+              </button>
+              <button
+                className={`filter-pill${sortBy === "power" ? " filter-pill--active" : ""}`}
+                onClick={() => setSortBy("power")}
+              >
+                {t("deckbuilder.sortPower")}
+              </button>
+            </div>
+          </div>
 
+          {/* Card list */}
           <div className="pool-card-list">
-            {poolCards.map((card) => {
+            {filteredPool.map((card) => {
               const count = deckCount[card.id] ?? 0;
               const inDeck = count > 0;
               const allowDuplicates = constraint?.allowDuplicates ?? true;
               const maxCopies = getMaxCardCopies(card.id, allowDuplicates);
-              const isDeckFull = playerDeck.length >= deckSize;
               const atLimit = count >= maxCopies;
-
               const atMax = allowDuplicates
-                ? (isDeckFull || atLimit)
-                : (inDeck ? false : isDeckFull);
+                ? isFull || atLimit
+                : inDeck ? false : isFull;
 
               const cardName = getCardName(t, card, card.id);
               const cardDesc = getCardDescription(t, card);
@@ -150,17 +250,43 @@ export function DeckBuilderScreen() {
                 </button>
               );
             })}
+            {filteredPool.length === 0 && (
+              <div className="pool-card-list-empty">
+                {t("deckbuilder.emptyHint")}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right: Deck List */}
+        {/* ── Right: Deck List ── */}
         <aside className="deck-list-panel">
           <h2 className="deck-list-heading">
             {t("deckbuilder.yourDeck")}{" "}
-            <span className={playerDeck.length === deckSize ? "deck-count--full" : ""}>
+            <span className={isFull ? "deck-count--full" : ""}>
               ({playerDeck.length}/{deckSize})
             </span>
           </h2>
+
+          {/* Deck structure stats */}
+          {playerDeck.length > 0 && (
+            <div className="deck-stats">
+              <div className="deck-stats__row">
+                <span>{t("deckbuilder.statsUnits")} {deckStats.units}</span>
+                <span>{t("deckbuilder.statsSpecials")} {deckStats.specials}</span>
+                {deckStats.neutral > 0 && (
+                  <span>{t("deckbuilder.statsMelee")} {deckStats.neutral}</span>
+                )}
+              </div>
+              <div className="deck-stats__row">
+                <span>{t("deckbuilder.statsMelee")} {deckStats.melee}</span>
+                <span>{t("deckbuilder.statsRanged")} {deckStats.ranged}</span>
+                <span>{t("deckbuilder.statsSiege")} {deckStats.siege}</span>
+              </div>
+              <div className="deck-stats__row">
+                <span>{t("deckbuilder.avgPower")} {deckStats.avgPower}</span>
+              </div>
+            </div>
+          )}
 
           {/* Constraints summary */}
           <div className="constraint-summary">
@@ -176,6 +302,7 @@ export function DeckBuilderScreen() {
             )}
           </div>
 
+          {/* Deck card list */}
           <ul className="deck-list">
             {deckEntries.map(({ def, key }) => (
               <li
@@ -202,55 +329,65 @@ export function DeckBuilderScreen() {
             )}
           </ul>
 
-          {/* Error + Start */}
+          {/* Error + Action buttons */}
           <div className="deck-builder-footer">
-            {(deckBuildError ?? validationError) && (
+            {(deckBuildError || validationError) && (
               <div className="deck-error">
-                {deckBuildError ?? validationError}
+                {deckBuildError
+                  ? t(deckBuildError)
+                  : validationError
+                    ? t(validationError.key, validationError.params as Record<string, string | number>)
+                    : ""}
               </div>
             )}
             <button
               className="btn-auto-fill"
               onClick={autoFillDeck}
-              disabled={playerDeck.length >= deckSize}
+              disabled={isFull}
             >
               {t("deckbuilder.autoFill")}
+            </button>
+            <button
+              className="btn-auto-fill"
+              onClick={handleClearDeck}
+              disabled={playerDeck.length === 0}
+              style={{ marginTop: "4px" }}
+            >
+              {t("deckbuilder.clearDeck")}
             </button>
             <button
               id="start-battle-btn"
               className={`btn-start-battle ${canStart ? "" : "btn-start-battle--disabled"}`}
               onClick={startLevelGame}
+              disabled={!canStart}
             >
               {canStart
                 ? `⚔ ${t("deckbuilder.startBattle")}`
-                : `${playerDeck.length}/${deckSize} ${t("deckbuilder.cards")}`}
+                : isFull
+                  ? t("deckbuilder.deckIllegal")
+                  : t("deckbuilder.needMoreCards", { count: deckSize - playerDeck.length })}
             </button>
           </div>
         </aside>
 
-        {/* Right: Card Preview */}
+        {/* ── Right: Card Preview ── */}
         <aside className="card-preview-panel">
           <h2 className="preview-heading">{t("deckbuilder.cardPreview")}</h2>
           {previewCard ? (
             <div className="card-preview-content">
               <div className={`card-preview-frame card-preview-frame--${previewCard.rarity} card-preview-frame--${previewCard.faction}`}>
-                {/* Header */}
                 <div className="preview-frame-header">
                   <span className="preview-frame-power">{previewCard.power}</span>
                   <span className="preview-frame-name">{getCardName(t, previewCard, previewCard.id)}</span>
                 </div>
-
-                {/* Art Placeholder */}
                 <div className="preview-frame-art">
                   <div className="preview-frame-art-inner">
                     <span className="preview-art-icon">
-                      {previewCard.type === "special" ? "📜" : (previewCard.row === "melee" ? "⚔" : previewCard.row === "ranged" ? "🏹" : "☄")}
+                      {previewCard.type === "special" ? "📜" : previewCard.row === "melee" ? "⚔" : previewCard.row === "ranged" ? "🏹" : "☄"}
                     </span>
                     <span className="preview-art-text">{t("deckbuilder.artPlaceholder")}</span>
                   </div>
                 </div>
-
-                {/* Metadata badges */}
                 <div className="preview-frame-metadata">
                   <span className={`preview-badge badge-faction badge-faction--${previewCard.faction}`}>
                     {t(`faction.${previewCard.faction}.name`)}
@@ -267,8 +404,6 @@ export function DeckBuilderScreen() {
                     {t(`cardtype.${previewCard.type}`)}
                   </span>
                 </div>
-
-                {/* Description Body */}
                 <div className="preview-frame-body">
                   <p className="preview-frame-desc">
                     {getCardDescription(t, previewCard)}

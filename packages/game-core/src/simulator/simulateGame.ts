@@ -4,6 +4,8 @@ import { DECK_SIZE } from "../constants";
 import type { GameAction } from "../rules/actions";
 import { createInitialGameState } from "../rules/gameInit";
 import { applyAction } from "../rules/reducer";
+import { getLegalActions } from "../rules/legalActions";
+import { settleRound } from "../rules/round";
 import { calculateScores } from "../rules/scoring";
 import type {
   CardDefinition,
@@ -62,6 +64,7 @@ function createEmptyActionSummary(): SimulateActionSummary {
       PASS: 0,
       START_NEXT_ROUND: 0,
       RESTART_GAME: 0,
+      DISCARD_CARD: 0,
     },
     byPlayer: {
       player: 0,
@@ -102,11 +105,37 @@ export function simulateGame(config: SimulateGameConfig): SimulateGameResult {
   let turns = 0;
 
   while (state.status !== "game_finished" && turns < maxTurns) {
-    const action =
-      state.status === "round_finished"
-        ? { type: "START_NEXT_ROUND" as const }
-        : chooseAction(state, state.currentPlayerId);
+    // Auto-resolve any pending discards before choosing next action.
+    while (state.pendingDiscard) {
+      const player = state.players[state.pendingDiscard.playerId];
+      if (player.hand.length === 0) break;
+      let lowest = player.hand[0];
+      for (const c of player.hand) {
+        if (c.currentPower < lowest.currentPower) lowest = c;
+      }
+      state = applyAction(state, {
+        type: "DISCARD_CARD",
+        playerId: state.pendingDiscard.playerId,
+        cardInstanceId: lowest.instanceId,
+      });
+    }
 
+    // If round finished, advance. If current player cannot act, advance round.
+    if (state.status === "round_finished") {
+      state = applyAction(state, { type: "START_NEXT_ROUND" });
+      turns += 1;
+      continue;
+    }
+
+    const legal = getLegalActions(state, state.currentPlayerId);
+    if (legal.length === 0) {
+      // Both players have passed — settle the round directly.
+      state = settleRound(state);
+      turns += 1;
+      continue;
+    }
+
+    const action = chooseAction(state, state.currentPlayerId);
     state = applyAction(state, action);
     turns += 1;
   }

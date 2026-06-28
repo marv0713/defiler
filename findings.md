@@ -739,3 +739,138 @@ App.tsx
     2. Updated `createProfileWithId` to automatically garbage collect all old profiles starting with `session-` (and their decks and progress) whenever a new session profile is initialized.
     3. Added a new unit test in `gameStore.test.ts` to assert that old session profiles are correctly cleaned up.
 
+## Code Quality Fix Pass (2026-06-28)
+
+- **i18n bypass in App.tsx**: ~25 hardcoded `language === "zh" ? "..." : "..."` patterns replaced with `t()` calls. New keys added: `start.heroSubtitle`, `start.campaignDesc`, `start.quickBattleDesc`, `game.logEffectDamage`, `game.logEffectBoost`, `game.logEffectSummon`, `game.logEffectLock`, `game.logEffectRevive`, `game.logEffectDrawDiscard`, `game.logEffectDestroy`, `game.logEffectClearWeather`, `game.logPlayCard`, `game.logPlayUnknown`, `game.logRoundStarted`, `faction.*.battleStyle`, `glossary.keywordTitle`, `game.cardDetails`, `game.cardDetailsHint`, `game.restartMatch`, `game.exitToMainMenu`, `history.empty`.
+- **`as any` type assertions**: Replaced with properly typed `EffectDefinition` union narrowing in `getEffectLogDetail` and `getCardKeywordsGlossary`.
+- **Render side effects**: `markComplete()` moved from render body into `useEffect` inside `ResultScreen`.
+- **DeckConstraint dead code**: Removed unused `requiredFactions` and `minFactions` fields from `levelTypes.ts`, `validateDeck()`, UI rendering in `DeckBuilderScreen` / `LevelSelectScreen`, corresponding i18n keys, and test assertions. No campaign level ever populated these constraints after the one-faction campaign lock.
+
+## Phase 10: Campaign & DeckBuilder UI Optimization (2026-06-28)
+
+### Cross-Platform Helpers
+
+- `packages/game-core/src/campaign/campaignHelpers.ts` exposes three pure functions:
+  - `getCampaignCardPool(faction)` — campaign-legal card definitions.
+  - `getFactionDeckStats(faction)` — pool composition (units/specials/rows/avgPower).
+  - `isLevelUnlocked(levelIndex, completedIds, lastLevelId)` — pure unlock check.
+- These are callable from any platform (Web React, WeChat WXML, iOS SwiftUI).
+
+### Campaign Page — Three-Column Layout
+
+- **Left column (260px)**: faction choice cards with seal, style tag, difficulty stars,
+  card count, policy name. Faction detail panel shows deck composition stats.
+- **Center column (flex)**: vertical route timeline with connected circle nodes.
+  Shows number/✓/🔒, title, difficulty stars, opponent faction.
+- **Right column (280px)**: stage detail card with mechanic, learning goal,
+  win condition badges, and Start Challenge / Locked reason / Done check.
+
+### DeckBuilder — Filters, Stats, Goal Card
+
+- Filter bar: All / Units / Specials / Addable pill buttons.
+- Sort: Default / Power ↓.
+- Deck structure stats panel: Units, Specials, Melee, Ranged, Siege, Avg Power.
+- Stage goal card (Goal, Special Rule, Enemy Mechanic) in header area.
+- Dismissible operation hint banner.
+- Clear Deck button alongside Auto Fill.
+- `validateDeck()` now returns `{ key, params } | null` for i18n-friendly errors.
+- "Start Battle" button states: active / "Need X cards" / "Deck illegal".
+
+### New i18n Keys
+
+~25 keys per locale under `campaign.*`, `faction.*.styleTag`, `faction.*.beginnerTag`,
+`level.<id>.mechanic`, `level.<id>.goal`, `deckbuilder.filter*`, `deckbuilder.sort*`,
+`deckbuilder.stats*`, `deckbuilder.stageGoal`, `deckbuilder.clearDeck`,
+`deckbuilder.operationHint`, `deckbuilder.needMoreCards`, `deckbuilder.deckIllegal`,
+`deckbuilder.error*`.
+
+### Manual Discard for DRAW_DISCARD (2026-06-28)
+
+- **Problem**: DRAW_DISCARD effects auto-discarded from the end of the hand. Player had
+  no control over which card to discard.
+- **Solution**: Added `pendingDiscard` to `GameState` as a lightweight pause mechanism.
+  When a DRAW_DISCARD effect needs to discard, cards are drawn normally but the discard
+  is deferred until the player (or AI) submits `DISCARD_CARD` actions.
+- **game-core changes**:
+  - `GameState.pendingDiscard?: { playerId, count }` — pause signal.
+  - `DiscardCardAction` — new action type for selecting a discard target.
+  - `effectResolver.ts`: `applyDrawDiscard` sets `pendingDiscard` instead of auto-discarding.
+  - `reducer.ts`: `applyDiscardCard` removes card → graveyard; when count hits 0,
+    clears pending and switches turn. `applyPlayCard` doesn't switch turn while pending.
+  - `legalActions.ts`: returns only `DISCARD_CARD` actions when `pendingDiscard` is active.
+  - `simulateGame.ts`: auto-discards lowest-power card for both AI sides in simulator.
+- **UI**: `DiscardMode` component — dims background, floats hand cards at center with
+  red glow. Click to select (✕ badge appears), "确认弃牌" button to confirm. Hover
+  shows card preview in sidebar. AI auto-picks lowest-power card.
+- **Campaign page refinements**: Qin pre-selected by default. Faction selection row is
+  horizontal hero cards. Back button is lightweight text link. Three-column body only
+  shows after faction is chosen.
+
+## Public Playtest Milestone (2026-06-28)
+
+### Two-Tier Release Strategy
+
+**A. Public Demo / Playtest** — goal: external players can open, play, and give feedback.
+**B. Full Product / Live Service** — goal: accounts, retention, content expansion, PvP.
+
+Current focus is Tier A. Tier B (accounts, cloud save, PvP, multi-platform) is deferred until
+playtest feedback validates the core game.
+
+### Tier A: Public Playtest Task Breakdown
+
+| # | Task | Status | Effort |
+|---|------|--------|--------|
+| **UI Polish** |
+| 1a | Home screen — match reference design | ✅ Phase 9 complete | — |
+| 1b | Unify font / spacing / button states across 4 screens | ⚠️ partial | Small |
+| 1c | Desktop 1440×900 / 1280×720 validation | ✅ fixed viewport | Small |
+| **New Player Onboarding** |
+| 2a | Pre-game rules explanation (3 rounds, PASS, rows, resources) | ❌ | Medium |
+| 2b | In-battle PASS hints (when to pass, why conservation matters) | ❌ | Small |
+| 2c | Keyword glossary — popover on hover instead of sidebar-only | ⚠️ exists in sidebar | Small |
+| **Card Visuals v1** |
+| 3a | Unified card face template (SVG / CSS) | ❌ | Medium |
+| 3b | Faction seal, rarity border, power, row clearly legible | ⚠️ data present, lacks hierarchy | Small |
+| 3c | AI-generated / placeholder art — one consistent style | ❌ | Medium |
+| **Audio** |
+| 4a | SFX: play card, PASS, round result, match result, button click | ❌ | Medium |
+| 4b | Single BGM loop + mute toggle | ❌ | Small |
+| **Analytics** |
+| 5a | Events: game start, level start, win/loss, deck built, exit | ❌ | Medium |
+| **Release Engineering** |
+| 6a | Production build + deploy (Vercel / Netlify) | ✅ `pnpm build` OK | Small |
+| 6b | Error logging (Sentry or similar) | ❌ | Small |
+| 6c | Cross-browser smoke test (Firefox, Safari) | ⚠️ Chrome only | Small |
+| 6d | Clean debug entrances / test data | ✅ no debug panel exists | — |
+| 6e | Feedback link (Google Form) | ❌ | Trivial |
+
+### Recommended Work Sequence
+
+```text
+Round 1 — Visual baseline + deployable  (3-5 days)
+├── 3a. Card face template
+├── 1b. CSS consolidation
+├── 6a. Deploy to Vercel
+└── 6e. Feedback link
+
+Round 2 — Onboarding + analytics  (2-3 days)
+├── 2. New-player guidance
+├── 5. Analytics events
+└── 6b. Error logging
+
+Round 3 — Audio + visual polish  (2-3 days)
+├── 4. SFX / BGM
+├── 3c. Art pass
+└── 6c. Cross-browser validation
+```
+
+Estimated total: **7–11 working days** to Tier A readiness.
+
+### Tier B (Post-Playtest)
+
+- Account system + cloud save + multi-device sync
+- PvP matchmaking, sync protocol, replay, anti-cheat
+- WeChat Mini Program / iOS / mobile Web
+- More cards, levels, faction policies, weather system
+- Card balance tools, automated AI regression simulation
+- Privacy policy, ToS, update mechanism

@@ -528,7 +528,7 @@ describe("resolveEffects", () => {
   });
 
   describe("DRAW_DISCARD", () => {
-    it("draws cards from deck and discards from end of hand", () => {
+    it("draws cards from deck and sets pendingDiscard for manual selection", () => {
       const state = createState({
         players: {
           player: {
@@ -567,13 +567,13 @@ describe("resolveEffects", () => {
 
       const result = resolveEffects(state, mockContext, effects);
 
-      // Drew 2 from deck: deck-1, deck-2 → hand becomes [hand-1, hand-2, deck-1, deck-2]
-      // Discard 1 from end: deck-2 → graveyard
+      // Drew 2 from deck: hand becomes [hand-1, hand-2, deck-1, deck-2] = 4 cards
+      // Discard is deferred — pendingDiscard should be set, no cards in graveyard yet.
       expect(result.players.player.deck).toHaveLength(1);
       expect(result.players.player.deck[0].instanceId).toBe("deck-3");
-      expect(result.players.player.hand).toHaveLength(3); // hand-1, hand-2, deck-1
-      expect(result.players.player.graveyard).toHaveLength(1);
-      expect(result.players.player.graveyard[0].instanceId).toBe("deck-2");
+      expect(result.players.player.hand).toHaveLength(4); // all 4 cards still in hand
+      expect(result.players.player.graveyard).toHaveLength(0); // not discarded yet
+      expect(result.pendingDiscard).toEqual({ playerId: "player", count: 1 });
     });
 
     it("handles draw from empty deck and discard from empty hand", () => {

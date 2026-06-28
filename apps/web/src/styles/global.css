@@ -850,47 +850,439 @@ body {
 }
 
 /* ─── Level Select Screen ───────────────────────────────────────── */
-.level-select-screen {
+/* ─── Campaign Screen ─────────────────────────────────────────── */
+.campaign-screen {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 16px 24px;
-  overflow-y: auto;
+  overflow: hidden;
 }
-.level-select-header {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 8px 16px;
-  margin-bottom: 20px;
-}
-.level-select-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--gold);
-  line-height: 1.2;
-}
-.level-select-subtitle {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-}
-.campaign-faction-selector {
+
+/* ── Top bar: light back link ── */
+.campaign-topbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-}
-.campaign-faction-selector__label {
-  font-size: 0.72rem;
+  padding: 10px 20px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
   color: var(--text-dim);
+}
+.campaign-back {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.82rem;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+.campaign-back:hover { color: var(--gold); }
+.campaign-topbar__divider {
+  color: var(--border);
+  font-size: 0.85rem;
+}
+.campaign-topbar__title {
+  font-weight: 700;
+  color: var(--parchment);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-.campaign-faction-selector__buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+.campaign-topbar__desc {
+  color: var(--text-dim);
 }
+.campaign-topbar__cleared {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* ── Faction selection row (horizontal hero cards) ── */
+.campaign-faction-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 8px 20px 16px;
+  flex-shrink: 0;
+}
+.campaign-faction-row--locked {
+  grid-template-columns: 1fr;
+  padding-bottom: 8px;
+}
+.faction-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.faction-hero-card:hover {
+  border-color: var(--gold-dim);
+  background: #141108;
+}
+.faction-hero-card--active {
+  background: #100e06;
+  border-color: var(--gold-dim);
+}
+.faction-hero-card__seal {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-row);
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.faction-hero-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.faction-hero-card__name {
+  font-weight: 700;
+  color: var(--parchment);
+  font-size: 0.95rem;
+}
+.faction-hero-card__style {
+  font-size: 0.73rem;
+  color: var(--gold-dim);
+  font-weight: 600;
+}
+.faction-hero-card__meta {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.faction-hero-card__policy {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.faction-locked-pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 2px solid;
+  background: #100e06;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* ── Prompt when no faction chosen ── */
+.campaign-prompt {
+  text-align: center;
+  padding: 32px 20px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Three-column body ── */
+.campaign-body {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  flex: 1;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+}
+.campaign-col {
+  overflow-y: auto;
+  padding: 14px;
+  border-right: 1px solid var(--border);
+}
+.campaign-col:last-child { border-right: none; }
+.campaign-col__heading {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+}
+
+/* ── Column 1: Faction Detail ── */
+.faction-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.faction-detail-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.faction-detail-panel__seal {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-row);
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.faction-detail-panel__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--parchment);
+  margin: 0;
+}
+.faction-detail-panel__style {
+  font-size: 0.72rem;
+  color: var(--gold-dim);
+}
+.faction-detail-panel__trait {
+  font-size: 0.73rem;
+  color: var(--parchment-dim);
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px;
+  background: var(--bg-row);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.faction-detail-panel__section h3 {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+}
+.faction-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.faction-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.faction-stat-item__value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.faction-stat-item__label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.faction-detail-panel__policy {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  padding: 6px;
+}
+
+/* ── Column 2: Route Timeline ── */
+.route-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  padding-left: 4px;
+}
+.route-timeline::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+.route-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 9px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.route-node:hover {
+  background: var(--bg-row);
+  border-color: var(--border);
+}
+.route-node--focused {
+  background: #100e06;
+  border-color: var(--border-gold);
+}
+.route-node--locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.route-node--locked:hover {
+  background: none;
+  border-color: transparent;
+}
+.route-node__circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.route-node--focused .route-node__circle {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #100e06;
+}
+.route-node--done .route-node__circle {
+  border-color: #2a5a2a;
+  color: #6ac66a;
+  background: #1a4a1a;
+}
+.route-node__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.route-node__title {
+  font-weight: 700;
+  color: var(--parchment);
+  font-size: 0.84rem;
+}
+.route-node--locked .route-node__title { color: var(--text-dim); }
+.route-node__meta {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+/* ── Column 3: Stage Detail ── */
+.stage-detail-card {
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stage-detail-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0;
+}
+.stage-detail-card__subtitle {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin: 3px 0 0;
+}
+.stage-detail-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stage-meta-tag {
+  display: inline-block;
+  background: #1e180a;
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  color: var(--parchment-dim);
+}
+.stage-meta-tag--warn {
+  border-color: #8b4a1a;
+  color: #c87a40;
+}
+.stage-detail-card__section h4 {
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  margin: 0 0 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stage-detail-card__section p {
+  font-size: 0.74rem;
+  color: var(--parchment-dim);
+  line-height: 1.45;
+  margin: 0;
+}
+.stage-detail-card__actions {
+  margin-top: 4px;
+}
+.btn-start-stage {
+  width: 100%;
+  padding: 10px;
+  background: var(--gold);
+  color: #0d0a03;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-start-stage:hover { opacity: 0.85; }
+.stage-done-badge {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #6ac66a;
+  font-weight: 700;
+  padding: 8px;
+}
+.stage-locked-msg {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .campaign-faction-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .campaign-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+  .campaign-col {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* Kept for backward compat in DeckBuilder */
 .campaign-faction-btn,
 .pool-faction-badge {
   padding: 4px 10px;
@@ -910,127 +1302,12 @@ body {
   background: #1a1508;
   font-weight: 700;
 }
-.campaign-faction-locked {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.campaign-faction-locked__badge {
+.pool-faction-badge {
   padding: 4px 10px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
   background: #1a1508;
-  font-size: 0.78rem;
   font-weight: 700;
 }
-.campaign-faction-trait {
-  max-width: 760px;
-  padding: 8px 10px;
-  background: var(--bg-row);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-.campaign-faction-trait__name {
-  color: var(--gold);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  margin-bottom: 2px;
-}
-.campaign-faction-trait p {
-  color: var(--parchment-dim);
-  font-size: 0.8rem;
-  line-height: 1.45;
-  margin: 0;
-}
-.btn-back {
-  background: none;
-  border: 1px solid var(--border-gold);
-  color: var(--parchment-dim);
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 0.82rem;
-  transition: border-color 0.15s, color 0.15s;
-}
-.btn-back:hover { border-color: var(--gold); color: var(--gold); }
-.btn-back {
-  grid-row: 1 / span 4;
-}
-
-.level-select-hint {
-  color: var(--text-dim);
-  font-size: 0.82rem;
-  margin: -8px 0 14px;
-  padding-left: calc(73px + 16px);
-}
-
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
-.level-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 14px;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s, background 0.15s;
-}
-.level-card:hover { border-color: var(--gold); background: #1c1810; }
-.level-card--done { border-color: #2a5a2a; }
-.level-card--done:hover { border-color: #4a9a4a; }
-.level-card--disabled,
-.level-card--disabled:hover {
-  cursor: not-allowed;
-  opacity: 0.48;
-  border-color: var(--border);
-  background: var(--bg-panel);
-}
-.level-card-number {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--border-gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.82rem;
-  color: var(--gold);
-  flex-shrink: 0;
-}
-.level-card--done .level-card-number { background: #1a4a1a; color: #6ac66a; }
-.level-card--locked .level-card-number { background: #1a1a1a; color: var(--text-dim); border: 1px solid var(--border); }
-.level-card-body { display: flex; flex-direction: column; gap: 4px; }
-.level-card-title { font-weight: 700; color: var(--parchment); font-size: 0.95rem; }
-.level-card-subtitle { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; }
-.level-card-meta {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
-  font-size: 0.75rem;
-}
-.level-difficulty { color: var(--gold-dim); }
-.level-opponent { color: var(--text-dim); }
-.level-constraint-badge {
-  display: inline-block;
-  background: #2a2010;
-  border: 1px solid var(--border-gold);
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 0.7rem;
-  color: var(--parchment-dim);
-  margin-top: 4px;
-  width: fit-content;
-}
-.level-constraint-badge--special { border-color: #8b4a1a; color: #c87a40; }
 
 /* ─── Deck Builder Screen ───────────────────────────────────────── */
 .deck-builder-screen {
@@ -1061,6 +1338,77 @@ body {
   color: var(--parchment);
   min-width: 56px;
   text-align: right;
+}
+
+/* Stage goal card (below header) */
+.deck-stage-goal {
+  display: flex;
+  gap: 24px;
+  padding: 8px 16px;
+  background: var(--bg-row);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 0.73rem;
+  color: var(--parchment-dim);
+  flex-wrap: wrap;
+}
+.stage-goal-row { white-space: nowrap; }
+.stage-goal-row strong { color: var(--gold-dim); }
+
+/* Filter bar */
+.pool-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.pool-filters,
+.pool-sort {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.filter-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-row);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.filter-pill:hover { border-color: var(--gold-dim); color: var(--parchment); }
+.filter-pill--active {
+  background: #1a1508;
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+/* Deck structure stats */
+.deck-stats {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.deck-stats__row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 1px 0;
+}
+
+/* Empty pool list message */
+.pool-card-list-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
 }
 
 .deck-builder-body {
@@ -1110,6 +1458,11 @@ body {
 .pool-faction-lock__hint {
   font-size: 0.75rem;
   color: var(--text-dim);
+}
+.pool-faction-lock__hint--dim {
+  color: var(--text-dim);
+  opacity: 0.65;
+  font-style: italic;
 }
 .pool-faction-badge {
   background: #1a1508;
@@ -2474,4 +2827,128 @@ body {
   .game-sidebar {
     display: none;
   }
+}
+
+/* ─── Discard Mode (dim background, hand cards selectable) ───── */
+.discard-mode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 10;
+  pointer-events: none;
+}
+.discard-mode-banner {
+  position: fixed;
+  top: calc(50% + 70px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(20, 12, 8, 0.92);
+  border: 1px solid rgba(200, 80, 80, 0.35);
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e0a0a0;
+  text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+}
+.discard-mode-confirm {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 80, 80, 0.4);
+  background: rgba(200, 60, 40, 0.12);
+  color: #c08080;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: default;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.discard-mode-confirm--ready {
+  background: rgba(200, 60, 40, 0.3);
+  border-color: #d04040;
+  color: #ffd0d0;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(200, 40, 20, 0.3);
+}
+.discard-mode-confirm--ready:hover {
+  background: rgba(220, 50, 30, 0.45);
+  border-color: #e05050;
+}
+
+/* Selected discard card — always elevated, never bounces back */
+.hand-card--discard-selected {
+  border-color: #e04040 !important;
+  box-shadow: 0 0 28px rgba(220, 30, 10, 0.6), 0 6px 20px rgba(0,0,0,0.55);
+  transform: translateY(-14px) scale(1.12) !important;
+  background: rgba(200, 30, 20, 0.2) !important;
+}
+.hand-card--discard-selected::after {
+  content: "✕";
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d03030;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(200, 30, 20, 0.5);
+}
+.hand-card--discard-selected .hand-card__power {
+  color: #ff9080;
+}
+.hand-card--discard-selected .hand-card__name {
+  color: #ffc0c0;
+}
+
+/* Discard hand cards wrapper (center of screen) */
+.hand-view--discard-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  pointer-events: auto;
+}
+.hand-view--discard-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 30% 10%;
+  background: rgba(8, 6, 3, 0.75);
+  border-radius: 20px;
+  border: 1px solid rgba(180, 100, 80, 0.12);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+/* Discardable cards */
+.hand-card--discardable {
+  cursor: pointer;
+  flex-shrink: 0;
+  border-color: rgba(200, 120, 100, 0.3) !important;
+  box-shadow: 0 0 14px rgba(200, 60, 40, 0.2), 0 3px 12px rgba(0,0,0,0.4);
+  transform: translateY(-6px) scale(1.04);
+  z-index: 20;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+  min-width: 80px;
+}
+.hand-card--discardable:hover {
+  border-color: rgba(200, 100, 80, 0.55) !important;
+  box-shadow: 0 0 22px rgba(200, 50, 30, 0.35), 0 5px 18px rgba(0,0,0,0.55);
+  transform: translateY(-10px) scale(1.08);
+}
+.hand-card--discardable .hand-card__power {
+  color: #d0a0a0;
 }

@@ -312,18 +312,15 @@ describe("useGameStore — campaign deck building", () => {
     expect(useGameStore.getState().campaignFactionLocked).toBe(false);
   });
 
-  it("blocks level selection until a campaign faction is chosen", () => {
+  it("defaults to Qin as the pre-selected campaign faction", () => {
     useGameStore.getState().goToLevelSelect();
 
-    expect(useGameStore.getState().campaignFactionChosen).toBe(false);
+    expect(useGameStore.getState().campaignFactionChosen).toBe(true);
+    expect(useGameStore.getState().playerFaction).toBe("qin");
     expect(useGameStore.getState().campaignFactionLocked).toBe(false);
-    useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
-    expect(useGameStore.getState().screen).toBe("level_select");
-    expect(useGameStore.getState().selectedLevel).toBeNull();
 
-    useGameStore.getState().setPlayerFaction("zhao");
+    // Can select a level immediately with the default faction.
     useGameStore.getState().selectLevel(CAMPAIGN_LEVELS[0]);
-
     expect(useGameStore.getState().screen).toBe("deck_builder");
     expect(useGameStore.getState().selectedLevel?.id).toBe(CAMPAIGN_LEVELS[0].id);
     expect(useGameStore.getState().campaignFactionLocked).toBe(true);
@@ -339,7 +336,7 @@ describe("useGameStore — campaign deck building", () => {
     useGameStore.getState().goToLevelSelect();
 
     expect(useGameStore.getState().campaignFactionLocked).toBe(false);
-    expect(useGameStore.getState().campaignFactionChosen).toBe(false);
+    expect(useGameStore.getState().campaignFactionChosen).toBe(true);
     expect(useGameStore.getState().playerDeck).toEqual([]);
   });
 

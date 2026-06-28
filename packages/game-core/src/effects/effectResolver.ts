@@ -297,11 +297,23 @@ function applyDrawDiscard(
 
   const nextHand = [...player.hand, ...drawn];
 
-  // Discard from end of hand (simple deterministic strategy)
-  const discardCount = Math.min(effect.discard, nextHand.length);
-  const discarded = nextHand.slice(nextHand.length - discardCount);
-  const finalHand = nextHand.slice(0, nextHand.length - discardCount);
+  // Draw first, then defer discard to manual selection (player) or auto (AI).
+  if (effect.discard > 0) {
+    return {
+      ...state,
+      pendingDiscard: { playerId: context.sourcePlayerId, count: effect.discard },
+      players: {
+        ...state.players,
+        [context.sourcePlayerId]: {
+          ...player,
+          deck: remainingDeck,
+          hand: nextHand,
+        },
+      },
+    };
+  }
 
+  // draw-only, no discard needed
   return {
     ...state,
     players: {
@@ -309,8 +321,7 @@ function applyDrawDiscard(
       [context.sourcePlayerId]: {
         ...player,
         deck: remainingDeck,
-        hand: finalHand,
-        graveyard: [...player.graveyard, ...discarded.map((c) => ({ ...c, isDestroyed: false }))],
+        hand: nextHand,
       },
     },
   };

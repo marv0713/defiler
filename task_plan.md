@@ -13,7 +13,26 @@ Build the browser-first MVP described in `docs/product_design_document.md`, usin
 
 ## Current Phase
 
-Phase 9: UI Polish / Battle Interface Overhaul — **Implemented / Playtest**.
+Phase 10: Campaign & DeckBuilder UI Optimization — **Complete**.
+
+Per `docs/campaign_deckbuilding/` documents:
+- Campaign page: three-column layout (faction detail | route timeline | stage detail).
+  Faction selection: horizontal hero cards with seal, style, difficulty, policy. Qin pre-selected.
+- DeckBuilder: card pool filters (All/Units/Specials/Addable), sort, deck stats, stage goal card,
+  operation hint inline with faction lock, Clear Deck button, i18n-friendly validateDeck errors.
+- Manual discard: `pendingDiscard` pause mechanism + `DiscardCardAction`. Two-step discard UI
+  (select cards with red ✕ badge → confirm). AI auto-discards lowest-power card.
+- Cross-platform helpers in `packages/game-core/src/campaign/campaignHelpers.ts`.
+- ~25 new i18n keys per locale added.
+
+Code quality fix pass (2026-06-28): fixed i18n bypass, `as any` assertions, React render
+side effect, and removed dead DeckConstraint fields.
+
+**Next milestone**: Public Playtest (Tier A). Estimated 7-11 working days across 3 rounds:
+1. Visual baseline: card face template, CSS consolidation, Vercel deploy, feedback link.
+2. Onboarding + analytics: new-player guidance, event tracking, error logging.
+3. Audio + polish: SFX, BGM, placeholder art pass, cross-browser validation.
+
 Gwent-style deck rules (25 cards, per-round draw) + 6 challenge levels + Deck Builder UI.
 Full English/Chinese i18n pass is complete.
 Deck Builder fixes complete: faction-locked campaign pool, in-page tooltip, copy limits.
@@ -21,8 +40,6 @@ Campaign sequential unlocking and AI difficulty profiles complete.
 Pluggable AI strategy architecture is implemented: Utility V1 baseline, Round
 Strategy AI, Lookahead 1-Ply AI, Strategic 3-Ply Lookahead AI, deterministic
 comparison benchmark, and campaign AI id mapping.
-Current focus: polish the home screen and battle screen using
-`docs/battle interface/` as visual and interaction reference.
 
 ## Task Status
 

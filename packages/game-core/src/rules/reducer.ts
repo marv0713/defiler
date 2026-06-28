@@ -1,4 +1,4 @@
-import type { GameAction, PlayCardAction } from "./actions";
+import type { GameAction, PlayCardAction, DiscardCardAction } from "./actions";
 import { getLegalActions } from "./legalActions";
 import { settleRound, startNextRound } from "./round";
 import { resolveEffects } from "../effects/effectResolver";
@@ -140,8 +140,70 @@ function applyPlayCard(state: GameState, action: PlayCardAction): GameState {
 
   return {
     ...nextState,
-    currentPlayerId: getNextPlayerId(nextState, action.playerId),
+    // Don't switch turn if the player needs to discard first.
+    currentPlayerId: nextState.pendingDiscard
+      ? action.playerId
+      : getNextPlayerId(nextState, action.playerId),
   };
+}
+
+function applyDiscardCard(
+  state: GameState,
+  action: DiscardCardAction,
+): GameState {
+  if (!state.pendingDiscard) {
+    throw new Error("No pending discard.");
+  }
+  if (state.pendingDiscard.playerId !== action.playerId) {
+    throw new Error("Not your discard turn.");
+  }
+
+  const player = state.players[action.playerId];
+  const cardIndex = player.hand.findIndex(
+    (c) => c.instanceId === action.cardInstanceId,
+  );
+  if (cardIndex === -1) {
+    throw new Error("Card not in hand for discard.");
+  }
+
+  const discardedCard = { ...player.hand[cardIndex], isDestroyed: false };
+  const nextHand = [
+    ...player.hand.slice(0, cardIndex),
+    ...player.hand.slice(cardIndex + 1),
+  ];
+  const nextCount = state.pendingDiscard.count - 1;
+
+  let nextState: GameState = {
+    ...state,
+    pendingDiscard: nextCount > 0
+      ? { playerId: action.playerId, count: nextCount }
+      : undefined,
+    players: {
+      ...state.players,
+      [action.playerId]: {
+        ...player,
+        hand: nextHand,
+        graveyard: [...player.graveyard, discardedCard],
+      },
+    },
+  };
+
+  // If all discards done, switch turn (or settle round).
+  if (nextCount <= 0) {
+    nextState = {
+      ...nextState,
+      currentPlayerId: getNextPlayerId(nextState, action.playerId),
+    };
+    // Check if both passed after discard → settle round.
+    if (
+      nextState.players.player.hasPassed &&
+      nextState.players.opponent.hasPassed
+    ) {
+      nextState = settleRound(nextState);
+    }
+  }
+
+  return nextState;
 }
 
 function applyPass(state: GameState, playerId: PlayerId): GameState {
@@ -184,6 +246,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       break;
     case "RESTART_GAME":
       throw new Error("RESTART_GAME is not implemented yet.");
+    case "DISCARD_CARD":
+      nextState = applyDiscardCard(state, action);
+      break;
   }
 
   return {

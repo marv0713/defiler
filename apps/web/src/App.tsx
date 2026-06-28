@@ -206,6 +206,69 @@ function StartScreen() {
   );
 }
 
+function DiscardMode({
+  pendingCount,
+  hand,
+  cardDefinitions,
+  onConfirm,
+  t,
+}: {
+  pendingCount: number;
+  hand: { instanceId: string; cardId: string; currentPower: number; row?: string }[];
+  cardDefinitions: Record<string, CardDefinition>;
+  onConfirm: (ids: string[]) => void;
+  t: (id: string, params?: Record<string, string | number>) => string;
+}) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const setHoveredCard = useGameStore((s) => s.setHoveredCard);
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const canConfirm = selected.length === pendingCount;
+
+  return (
+    <>
+      <div className="discard-mode-overlay" />
+      <div className="discard-mode-banner">
+        <span>{t("game.discardHint", { count: pendingCount })}</span>
+        <button
+          className={`discard-mode-confirm${canConfirm ? " discard-mode-confirm--ready" : ""}`}
+          disabled={!canConfirm}
+          onClick={() => onConfirm(selected)}
+        >
+          {t("game.discardConfirm")}
+        </button>
+      </div>
+      <div className="hand-view--discard-wrapper">
+        {hand.map((card) => {
+          const def = cardDefinitions[card.cardId];
+          const name = def ? getCardName(t, def, card.cardId) : card.cardId;
+          const isSelected = selected.includes(card.instanceId);
+          return (
+            <button
+              key={card.instanceId}
+              className={`hand-card hand-card--discardable${isSelected ? " hand-card--discard-selected" : ""}`}
+              onClick={() => toggle(card.instanceId)}
+              onMouseEnter={() => setHoveredCard(def)}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <span className="hand-card__power">{card.currentPower}</span>
+              <span className="hand-card__name">{name}</span>
+              {def?.row && (
+                <span className="hand-card__row-badge">{t(`row.${def.row}`)}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function BattleIdentityBar({
   side,
   faction,
@@ -279,7 +342,7 @@ function RoundResultBanner() {
 // Game Screen
 // ──────────────────────────────────────────
 function GameScreen() {
-  const { gameState, playCard, pass, scores, hoveredCard, selectedLevel, campaignMode, restart, startLevelGame, startGame, playerFaction, opponentFaction } = useGameStore();
+  const { gameState, playCard, pass, discardCard, scores, hoveredCard, selectedLevel, campaignMode, restart, startLevelGame, startGame, playerFaction, opponentFaction } = useGameStore();
   const { t } = useI18n();
 
   // State hooks
@@ -706,6 +769,20 @@ function GameScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Discard Mode Overlay ── */}
+      {gameState.pendingDiscard?.playerId === "player" && (
+        <DiscardMode
+          pendingCount={gameState.pendingDiscard.count}
+          hand={player.hand}
+          cardDefinitions={gameState.cardDefinitions}
+          onConfirm={(ids) => {
+            for (const id of ids) discardCard(id);
+            setSelectedCardId(null);
+          }}
+          t={t}
+        />
       )}
 
       {/* ── Round result overlay banner ── */}
